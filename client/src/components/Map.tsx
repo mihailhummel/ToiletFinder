@@ -22,6 +22,7 @@ declare global {
     resetStars: (toiletId: string) => void;
     submitReview: (toiletId: string) => void;
     cancelReview: (toiletId: string) => void;
+    loadReviews: (toiletId: string) => void;
     openLoginModal: () => void;
     getCurrentUser: () => any;
     currentRating?: { toiletId: string; rating: number };
@@ -163,7 +164,8 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
             // Reset form
             (window as any).cancelReview(toiletId);
             alert('✅ Review submitted successfully!');
-            // Instead of reloading, we'll just reset the form - the review is already submitted
+            // Refresh reviews display
+            (window as any).loadReviews(toiletId);
           } else {
             const errorData = await response.json();
             if (response.status === 409) {
@@ -197,6 +199,58 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
           
           // Clear stored rating
           delete (window as any).currentRating;
+        }
+      };
+
+      (window as any).loadReviews = async (toiletId: string) => {
+        try {
+          const response = await fetch(`/api/toilets/${toiletId}/reviews`);
+          if (response.ok) {
+            const reviews = await response.json();
+            const reviewsContainer = document.getElementById(`reviews-${toiletId}`);
+            if (reviewsContainer) {
+              if (reviews.length > 0) {
+                reviewsContainer.innerHTML = `
+                  <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #e5e7eb;">
+                    <div style="font-size: 13px; color: #64748b; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">
+                      Recent Reviews (${reviews.length})
+                    </div>
+                    <div style="max-height: 200px; overflow-y: auto;">
+                      ${reviews.slice(0, 5).map(review => `
+                        <div style="padding: 12px; background: #f9fafb; border-radius: 8px; margin-bottom: 8px;">
+                          <div style="display: flex; align-items: center; justify-between; margin-bottom: 6px;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                              <div style="width: 24px; height: 24px; background: #3b82f6; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 12px; font-weight: 600;">
+                                ${review.userName.charAt(0).toUpperCase()}
+                              </div>
+                              <span style="font-size: 14px; font-weight: 500; color: #374151;">${review.userName}</span>
+                            </div>
+                            <div style="display: flex; color: #facc15;">
+                              ${'★'.repeat(review.rating)}${'☆'.repeat(5 - review.rating)}
+                            </div>
+                          </div>
+                          ${review.text ? `<div style="font-size: 14px; color: #6b7280; line-height: 1.4;">${review.text}</div>` : ''}
+                          <div style="font-size: 12px; color: #9ca3af; margin-top: 4px;">
+                            ${new Date(review.createdAt).toLocaleDateString()}
+                          </div>
+                        </div>
+                      `).join('')}
+                    </div>
+                  </div>
+                `;
+              } else {
+                reviewsContainer.innerHTML = `
+                  <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #e5e7eb;">
+                    <div style="font-size: 14px; color: #9ca3af; font-style: italic; text-align: center; padding: 20px;">
+                      No reviews yet. Be the first to review this toilet!
+                    </div>
+                  </div>
+                `;
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Error loading reviews:', error);
         }
       };
 
@@ -670,6 +724,9 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
           </div>
           ${user ? '' : '</div>'}
 
+          <!-- Reviews Section -->
+          <div id="reviews-${toilet.id}"></div>
+
           <!-- Action button -->
           <div style="padding-top: 4px;">
             <button onclick="window.getDirections(${toilet.coordinates.lat}, ${toilet.coordinates.lng})" style="
@@ -710,6 +767,10 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
         .on('click', (e: any) => {
           e.originalEvent?.stopPropagation();
           marker.openPopup();
+          // Load reviews when popup opens
+          setTimeout(() => {
+            (window as any).loadReviews(toilet.id);
+          }, 100);
         });
 
       markers.current.push(marker);
