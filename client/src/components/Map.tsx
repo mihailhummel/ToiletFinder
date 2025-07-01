@@ -292,12 +292,12 @@ export const Map = ({ onToiletClick, onAddToiletClick }: MapProps) => {
       const accessibility = getAccessibilityInfo(toilet);
 
       const popupContent = `
-        <div style="min-width: 320px; max-width: 380px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; line-height: 1.5;">
+        <div style="min-width: 280px; max-width: 340px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; line-height: 1.4; padding: 20px;">
           <!-- Header with location name and rating -->
           <div style="
-            padding: 16px 0 12px 0;
+            padding-bottom: 16px;
             border-bottom: 1px solid #e5e7eb;
-            margin-bottom: 16px;
+            margin-bottom: 18px;
           ">
             <div style="
               display: flex;
@@ -455,13 +455,14 @@ export const Map = ({ onToiletClick, onAddToiletClick }: MapProps) => {
       const marker = window.L.marker([toilet.coordinates.lat, toilet.coordinates.lng], { icon })
         .addTo(map.current)
         .bindPopup(popupContent, {
-          maxWidth: 400,
-          minWidth: 350,
+          maxWidth: 360,
+          minWidth: 300,
           className: 'toilet-popup',
           closeButton: true,
           offset: [0, -40], // Offset to appear above the pin
           autoPan: true,
-          keepInView: true
+          keepInView: true,
+          autoPanPadding: [20, 20]
         })
         .on('click', (e: any) => {
           e.originalEvent?.stopPropagation();

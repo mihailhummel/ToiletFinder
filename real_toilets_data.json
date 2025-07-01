@@ -1,0 +1,4674 @@
+[
+  {
+    "id": "toilet-1751410636036-0",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.7035766,
+      "lng": 23.3108261
+    },
+    "notes": "Gas station restroom. Hours: 24/7. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.036Z",
+    "name": "Toilet at ОМВ",
+    "availability": "Customer access preferred",
+    "accessibility": "Wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 254476709
+  },
+  {
+    "id": "toilet-1751410636036-1",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.735831,
+      "lng": 23.2464853
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.036Z",
+    "name": "Toilet at Петрол",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 254476717
+  },
+  {
+    "id": "toilet-1751410636036-2",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.6851859,
+      "lng": 23.4000573
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.036Z",
+    "name": "Toilet at Лукойл",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 254476719
+  },
+  {
+    "id": "toilet-1751410636036-3",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.7091675,
+      "lng": 23.2669356
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.036Z",
+    "name": "Toilet at Бензиностанция Варко Булвария",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 254476720
+  },
+  {
+    "id": "toilet-1751410636036-4",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.6505152,
+      "lng": 23.2898567
+    },
+    "notes": "Gas station restroom. Hours: 24/7. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.036Z",
+    "name": "Toilet at Shell",
+    "availability": "Customer access preferred",
+    "accessibility": "Wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 254476721
+  },
+  {
+    "id": "toilet-1751410636036-5",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.655008,
+      "lng": 23.400788
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.036Z",
+    "name": "Toilet at Газостанция Лиема",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 254476730
+  },
+  {
+    "id": "toilet-1751410636036-6",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.7459561,
+      "lng": 23.2293205
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.036Z",
+    "name": "Toilet at Лукойл",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 254476732
+  },
+  {
+    "id": "toilet-1751410636036-7",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.6986351,
+      "lng": 23.3459473
+    },
+    "notes": "Gas station restroom. Hours: 24/7. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.036Z",
+    "name": "Toilet at InteSpeed",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 254476741
+  },
+  {
+    "id": "toilet-1751410636036-8",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.7136319,
+      "lng": 23.2372672
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.036Z",
+    "name": "Toilet at Gas Station",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 254476743
+  },
+  {
+    "id": "toilet-1751410636036-9",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.6600222,
+      "lng": 23.3479848
+    },
+    "notes": "Gas station restroom. Hours: 24/7. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.036Z",
+    "name": "Toilet at Shell",
+    "availability": "Customer access preferred",
+    "accessibility": "Wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 254476750
+  },
+  {
+    "id": "toilet-1751410636036-10",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.7051361,
+      "lng": 23.3111521
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.036Z",
+    "name": "Toilet at Shell",
+    "availability": "Customer access preferred",
+    "accessibility": "Wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 254476758
+  },
+  {
+    "id": "toilet-1751410636036-11",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.709059,
+      "lng": 23.368417
+    },
+    "notes": "Gas station restroom. Hours: 24/7. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.036Z",
+    "name": "Toilet at Shell",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 254476759
+  },
+  {
+    "id": "toilet-1751410636036-12",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.6388665,
+      "lng": 23.3208139
+    },
+    "notes": "Gas station restroom. Hours: 24/7. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.036Z",
+    "name": "Toilet at Shell",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 254476762
+  },
+  {
+    "id": "toilet-1751410636036-13",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.7094311,
+      "lng": 23.398258
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.036Z",
+    "name": "Toilet at SNG",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 254476768
+  },
+  {
+    "id": "toilet-1751410636036-14",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.6616567,
+      "lng": 23.3917118
+    },
+    "notes": "Gas station restroom. Hours: 24/7. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.036Z",
+    "name": "Toilet at ОМВ",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 254476794
+  },
+  {
+    "id": "toilet-1751410636036-15",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.6656436,
+      "lng": 23.3540695
+    },
+    "notes": "Gas station restroom. Hours: 24/7. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.036Z",
+    "name": "Toilet at Петрол",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 254476797
+  },
+  {
+    "id": "toilet-1751410636036-16",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.643929,
+      "lng": 23.402955
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.036Z",
+    "name": "Toilet at Газостанция Топливо",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 254476799
+  },
+  {
+    "id": "toilet-1751410636036-17",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.709205,
+      "lng": 23.393618
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.036Z",
+    "name": "Toilet at Tekom",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 254476843
+  },
+  {
+    "id": "toilet-1751410636036-18",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.6677654,
+      "lng": 23.3682069
+    },
+    "notes": "Gas station restroom. Hours: 24/7. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.036Z",
+    "name": "Toilet at EKO",
+    "availability": "Customer access preferred",
+    "accessibility": "Wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 254476850
+  },
+  {
+    "id": "toilet-1751410636036-19",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.6619019,
+      "lng": 23.3796224
+    },
+    "notes": "Gas station restroom. Hours: 24/7. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.036Z",
+    "name": "Toilet at Shell",
+    "availability": "Customer access preferred",
+    "accessibility": "Wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 254476851
+  },
+  {
+    "id": "toilet-1751410636036-20",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.6740963,
+      "lng": 23.3800358
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.036Z",
+    "name": "Toilet at Круиз",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 254476856
+  },
+  {
+    "id": "toilet-1751410636036-21",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.6681759,
+      "lng": 23.3289986
+    },
+    "notes": "Gas station restroom. Hours: 24/7. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.036Z",
+    "name": "Toilet at EKO",
+    "availability": "Customer access preferred",
+    "accessibility": "Wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 254476857
+  },
+  {
+    "id": "toilet-1751410636036-22",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.650871,
+      "lng": 23.217766
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.036Z",
+    "name": "Toilet at Лукойл",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 254476859
+  },
+  {
+    "id": "toilet-1751410636036-23",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.6924183,
+      "lng": 23.2954226
+    },
+    "notes": "Gas station restroom. Hours: 24/7. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.036Z",
+    "name": "Toilet at Eco Petrol",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 254476860
+  },
+  {
+    "id": "toilet-1751410636036-24",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.649077,
+      "lng": 23.214067
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.036Z",
+    "name": "Toilet at Газпром",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 254476861
+  },
+  {
+    "id": "toilet-1751410636036-25",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.633707,
+      "lng": 23.3754383
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.036Z",
+    "name": "Toilet at Gas Station",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 254476862
+  },
+  {
+    "id": "toilet-1751410636036-26",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.6693502,
+      "lng": 23.3924566
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.036Z",
+    "name": "Toilet at Shell",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 254476863
+  },
+  {
+    "id": "toilet-1751410636036-27",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.6578113,
+      "lng": 23.3392465
+    },
+    "notes": "Gas station restroom. Hours: 24/7. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.036Z",
+    "name": "Toilet at Лукойл",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 254476866
+  },
+  {
+    "id": "toilet-1751410636036-28",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.7171096,
+      "lng": 23.2612649
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.036Z",
+    "name": "Toilet at Interspeed",
+    "availability": "Customer access preferred",
+    "accessibility": "Wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 254476871
+  },
+  {
+    "id": "toilet-1751410636036-29",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.718649,
+      "lng": 23.2356834
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.036Z",
+    "name": "Toilet at Petrol Oil",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 254476873
+  },
+  {
+    "id": "toilet-1751410636036-30",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.720606,
+      "lng": 23.333066
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.036Z",
+    "name": "Toilet at InteSpeed",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 254476879
+  },
+  {
+    "id": "toilet-1751410636036-31",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.7088884,
+      "lng": 23.4281239
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.036Z",
+    "name": "Toilet at InterSpeed",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 254476882
+  },
+  {
+    "id": "toilet-1751410636036-32",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.6236097,
+      "lng": 23.362933
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.036Z",
+    "name": "Toilet at Gas Station",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 254476883
+  },
+  {
+    "id": "toilet-1751410636036-33",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.7142738,
+      "lng": 23.3279417
+    },
+    "notes": "Gas station restroom. Hours: 24/7. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.036Z",
+    "name": "Toilet at Shell",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 254476885
+  },
+  {
+    "id": "toilet-1751410636036-34",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.696517,
+      "lng": 23.2812236
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.036Z",
+    "name": "Toilet at Петрол",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 254476888
+  },
+  {
+    "id": "toilet-1751410636036-35",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.6675058,
+      "lng": 23.2907696
+    },
+    "notes": "Gas station restroom. Hours: 24/7. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.036Z",
+    "name": "Toilet at ОМВ",
+    "availability": "Customer access preferred",
+    "accessibility": "Wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 254476890
+  },
+  {
+    "id": "toilet-1751410636036-36",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.655305,
+      "lng": 23.4001901
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.036Z",
+    "name": "Toilet at Gas Station",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 254476892
+  },
+  {
+    "id": "toilet-1751410636036-37",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.675907,
+      "lng": 23.3799568
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.036Z",
+    "name": "Toilet at Петрол",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 254476907
+  },
+  {
+    "id": "toilet-1751410636036-38",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.7031259,
+      "lng": 23.2975007
+    },
+    "notes": "Gas station restroom. Hours: 24/7. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.036Z",
+    "name": "Toilet at Петрол",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 254476908
+  },
+  {
+    "id": "toilet-1751410636036-39",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.6955857,
+      "lng": 23.3128396
+    },
+    "notes": "Gas station restroom. Hours: Mo-Su,PH 00:00-24:00. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.036Z",
+    "name": "Toilet at InsaOil",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 254476910
+  },
+  {
+    "id": "toilet-1751410636036-40",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.7117498,
+      "lng": 23.3310944
+    },
+    "notes": "Gas station restroom. Hours: 24/7. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.036Z",
+    "name": "Toilet at ОМВ",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 254476911
+  },
+  {
+    "id": "toilet-1751410636036-41",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.7069757,
+      "lng": 23.4573364
+    },
+    "notes": "Gas station restroom. Hours: 24/7. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.036Z",
+    "name": "Toilet at Shell",
+    "availability": "Customer access preferred",
+    "accessibility": "Wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 269999179
+  },
+  {
+    "id": "toilet-1751410636036-42",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.6022,
+      "lng": 23.1424234
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.036Z",
+    "name": "Toilet at Gas Station",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 276350257
+  },
+  {
+    "id": "toilet-1751410636036-43",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.6017181,
+      "lng": 23.1415816
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.036Z",
+    "name": "Toilet at Gas Station",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 276350261
+  },
+  {
+    "id": "toilet-1751410636036-44",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.6009622,
+      "lng": 23.1305167
+    },
+    "notes": "Gas station restroom. Hours: PH,Mo-Su 00:00-24:00. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.036Z",
+    "name": "Toilet at Петрол",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 276350264
+  },
+  {
+    "id": "toilet-1751410636036-45",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.5886606,
+      "lng": 23.3629717
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.036Z",
+    "name": "Toilet at Gas Station",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 331002747
+  },
+  {
+    "id": "toilet-1751410636036-46",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.6304463,
+      "lng": 23.4648784
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.036Z",
+    "name": "Toilet at Лукойл",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 355041169
+  },
+  {
+    "id": "toilet-1751410636036-47",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.7536916,
+      "lng": 23.4424742
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.036Z",
+    "name": "Toilet at EKO",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 470821043
+  },
+  {
+    "id": "toilet-1751410636036-48",
+    "type": "public",
+    "coordinates": {
+      "lat": 43.2086912,
+      "lng": 27.9032066
+    },
+    "notes": "Located in Varna.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.036Z",
+    "name": "Public Toilet",
+    "availability": "Public access",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 496147642
+  },
+  {
+    "id": "toilet-1751410636036-49",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.6324432,
+      "lng": 23.4587851
+    },
+    "notes": "Gas station restroom. Hours: 24/7. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.036Z",
+    "name": "Toilet at Петрол",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 577539477
+  },
+  {
+    "id": "toilet-1751410636036-50",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.7319873,
+      "lng": 23.2755631
+    },
+    "notes": "Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.036Z",
+    "name": "Public Toilet",
+    "availability": "Free access",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 583205503
+  },
+  {
+    "id": "toilet-1751410636036-51",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.7106476,
+      "lng": 23.3084807
+    },
+    "notes": "Gas station restroom. Hours: 24/7. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.036Z",
+    "name": "Toilet at ОМВ",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 688820149
+  },
+  {
+    "id": "toilet-1751410636036-52",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.7358056,
+      "lng": 23.3147183
+    },
+    "notes": "Gas station restroom. Hours: 24/7. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.036Z",
+    "name": "Toilet at Rompetrol",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 811382533
+  },
+  {
+    "id": "toilet-1751410636036-53",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.6881381,
+      "lng": 23.4138488
+    },
+    "notes": "Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.036Z",
+    "name": "Public Toilet",
+    "availability": "Free access",
+    "accessibility": "Wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 1034001284
+  },
+  {
+    "id": "toilet-1751410636036-54",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.6886315,
+      "lng": 23.4155772
+    },
+    "notes": "Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.036Z",
+    "name": "Public Toilet",
+    "availability": "Free access",
+    "accessibility": "Wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 1034001396
+  },
+  {
+    "id": "toilet-1751410636036-55",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.5826104,
+      "lng": 23.2919686
+    },
+    "notes": "Fee required. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.036Z",
+    "name": "Public Toilet",
+    "availability": "Paid access",
+    "accessibility": "Not wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 1141386689
+  },
+  {
+    "id": "toilet-1751410636036-56",
+    "type": "public",
+    "coordinates": {
+      "lat": 43.206948,
+      "lng": 27.9145719
+    },
+    "notes": "Located in Varna.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.036Z",
+    "name": "Public Toilet",
+    "availability": "Free access",
+    "accessibility": "Not wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 1270803230
+  },
+  {
+    "id": "toilet-1751410636036-57",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.7803621,
+      "lng": 23.2743467
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.036Z",
+    "name": "Toilet at Интер Спиид",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 1339823743
+  },
+  {
+    "id": "toilet-1751410636036-58",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.7394461,
+      "lng": 23.2507985
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.036Z",
+    "name": "Toilet at Петрол",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 1339823984
+  },
+  {
+    "id": "toilet-1751410636036-59",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.5703462,
+      "lng": 23.1160912
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.036Z",
+    "name": "Toilet at Лукойл",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 1348214992
+  },
+  {
+    "id": "toilet-1751410636036-60",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.5395384,
+      "lng": 23.1293251
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.036Z",
+    "name": "Toilet at Shell",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 1348214996
+  },
+  {
+    "id": "toilet-1751410636036-61",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.1324333,
+      "lng": 24.7963259
+    },
+    "notes": "Located in Plovdiv.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.036Z",
+    "name": "Public Toilet",
+    "availability": "Public access",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 1479573100
+  },
+  {
+    "id": "toilet-1751410636036-62",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.6490073,
+      "lng": 23.2952233
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at Gas Station",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 1699545030
+  },
+  {
+    "id": "toilet-1751410636037-63",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.6606787,
+      "lng": 23.272918
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at Лукойл",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 1700083395
+  },
+  {
+    "id": "toilet-1751410636037-64",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.6674393,
+      "lng": 23.2643933
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at Петрол",
+    "availability": "Customer access preferred",
+    "accessibility": "Not wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 1700083427
+  },
+  {
+    "id": "toilet-1751410636037-65",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.7069851,
+      "lng": 23.4683791
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at Gas Station",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 1837792018
+  },
+  {
+    "id": "toilet-1751410636037-66",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.1629758,
+      "lng": 24.7168234
+    },
+    "notes": "Located in Plovdiv.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Public access",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 1853117646
+  },
+  {
+    "id": "toilet-1751410636037-67",
+    "type": "public",
+    "coordinates": {
+      "lat": 43.2078893,
+      "lng": 27.9266515
+    },
+    "notes": "Fee required. Located in Varna.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Paid access",
+    "accessibility": "Not wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 1916676907
+  },
+  {
+    "id": "toilet-1751410636037-68",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.1269796,
+      "lng": 24.7808369
+    },
+    "notes": "Located in Plovdiv.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Public access",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 1933947114
+  },
+  {
+    "id": "toilet-1751410636037-69",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.7005276,
+      "lng": 23.3004674
+    },
+    "notes": "Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Public access",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 2070152279
+  },
+  {
+    "id": "toilet-1751410636037-70",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.762503,
+      "lng": 23.1933818
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at Gas Station",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 2166928182
+  },
+  {
+    "id": "toilet-1751410636037-71",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.6384627,
+      "lng": 23.3192452
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at EKO",
+    "availability": "Customer access preferred",
+    "accessibility": "Wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 2303383623
+  },
+  {
+    "id": "toilet-1751410636037-72",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.1370765,
+      "lng": 24.7590347
+    },
+    "notes": "Located in Plovdiv.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Public access",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 2385120494
+  },
+  {
+    "id": "toilet-1751410636037-73",
+    "type": "public",
+    "coordinates": {
+      "lat": 43.2074807,
+      "lng": 27.9148115
+    },
+    "notes": "Located in Varna.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Public access",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 2399007769
+  },
+  {
+    "id": "toilet-1751410636037-74",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.6501557,
+      "lng": 23.378522
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at Метагаз",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 2519755172
+  },
+  {
+    "id": "toilet-1751410636037-75",
+    "type": "public",
+    "coordinates": {
+      "lat": 43.2280587,
+      "lng": 27.9401247
+    },
+    "notes": "Located in Varna.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Public access",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 2674576957
+  },
+  {
+    "id": "toilet-1751410636037-76",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.1485989,
+      "lng": 24.7490648
+    },
+    "notes": "Fee required. Located in Plovdiv.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Paid access",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 3094883578
+  },
+  {
+    "id": "toilet-1751410636037-77",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.7044972,
+      "lng": 23.3580195
+    },
+    "notes": "Gas station restroom. Hours: 24/7. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at EKO",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 3218210852
+  },
+  {
+    "id": "toilet-1751410636037-78",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.7393184,
+      "lng": 23.3173984
+    },
+    "notes": "Gas station restroom. Hours: Mo-Su 07:00-19:00. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at Петрол",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 3252036182
+  },
+  {
+    "id": "toilet-1751410636037-79",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.6398721,
+      "lng": 23.4381613
+    },
+    "notes": "Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Public access",
+    "accessibility": "Not wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 3631997755
+  },
+  {
+    "id": "toilet-1751410636037-80",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.1449468,
+      "lng": 24.7510612
+    },
+    "notes": "Fee required. Located in Plovdiv.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Paid access",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 3654787180
+  },
+  {
+    "id": "toilet-1751410636037-81",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.6500663,
+      "lng": 23.3470075
+    },
+    "notes": "Gas station restroom. Hours: 24/7. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at Go Petroleum",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 3714011439
+  },
+  {
+    "id": "toilet-1751410636037-82",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.657672,
+      "lng": 23.3148217
+    },
+    "notes": "Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Free access",
+    "accessibility": "Wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 3770682420
+  },
+  {
+    "id": "toilet-1751410636037-83",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.6958748,
+      "lng": 23.3255691
+    },
+    "notes": "Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Free access",
+    "accessibility": "Not wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 3772984285
+  },
+  {
+    "id": "toilet-1751410636037-84",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.7145202,
+      "lng": 23.2977886
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at Eco Petrol",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 3782105058
+  },
+  {
+    "id": "toilet-1751410636037-85",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.688616,
+      "lng": 23.3201516
+    },
+    "notes": "Fee required. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Paid access",
+    "accessibility": "Wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 3926181659
+  },
+  {
+    "id": "toilet-1751410636037-86",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.6047267,
+      "lng": 23.114976
+    },
+    "notes": "Gas station restroom. Hours: 24/7. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at Лукойл",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 3934703050
+  },
+  {
+    "id": "toilet-1751410636037-87",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.1500136,
+      "lng": 24.7433068
+    },
+    "notes": "Located in Plovdiv.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Public access",
+    "accessibility": "Wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 4105536894
+  },
+  {
+    "id": "toilet-1751410636037-88",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.6435688,
+      "lng": 23.3737334
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at Петрол",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 4308077310
+  },
+  {
+    "id": "toilet-1751410636037-89",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.1463484,
+      "lng": 24.7540961
+    },
+    "notes": "Located in Plovdiv.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Public access",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 4331172867
+  },
+  {
+    "id": "toilet-1751410636037-90",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.6962974,
+      "lng": 23.2934356
+    },
+    "notes": "Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Public access",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 4349411446
+  },
+  {
+    "id": "toilet-1751410636037-91",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.6577519,
+      "lng": 23.3135591
+    },
+    "notes": "Drinking water available. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Free access",
+    "accessibility": "Wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 4463346466
+  },
+  {
+    "id": "toilet-1751410636037-92",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.6756965,
+      "lng": 23.3823137
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at Газстанция Грубер ойл",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 4511979789
+  },
+  {
+    "id": "toilet-1751410636037-93",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.7069096,
+      "lng": 23.351286
+    },
+    "notes": "Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Public access",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 4579807789
+  },
+  {
+    "id": "toilet-1751410636037-94",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.7043821,
+      "lng": 23.3594094
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at SV Oil",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 4592322388
+  },
+  {
+    "id": "toilet-1751410636037-95",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.7213313,
+      "lng": 23.2821116
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at Ловато",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 4601655304
+  },
+  {
+    "id": "toilet-1751410636037-96",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.6981517,
+      "lng": 23.3618212
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at Gas Station",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 4602609805
+  },
+  {
+    "id": "toilet-1751410636037-97",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.6887468,
+      "lng": 23.3988713
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at Gas Station",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 4638375292
+  },
+  {
+    "id": "toilet-1751410636037-98",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.7103726,
+      "lng": 23.2429569
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at Ради Газ",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 4707375396
+  },
+  {
+    "id": "toilet-1751410636037-99",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.7214906,
+      "lng": 23.2385459
+    },
+    "notes": "Gas station restroom. Hours: 24/7. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at VM Petroleum",
+    "availability": "Customer access preferred",
+    "accessibility": "Wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 4737913216
+  },
+  {
+    "id": "toilet-1751410636037-100",
+    "type": "public",
+    "coordinates": {
+      "lat": 43.2044475,
+      "lng": 27.909775
+    },
+    "notes": "Fee required. Located in Varna.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Paid access",
+    "accessibility": "Wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 4860491046
+  },
+  {
+    "id": "toilet-1751410636037-101",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.6328803,
+      "lng": 23.4178189
+    },
+    "notes": "Gas station restroom. Hours: Mo-Su 7:30-20:00. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at Eco Petrol",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 4891877821
+  },
+  {
+    "id": "toilet-1751410636037-102",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.6830249,
+      "lng": 23.3179775
+    },
+    "notes": "Fee required. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Paid access",
+    "accessibility": "Wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 4940823706
+  },
+  {
+    "id": "toilet-1751410636037-103",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.6216188,
+      "lng": 23.1802932
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at Avia",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 4967787871
+  },
+  {
+    "id": "toilet-1751410636037-104",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.1531895,
+      "lng": 24.7453402
+    },
+    "notes": "Located in Plovdiv.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Public access",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 4968049598
+  },
+  {
+    "id": "toilet-1751410636037-105",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.6913839,
+      "lng": 23.3443167
+    },
+    "notes": "Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Free access",
+    "accessibility": "Not wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 4973928029
+  },
+  {
+    "id": "toilet-1751410636037-106",
+    "type": "public",
+    "coordinates": {
+      "lat": 43.2048311,
+      "lng": 27.9256612
+    },
+    "notes": "Located in Varna.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Free access",
+    "accessibility": "Not wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 4980227982
+  },
+  {
+    "id": "toilet-1751410636037-107",
+    "type": "mall",
+    "coordinates": {
+      "lat": 42.672088,
+      "lng": 23.2944814
+    },
+    "notes": "Shopping center restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Restroom at Shopping Center",
+    "availability": "Public during hours",
+    "accessibility": "Wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 4980845647
+  },
+  {
+    "id": "toilet-1751410636037-108",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.7888951,
+      "lng": 23.3274668
+    },
+    "notes": "Gas station restroom. Hours: 24/7. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at Лукойл",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 5194578249
+  },
+  {
+    "id": "toilet-1751410636037-109",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.7964512,
+      "lng": 23.3310213
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at Озон",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 5194667438
+  },
+  {
+    "id": "toilet-1751410636037-110",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.7238062,
+      "lng": 23.2669372
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at Gas Station",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 5232810922
+  },
+  {
+    "id": "toilet-1751410636037-111",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.7029796,
+      "lng": 23.3198282
+    },
+    "notes": "Hours: Mo-Sa 09:00-18:00; Su 09:00-17:00. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Public access",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 5577658321
+  },
+  {
+    "id": "toilet-1751410636037-112",
+    "type": "public",
+    "coordinates": {
+      "lat": 43.1926306,
+      "lng": 27.9210927
+    },
+    "notes": "Located in Varna.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Free access",
+    "accessibility": "Not wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 5723987161
+  },
+  {
+    "id": "toilet-1751410636037-113",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.7113507,
+      "lng": 23.3200985
+    },
+    "notes": "Hours: Mo-Su 06:30-18:00. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Free access",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 5837907686
+  },
+  {
+    "id": "toilet-1751410636037-114",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.7040547,
+      "lng": 23.3014731
+    },
+    "notes": "Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Public access",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 5851597710
+  },
+  {
+    "id": "toilet-1751410636037-115",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.7120322,
+      "lng": 23.3212897
+    },
+    "notes": "Fee required. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Paid access",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 5854132346
+  },
+  {
+    "id": "toilet-1751410636037-116",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.712048,
+      "lng": 23.3212361
+    },
+    "notes": "Fee required. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Paid access",
+    "accessibility": "Wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 5854132347
+  },
+  {
+    "id": "toilet-1751410636037-117",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.690752,
+      "lng": 23.3334774
+    },
+    "notes": "Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Free access",
+    "accessibility": "Not wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 5863892279
+  },
+  {
+    "id": "toilet-1751410636037-118",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.706285,
+      "lng": 23.3049246
+    },
+    "notes": "Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Public access",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 5893062067
+  },
+  {
+    "id": "toilet-1751410636037-119",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.7375948,
+      "lng": 23.3265099
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at Метанстанция",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 5909318098
+  },
+  {
+    "id": "toilet-1751410636037-120",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.7235858,
+      "lng": 23.3285584
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at Лукойл",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 5909623077
+  },
+  {
+    "id": "toilet-1751410636037-121",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.7127345,
+      "lng": 23.342995
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at Метанстанция Метагаз",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 5912311341
+  },
+  {
+    "id": "toilet-1751410636037-122",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.7413796,
+      "lng": 23.3086469
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at Вагеркраф",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 5923879270
+  },
+  {
+    "id": "toilet-1751410636037-123",
+    "type": "public",
+    "coordinates": {
+      "lat": 43.2372754,
+      "lng": 27.8257539
+    },
+    "notes": "Located in Varna.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Free access",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 6038687820
+  },
+  {
+    "id": "toilet-1751410636037-124",
+    "type": "public",
+    "coordinates": {
+      "lat": 43.2371496,
+      "lng": 27.8266104
+    },
+    "notes": "Located in Varna.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Free access",
+    "accessibility": "Wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 6038687821
+  },
+  {
+    "id": "toilet-1751410636037-125",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.6089886,
+      "lng": 23.1326681
+    },
+    "notes": "Gas station restroom. Hours: 24/7. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at ОМВ",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 6044086521
+  },
+  {
+    "id": "toilet-1751410636037-126",
+    "type": "public",
+    "coordinates": {
+      "lat": 43.198097,
+      "lng": 27.9176639
+    },
+    "notes": "Drinking water available. Located in Varna.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Public access",
+    "accessibility": "Wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 6088053717
+  },
+  {
+    "id": "toilet-1751410636037-127",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.1347186,
+      "lng": 24.7420478
+    },
+    "notes": "Located in Plovdiv.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Public access",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 6181345264
+  },
+  {
+    "id": "toilet-1751410636037-128",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.135654,
+      "lng": 24.74364
+    },
+    "notes": "Fee required. Located in Plovdiv.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Paid access",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 6181347404
+  },
+  {
+    "id": "toilet-1751410636037-129",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.7225018,
+      "lng": 23.3432177
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at L.P. Oil",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 6251324838
+  },
+  {
+    "id": "toilet-1751410636037-130",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.6947112,
+      "lng": 23.3068823
+    },
+    "notes": "Fee required. Hours: Mo-Su 06:00-23:00. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Paid access",
+    "accessibility": "Wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 6373867118
+  },
+  {
+    "id": "toilet-1751410636037-131",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.1301848,
+      "lng": 24.7706696
+    },
+    "notes": "Located in Plovdiv.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Public access",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 6402590354
+  },
+  {
+    "id": "toilet-1751410636037-132",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.683836,
+      "lng": 23.3298061
+    },
+    "notes": "Fee required. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Paid access",
+    "accessibility": "Not wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 6410343492
+  },
+  {
+    "id": "toilet-1751410636037-133",
+    "type": "public",
+    "coordinates": {
+      "lat": 43.2368212,
+      "lng": 27.8260366
+    },
+    "notes": "Located in Varna.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Free access",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 6414107088
+  },
+  {
+    "id": "toilet-1751410636037-134",
+    "type": "public",
+    "coordinates": {
+      "lat": 43.2368475,
+      "lng": 27.8257408
+    },
+    "notes": "Located in Varna.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Free access",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 6414108097
+  },
+  {
+    "id": "toilet-1751410636037-135",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.6738365,
+      "lng": 23.347898
+    },
+    "notes": "Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Public access",
+    "accessibility": "Not wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 6450878243
+  },
+  {
+    "id": "toilet-1751410636037-136",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.6875154,
+      "lng": 23.3136401
+    },
+    "notes": "Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Free access",
+    "accessibility": "Not wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 6453120007
+  },
+  {
+    "id": "toilet-1751410636037-137",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.69445,
+      "lng": 23.3376108
+    },
+    "notes": "Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Free access",
+    "accessibility": "Not wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 6543321849
+  },
+  {
+    "id": "toilet-1751410636037-138",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.6898167,
+      "lng": 23.3345415
+    },
+    "notes": "Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Free access",
+    "accessibility": "Not wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 6575406513
+  },
+  {
+    "id": "toilet-1751410636037-139",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.6744249,
+      "lng": 23.3093728
+    },
+    "notes": "Operated by Domino's. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet - Domino's",
+    "availability": "Public access",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 6580387303
+  },
+  {
+    "id": "toilet-1751410636037-140",
+    "type": "public",
+    "coordinates": {
+      "lat": 43.176184,
+      "lng": 27.9128878
+    },
+    "notes": "Located in Varna.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Public access",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 6593584462
+  },
+  {
+    "id": "toilet-1751410636037-141",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.711226,
+      "lng": 23.3021974
+    },
+    "notes": "Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Free access",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 6597309312
+  },
+  {
+    "id": "toilet-1751410636037-142",
+    "type": "public",
+    "coordinates": {
+      "lat": 43.2025377,
+      "lng": 27.9205695
+    },
+    "notes": "Located in Varna.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Public access",
+    "accessibility": "Not wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 6650975456
+  },
+  {
+    "id": "toilet-1751410636037-143",
+    "type": "public",
+    "coordinates": {
+      "lat": 43.2051031,
+      "lng": 27.920703
+    },
+    "notes": "Located in Varna.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Public access",
+    "accessibility": "Not wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 6651001726
+  },
+  {
+    "id": "toilet-1751410636037-144",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.7241148,
+      "lng": 23.30605
+    },
+    "notes": "Hours: Mo-Su 08:00-22:00. Drinking water available. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Free access",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 6680029690
+  },
+  {
+    "id": "toilet-1751410636037-145",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.7099208,
+      "lng": 23.3237055
+    },
+    "notes": "Fee required. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Paid access",
+    "accessibility": "Wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 6683958287
+  },
+  {
+    "id": "toilet-1751410636037-146",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.710384,
+      "lng": 23.3230108
+    },
+    "notes": "Fee required. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Paid access",
+    "accessibility": "Wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 6683963886
+  },
+  {
+    "id": "toilet-1751410636037-147",
+    "type": "public",
+    "coordinates": {
+      "lat": 43.2162107,
+      "lng": 27.8968903
+    },
+    "notes": "Located in Varna.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Public access",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 6685883387
+  },
+  {
+    "id": "toilet-1751410636037-148",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.7031505,
+      "lng": 23.2088867
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at Лукойл",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 6790129384
+  },
+  {
+    "id": "toilet-1751410636037-149",
+    "type": "public",
+    "coordinates": {
+      "lat": 43.202261,
+      "lng": 27.9237702
+    },
+    "notes": "Located in Varna.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Free access",
+    "accessibility": "Wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 6831049647
+  },
+  {
+    "id": "toilet-1751410636037-150",
+    "type": "public",
+    "coordinates": {
+      "lat": 43.2038294,
+      "lng": 27.9252553
+    },
+    "notes": "Located in Varna.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Public access",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 6831049648
+  },
+  {
+    "id": "toilet-1751410636037-151",
+    "type": "public",
+    "coordinates": {
+      "lat": 43.2043574,
+      "lng": 27.9223344
+    },
+    "notes": "Fee required. Located in Varna.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Paid access",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 6831049649
+  },
+  {
+    "id": "toilet-1751410636037-152",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.6393577,
+      "lng": 23.354305
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at Gas Station",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 6906797939
+  },
+  {
+    "id": "toilet-1751410636037-153",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.7043944,
+      "lng": 23.3308968
+    },
+    "notes": "Fee required. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Paid access",
+    "accessibility": "Not wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 6916774296
+  },
+  {
+    "id": "toilet-1751410636037-154",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.7137528,
+      "lng": 23.2846722
+    },
+    "notes": "Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Public access",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 6975178842
+  },
+  {
+    "id": "toilet-1751410636037-155",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.6448153,
+      "lng": 23.265506
+    },
+    "notes": "Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Public access",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 7238968194
+  },
+  {
+    "id": "toilet-1751410636037-156",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.6385039,
+      "lng": 23.3959764
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at Интерспийд",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 7477966094
+  },
+  {
+    "id": "toilet-1751410636037-157",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.7219725,
+      "lng": 23.2853103
+    },
+    "notes": "Gas station restroom. Hours: Mo-Su 00:00-23:59. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at Интерспийд",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 7477974189
+  },
+  {
+    "id": "toilet-1751410636037-158",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.1267503,
+      "lng": 24.7478628
+    },
+    "notes": "Located in Plovdiv.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Public access",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 7647174878
+  },
+  {
+    "id": "toilet-1751410636037-159",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.6027101,
+      "lng": 23.2334711
+    },
+    "notes": "Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Free access",
+    "accessibility": "Not wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 7824880502
+  },
+  {
+    "id": "toilet-1751410636037-160",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.6878687,
+      "lng": 23.3369625
+    },
+    "notes": "Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Free access",
+    "accessibility": "Not wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 8260706773
+  },
+  {
+    "id": "toilet-1751410636037-161",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.6827965,
+      "lng": 23.3238065
+    },
+    "notes": "Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Free access",
+    "accessibility": "Not wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 8272197813
+  },
+  {
+    "id": "toilet-1751410636037-162",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.7089946,
+      "lng": 23.317287
+    },
+    "notes": "Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Public access",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 8479344243
+  },
+  {
+    "id": "toilet-1751410636037-163",
+    "type": "public",
+    "coordinates": {
+      "lat": 43.2074266,
+      "lng": 27.924649
+    },
+    "notes": "Fee required. Located in Varna.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Paid access",
+    "accessibility": "Wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 8557075987
+  },
+  {
+    "id": "toilet-1751410636037-164",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.7048502,
+      "lng": 23.2104973
+    },
+    "notes": "Gas station restroom. Hours: 24/7. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at OMV",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 8563848903
+  },
+  {
+    "id": "toilet-1751410636037-165",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.7740244,
+      "lng": 23.186378
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at Avia",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 8698428364
+  },
+  {
+    "id": "toilet-1751410636037-166",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.6102106,
+      "lng": 23.2392352
+    },
+    "notes": "Fee required. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Paid access",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 8776394172
+  },
+  {
+    "id": "toilet-1751410636037-167",
+    "type": "public",
+    "coordinates": {
+      "lat": 43.2240863,
+      "lng": 27.9277021
+    },
+    "notes": "Located in Varna.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Public access",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 8831029269
+  },
+  {
+    "id": "toilet-1751410636037-168",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.7162184,
+      "lng": 23.294565
+    },
+    "notes": "Gas station restroom. Hours: Mo-Su 8:00-20:00. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at Eco Petrol",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 8870012782
+  },
+  {
+    "id": "toilet-1751410636037-169",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.7775375,
+      "lng": 23.3152584
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at SNG",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 9090321507
+  },
+  {
+    "id": "toilet-1751410636037-170",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.6975081,
+      "lng": 23.2960863
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at EKO",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 9127420375
+  },
+  {
+    "id": "toilet-1751410636037-171",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.6500868,
+      "lng": 23.292981
+    },
+    "notes": "Gas station restroom. Hours: 24/7. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at EKO",
+    "availability": "Customer access preferred",
+    "accessibility": "Wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 9127420376
+  },
+  {
+    "id": "toilet-1751410636037-172",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.1399957,
+      "lng": 24.7961305
+    },
+    "notes": "Located in Plovdiv.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Public access",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 9136940936
+  },
+  {
+    "id": "toilet-1751410636037-173",
+    "type": "public",
+    "coordinates": {
+      "lat": 43.2136658,
+      "lng": 27.9237747
+    },
+    "notes": "Fee required. Located in Varna.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Paid access",
+    "accessibility": "Wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 9169860026
+  },
+  {
+    "id": "toilet-1751410636037-174",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.7093719,
+      "lng": 23.260428
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at iGas",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 9198054508
+  },
+  {
+    "id": "toilet-1751410636037-175",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.743775,
+      "lng": 23.2842684
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at Петрол",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 9230435856
+  },
+  {
+    "id": "toilet-1751410636037-176",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.6390331,
+      "lng": 23.381154
+    },
+    "notes": "Gas station restroom. Hours: 24/7. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at Петрол",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 9308042260
+  },
+  {
+    "id": "toilet-1751410636037-177",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.6773444,
+      "lng": 23.2972488
+    },
+    "notes": "Gas station restroom. Hours: 24/7. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at Shell",
+    "availability": "Customer access preferred",
+    "accessibility": "Wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 9438795239
+  },
+  {
+    "id": "toilet-1751410636037-178",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.7431801,
+      "lng": 23.2740201
+    },
+    "notes": "Gas station restroom. Hours: 24/7. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at Интерспийд",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 9444731612
+  },
+  {
+    "id": "toilet-1751410636037-179",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.74608,
+      "lng": 23.2322205
+    },
+    "notes": "Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Public access",
+    "accessibility": "Wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 9527169624
+  },
+  {
+    "id": "toilet-1751410636037-180",
+    "type": "public",
+    "coordinates": {
+      "lat": 43.211388,
+      "lng": 27.9069425
+    },
+    "notes": "Located in Varna.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Public access",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 9555594295
+  },
+  {
+    "id": "toilet-1751410636037-181",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.7017773,
+      "lng": 23.4498905
+    },
+    "notes": "Gas station restroom. Hours: 24/7. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at Лукойл",
+    "availability": "Customer access preferred",
+    "accessibility": "Wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 9566856127
+  },
+  {
+    "id": "toilet-1751410636037-182",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.700169,
+      "lng": 23.3876077
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at Автогаѕ",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 9576457901
+  },
+  {
+    "id": "toilet-1751410636037-183",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.7027142,
+      "lng": 23.383177
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at Rompetrol",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 9576457905
+  },
+  {
+    "id": "toilet-1751410636037-184",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.7095472,
+      "lng": 23.4282214
+    },
+    "notes": "Gas station restroom. Hours: 24/7. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at ОМВ",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 9587927428
+  },
+  {
+    "id": "toilet-1751410636037-185",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.6991509,
+      "lng": 23.3605535
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at Rompetrol",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 9641616943
+  },
+  {
+    "id": "toilet-1751410636037-186",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.7279165,
+      "lng": 23.2881698
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at Петрол",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 9643804076
+  },
+  {
+    "id": "toilet-1751410636037-187",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.6870893,
+      "lng": 23.2719919
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at ГАЗТРАНС",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 9672161709
+  },
+  {
+    "id": "toilet-1751410636037-188",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.6564734,
+      "lng": 23.4016999
+    },
+    "notes": "Gas station restroom. Hours: 24/7. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at Петрол",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 9680285150
+  },
+  {
+    "id": "toilet-1751410636037-189",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.6452989,
+      "lng": 23.4124241
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at EKO",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 9680856912
+  },
+  {
+    "id": "toilet-1751410636037-190",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.7887565,
+      "lng": 23.3108908
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at КМГ",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 9683405525
+  },
+  {
+    "id": "toilet-1751410636037-191",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.7033969,
+      "lng": 23.3602499
+    },
+    "notes": "Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Public access",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 9683405763
+  },
+  {
+    "id": "toilet-1751410636037-192",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.6302588,
+      "lng": 23.3742836
+    },
+    "notes": "Gas station restroom. Hours: 24/7. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at Лукойл",
+    "availability": "Customer access preferred",
+    "accessibility": "Wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 9695236186
+  },
+  {
+    "id": "toilet-1751410636037-193",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.6708191,
+      "lng": 23.2730921
+    },
+    "notes": "Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Free access",
+    "accessibility": "Wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 9737975624
+  },
+  {
+    "id": "toilet-1751410636037-194",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.6723631,
+      "lng": 23.2433627
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at Лукойл",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 9859930250
+  },
+  {
+    "id": "toilet-1751410636037-195",
+    "type": "public",
+    "coordinates": {
+      "lat": 43.1986064,
+      "lng": 27.9207122
+    },
+    "notes": "Located in Varna.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Free access",
+    "accessibility": "Not wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 9904031069
+  },
+  {
+    "id": "toilet-1751410636037-196",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.7117862,
+      "lng": 23.3441995
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at Круиз",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 9910160646
+  },
+  {
+    "id": "toilet-1751410636037-197",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.6220512,
+      "lng": 23.4043488
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at Gas Station",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 9944937188
+  },
+  {
+    "id": "toilet-1751410636037-198",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.1477669,
+      "lng": 24.7204177
+    },
+    "notes": "Located in Plovdiv.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Public access",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 9968681546
+  },
+  {
+    "id": "toilet-1751410636037-199",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.6909939,
+      "lng": 23.2298025
+    },
+    "notes": "Gas station restroom. Hours: 24/7. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at Лукойл",
+    "availability": "Customer access preferred",
+    "accessibility": "Wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 9995394393
+  },
+  {
+    "id": "toilet-1751410636037-200",
+    "type": "public",
+    "coordinates": {
+      "lat": 43.2191237,
+      "lng": 27.994526
+    },
+    "notes": "Located in Varna.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Public access",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 10000126372
+  },
+  {
+    "id": "toilet-1751410636037-201",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.6866817,
+      "lng": 23.376654
+    },
+    "notes": "Gas station restroom. Hours: 24/7. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at InterSpeed",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 10025360283
+  },
+  {
+    "id": "toilet-1751410636037-202",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.7284676,
+      "lng": 23.2860535
+    },
+    "notes": "Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Free access",
+    "accessibility": "Wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 10067701469
+  },
+  {
+    "id": "toilet-1751410636037-203",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.7370849,
+      "lng": 23.2603198
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at Gas Station",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 10136186853
+  },
+  {
+    "id": "toilet-1751410636037-204",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.6616919,
+      "lng": 23.3773054
+    },
+    "notes": "Gas station restroom. Hours: 24/7. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at OMV",
+    "availability": "Customer access preferred",
+    "accessibility": "Wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 10178502676
+  },
+  {
+    "id": "toilet-1751410636037-205",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.6604026,
+      "lng": 23.3837785
+    },
+    "notes": "Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Public access",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 10249380525
+  },
+  {
+    "id": "toilet-1751410636037-206",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.6603736,
+      "lng": 23.3837743
+    },
+    "notes": "Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Public access",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 10249380564
+  },
+  {
+    "id": "toilet-1751410636037-207",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.660916,
+      "lng": 23.3820527
+    },
+    "notes": "Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Public access",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 10249380569
+  },
+  {
+    "id": "toilet-1751410636037-208",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.6609664,
+      "lng": 23.3818862
+    },
+    "notes": "Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Free access",
+    "accessibility": "Wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 10249380633
+  },
+  {
+    "id": "toilet-1751410636037-209",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.6601615,
+      "lng": 23.3835769
+    },
+    "notes": "Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Public access",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 10249380855
+  },
+  {
+    "id": "toilet-1751410636037-210",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.6922855,
+      "lng": 23.3223474
+    },
+    "notes": "Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Free access",
+    "accessibility": "Not wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 10285765097
+  },
+  {
+    "id": "toilet-1751410636037-211",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.7111168,
+      "lng": 23.3226159
+    },
+    "notes": "Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Public access",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 10296378794
+  },
+  {
+    "id": "toilet-1751410636037-212",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.6720162,
+      "lng": 23.2997528
+    },
+    "notes": "Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Free access",
+    "accessibility": "Wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 10665526728
+  },
+  {
+    "id": "toilet-1751410636037-213",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.6775234,
+      "lng": 23.2859761
+    },
+    "notes": "Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Public access",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 10699746863
+  },
+  {
+    "id": "toilet-1751410636037-214",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.6249964,
+      "lng": 23.3511521
+    },
+    "notes": "Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Public access",
+    "accessibility": "Wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 10718597705
+  },
+  {
+    "id": "toilet-1751410636037-215",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.6243774,
+      "lng": 23.3526471
+    },
+    "notes": "Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Free access",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 10719128505
+  },
+  {
+    "id": "toilet-1751410636037-216",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.6245854,
+      "lng": 23.3536722
+    },
+    "notes": "Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Free access",
+    "accessibility": "Wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 10719128506
+  },
+  {
+    "id": "toilet-1751410636037-217",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.6770806,
+      "lng": 23.3039494
+    },
+    "notes": "Fee required. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Paid access",
+    "accessibility": "Not wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 10785256757
+  },
+  {
+    "id": "toilet-1751410636037-218",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.1471073,
+      "lng": 24.7515506
+    },
+    "notes": "Fee required. Located in Plovdiv.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Paid access",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 10807374305
+  },
+  {
+    "id": "toilet-1751410636037-219",
+    "type": "public",
+    "coordinates": {
+      "lat": 43.2287146,
+      "lng": 27.9392414
+    },
+    "notes": "Located in Varna.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Public access",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 10814645520
+  },
+  {
+    "id": "toilet-1751410636037-220",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.617823,
+      "lng": 23.1775314
+    },
+    "notes": "Gas station restroom. Hours: 24/7. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at Лукойл",
+    "availability": "Customer access preferred",
+    "accessibility": "Wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 10871518858
+  },
+  {
+    "id": "toilet-1751410636037-221",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.6506266,
+      "lng": 23.3163582
+    },
+    "notes": "Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Free access",
+    "accessibility": "Wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 10928922445
+  },
+  {
+    "id": "toilet-1751410636037-222",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.668987,
+      "lng": 23.2791715
+    },
+    "notes": "Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Public access",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 10938955828
+  },
+  {
+    "id": "toilet-1751410636037-223",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.7005219,
+      "lng": 23.3383948
+    },
+    "notes": "Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Public access",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 10992331512
+  },
+  {
+    "id": "toilet-1751410636037-224",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.6478918,
+      "lng": 23.3760449
+    },
+    "notes": "Gas station restroom. Hours: 24/7. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at Shell",
+    "availability": "Customer access preferred",
+    "accessibility": "Wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 11064708232
+  },
+  {
+    "id": "toilet-1751410636037-225",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.7277574,
+      "lng": 23.2584997
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at Газ Лоджистик",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 11149630328
+  },
+  {
+    "id": "toilet-1751410636037-226",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.6613512,
+      "lng": 23.456429
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at Shell",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 11216873985
+  },
+  {
+    "id": "toilet-1751410636037-227",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.602435,
+      "lng": 23.1453908
+    },
+    "notes": "Gas station restroom. Hours: 24/7. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at Shell",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 11216892062
+  },
+  {
+    "id": "toilet-1751410636037-228",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.6375418,
+      "lng": 23.4136587
+    },
+    "notes": "Gas station restroom. Hours: 24/7. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at Wolf",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 11217634790
+  },
+  {
+    "id": "toilet-1751410636037-229",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.642036,
+      "lng": 23.4318873
+    },
+    "notes": "Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Free access",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 11263231434
+  },
+  {
+    "id": "toilet-1751410636037-230",
+    "type": "mall",
+    "coordinates": {
+      "lat": 42.6841565,
+      "lng": 23.3306389
+    },
+    "notes": "Shopping center restroom. Hours: Sa 09:00-14:00. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Restroom at Съботен фермерски пазар Римската стена на Хранкооп",
+    "availability": "Public during hours",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 11314967760
+  },
+  {
+    "id": "toilet-1751410636037-231",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.6509989,
+      "lng": 23.3576597
+    },
+    "notes": "Gas station restroom. Hours: 24/7. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at ОМВ",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 11329351525
+  },
+  {
+    "id": "toilet-1751410636037-232",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.6514376,
+      "lng": 23.2876012
+    },
+    "notes": "Gas station restroom. Hours: 24/7. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at ОМВ",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 11343276289
+  },
+  {
+    "id": "toilet-1751410636037-233",
+    "type": "public",
+    "coordinates": {
+      "lat": 43.20968,
+      "lng": 27.9356565
+    },
+    "notes": "Fee required. Located in Varna.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Paid access",
+    "accessibility": "Wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 11434960748
+  },
+  {
+    "id": "toilet-1751410636037-234",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.6568676,
+      "lng": 23.2861569
+    },
+    "notes": "Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Free access",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 11476802270
+  },
+  {
+    "id": "toilet-1751410636037-235",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.6512009,
+      "lng": 23.2185559
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at Gas Station",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 11495621754
+  },
+  {
+    "id": "toilet-1751410636037-236",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.6962606,
+      "lng": 23.355961
+    },
+    "notes": "Gas station restroom. Hours: 24/7. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at Shell",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 11504445879
+  },
+  {
+    "id": "toilet-1751410636037-237",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.6695089,
+      "lng": 23.3842069
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at EKO",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 11504445887
+  },
+  {
+    "id": "toilet-1751410636037-238",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.7064818,
+      "lng": 23.4742806
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at SNG",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 11531758371
+  },
+  {
+    "id": "toilet-1751410636037-239",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.7063592,
+      "lng": 23.3058715
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at Shell",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 11537298842
+  },
+  {
+    "id": "toilet-1751410636037-240",
+    "type": "mall",
+    "coordinates": {
+      "lat": 42.7078333,
+      "lng": 23.1442445
+    },
+    "notes": "Shopping center restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Restroom at Shopping Center",
+    "availability": "Public during hours",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 11616197907
+  },
+  {
+    "id": "toilet-1751410636037-241",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.6721612,
+      "lng": 23.2726867
+    },
+    "notes": "Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Public access",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 11627548868
+  },
+  {
+    "id": "toilet-1751410636037-242",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.6575883,
+      "lng": 23.3146989
+    },
+    "notes": "Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Free access",
+    "accessibility": "Wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 11685268064
+  },
+  {
+    "id": "toilet-1751410636037-243",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.6099273,
+      "lng": 23.106312
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at Петрол",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 11757809999
+  },
+  {
+    "id": "toilet-1751410636037-244",
+    "type": "public",
+    "coordinates": {
+      "lat": 43.2129607,
+      "lng": 27.9232049
+    },
+    "notes": "Located in Varna.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Free access",
+    "accessibility": "Not wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 11771690646
+  },
+  {
+    "id": "toilet-1751410636037-245",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.6763229,
+      "lng": 23.2370351
+    },
+    "notes": "Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Public access",
+    "accessibility": "Not wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 11777897575
+  },
+  {
+    "id": "toilet-1751410636037-246",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.7266845,
+      "lng": 23.3164792
+    },
+    "notes": "Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Public access",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 11869833692
+  },
+  {
+    "id": "toilet-1751410636037-247",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.7182321,
+      "lng": 23.3152749
+    },
+    "notes": "Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Free access",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 11874474741
+  },
+  {
+    "id": "toilet-1751410636037-248",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.7370693,
+      "lng": 23.2968897
+    },
+    "notes": "Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Public access",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 11879230780
+  },
+  {
+    "id": "toilet-1751410636037-249",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.6421492,
+      "lng": 23.3364905
+    },
+    "notes": "Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Free access",
+    "accessibility": "Wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 11901190043
+  },
+  {
+    "id": "toilet-1751410636037-250",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.6643771,
+      "lng": 23.4552469
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at Омикс",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 11910438870
+  },
+  {
+    "id": "toilet-1751410636037-251",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.6998378,
+      "lng": 23.3215678
+    },
+    "notes": "Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Public access",
+    "accessibility": "Wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 11938894741
+  },
+  {
+    "id": "toilet-1751410636037-252",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.7005778,
+      "lng": 23.3051643
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at PowerOil",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 12025576641
+  },
+  {
+    "id": "toilet-1751410636037-253",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.6191176,
+      "lng": 23.2825366
+    },
+    "notes": "Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Free access",
+    "accessibility": "Not wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 12110373237
+  },
+  {
+    "id": "toilet-1751410636037-254",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.5838373,
+      "lng": 23.1202455
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at Петрол",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 12126037788
+  },
+  {
+    "id": "toilet-1751410636037-255",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.7395629,
+      "lng": 23.2981048
+    },
+    "notes": "Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Free access",
+    "accessibility": "Not wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 12142750923
+  },
+  {
+    "id": "toilet-1751410636037-256",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.6638161,
+      "lng": 23.2885673
+    },
+    "notes": "Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Public access",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 12165020037
+  },
+  {
+    "id": "toilet-1751410636037-257",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.7105166,
+      "lng": 23.349432
+    },
+    "notes": "Gas station restroom. Hours: 24/7. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at EKO",
+    "availability": "Customer access preferred",
+    "accessibility": "Wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 12205087176
+  },
+  {
+    "id": "toilet-1751410636037-258",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.7202804,
+      "lng": 23.2795649
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at EKO",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 12205113321
+  },
+  {
+    "id": "toilet-1751410636037-259",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.6605584,
+      "lng": 23.3109259
+    },
+    "notes": "Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Free access",
+    "accessibility": "Not wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 12229297499
+  },
+  {
+    "id": "toilet-1751410636037-260",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.6943946,
+      "lng": 23.3302086
+    },
+    "notes": "Fee required. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Paid access",
+    "accessibility": "Wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 12231455438
+  },
+  {
+    "id": "toilet-1751410636037-261",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.7061502,
+      "lng": 23.3051335
+    },
+    "notes": "Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Public access",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 12287617271
+  },
+  {
+    "id": "toilet-1751410636037-262",
+    "type": "public",
+    "coordinates": {
+      "lat": 43.2070448,
+      "lng": 27.9143842
+    },
+    "notes": "Located in Varna.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Free access",
+    "accessibility": "Not wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 12303580484
+  },
+  {
+    "id": "toilet-1751410636037-263",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.6934128,
+      "lng": 23.335126
+    },
+    "notes": "Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Free access",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 12395552178
+  },
+  {
+    "id": "toilet-1751410636037-264",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.682003,
+      "lng": 23.2875009
+    },
+    "notes": "Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Free access",
+    "accessibility": "Wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 12398751566
+  },
+  {
+    "id": "toilet-1751410636037-265",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.6022194,
+      "lng": 23.1416683
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at Gas Station",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 12426343648
+  },
+  {
+    "id": "toilet-1751410636037-266",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.6676088,
+      "lng": 23.3649757
+    },
+    "notes": "Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Public access",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 12438544344
+  },
+  {
+    "id": "toilet-1751410636037-267",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.7343699,
+      "lng": 23.3429542
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at Gas Station",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 12442077352
+  },
+  {
+    "id": "toilet-1751410636037-268",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.689714,
+      "lng": 23.4020301
+    },
+    "notes": "Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Free access",
+    "accessibility": "Not wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 12454474631
+  },
+  {
+    "id": "toilet-1751410636037-269",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.6897969,
+      "lng": 23.4019775
+    },
+    "notes": "Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Free access",
+    "accessibility": "Wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 12454479376
+  },
+  {
+    "id": "toilet-1751410636037-270",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.689923,
+      "lng": 23.4020249
+    },
+    "notes": "Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Free access",
+    "accessibility": "Not wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 12454634627
+  },
+  {
+    "id": "toilet-1751410636037-271",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.6897722,
+      "lng": 23.4020632
+    },
+    "notes": "Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Free access",
+    "accessibility": "Not wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 12454640744
+  },
+  {
+    "id": "toilet-1751410636037-272",
+    "type": "public",
+    "coordinates": {
+      "lat": 43.2101433,
+      "lng": 27.9358181
+    },
+    "notes": "Located in Varna.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Public access",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 12469521899
+  },
+  {
+    "id": "toilet-1751410636037-273",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.7001787,
+      "lng": 23.3192492
+    },
+    "notes": "Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Free access",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 12563519425
+  },
+  {
+    "id": "toilet-1751410636037-274",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.7169985,
+      "lng": 23.3162096
+    },
+    "notes": "Drinking water available. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Free access",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 12600611000
+  },
+  {
+    "id": "toilet-1751410636037-275",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.6942355,
+      "lng": 23.3349327
+    },
+    "notes": "Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Free access",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 12645956944
+  },
+  {
+    "id": "toilet-1751410636037-276",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.6942109,
+      "lng": 23.3350809
+    },
+    "notes": "Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Free access",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 12645956945
+  },
+  {
+    "id": "toilet-1751410636037-277",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.6755658,
+      "lng": 23.3658742
+    },
+    "notes": "Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Public access",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 12653929555
+  },
+  {
+    "id": "toilet-1751410636037-278",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.6795627,
+      "lng": 23.3675199
+    },
+    "notes": "Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Free access",
+    "accessibility": "Wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 12653967822
+  },
+  {
+    "id": "toilet-1751410636037-279",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.6628797,
+      "lng": 23.4010567
+    },
+    "notes": "Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Free access",
+    "accessibility": "Not wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 12696202845
+  },
+  {
+    "id": "toilet-1751410636037-280",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.6866055,
+      "lng": 23.3391054
+    },
+    "notes": "Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Free access",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 12722894242
+  },
+  {
+    "id": "toilet-1751410636037-281",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.7087795,
+      "lng": 23.456359
+    },
+    "notes": "Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Public access",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 12729167279
+  },
+  {
+    "id": "toilet-1751410636037-282",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.6817923,
+      "lng": 23.2942223
+    },
+    "notes": "Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Free access",
+    "accessibility": "Not wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 12759772450
+  },
+  {
+    "id": "toilet-1751410636037-283",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.7256384,
+      "lng": 23.2420438
+    },
+    "notes": "Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Public access",
+    "accessibility": "Wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 12772951698
+  },
+  {
+    "id": "toilet-1751410636037-284",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.6740484,
+      "lng": 23.3090953
+    },
+    "notes": "Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Free access",
+    "accessibility": "Not wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 12774626551
+  },
+  {
+    "id": "toilet-1751410636037-285",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.7426941,
+      "lng": 23.2666603
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at Pit Stop",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 12778895596
+  },
+  {
+    "id": "toilet-1751410636037-286",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.7039964,
+      "lng": 23.3215326
+    },
+    "notes": "Fee required. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Paid access",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 12844356388
+  },
+  {
+    "id": "toilet-1751410636037-287",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.689615,
+      "lng": 23.3021266
+    },
+    "notes": "Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Free access",
+    "accessibility": "Wheelchair accessible",
+    "source": "OpenStreetMap",
+    "osmId": 12847221310
+  },
+  {
+    "id": "toilet-1751410636037-288",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.709547,
+      "lng": 23.3805729
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at Gas Station",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 12863355376
+  },
+  {
+    "id": "toilet-1751410636037-289",
+    "type": "gas-station",
+    "coordinates": {
+      "lat": 42.7092799,
+      "lng": 23.3805826
+    },
+    "notes": "Gas station restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Toilet at София Газ",
+    "availability": "Customer access preferred",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 12863355377
+  },
+  {
+    "id": "toilet-1751410636037-290",
+    "type": "mall",
+    "coordinates": {
+      "lat": 42.6657398,
+      "lng": 23.2720304
+    },
+    "notes": "Shopping center restroom. Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Restroom at Базар Вихрен",
+    "availability": "Public during hours",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 12899845801
+  },
+  {
+    "id": "toilet-1751410636037-291",
+    "type": "public",
+    "coordinates": {
+      "lat": 42.7123906,
+      "lng": 23.3200253
+    },
+    "notes": "Located in Sofia.",
+    "userId": "system",
+    "createdAt": "2025-07-01T22:57:16.037Z",
+    "name": "Public Toilet",
+    "availability": "Public access",
+    "accessibility": "Accessibility unknown",
+    "source": "OpenStreetMap",
+    "osmId": 12945161034
+  }
+]
