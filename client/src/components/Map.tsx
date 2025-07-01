@@ -11,10 +11,10 @@ interface MapProps {
   onAddToiletClick: (location: MapLocation) => void;
 }
 
-// Declare Mapbox GL types for global window object
+// Declare Leaflet types for global window object
 declare global {
   interface Window {
-    mapboxgl: any;
+    L: any;
   }
 }
 
@@ -22,7 +22,8 @@ export const Map = ({ onToiletClick, onAddToiletClick }: MapProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<any>(null);
   const markers = useRef<any[]>([]);
-  const [mapboxLoaded, setMapboxLoaded] = useState(false);
+  const userMarker = useRef<any>(null);
+  const [leafletLoaded, setLeafletLoaded] = useState(false);
   const [isAwayFromUser, setIsAwayFromUser] = useState(false);
   
   const { location: userLocation, loading: locationLoading } = useGeolocation();
@@ -31,19 +32,19 @@ export const Map = ({ onToiletClick, onAddToiletClick }: MapProps) => {
   // Use nearby toilets within 100m when user location is available
   const { data: toilets = [] } = useToilets(userLocation);
 
-  // Load Mapbox GL CSS and JS
+  // Load Leaflet CSS and JS
   useEffect(() => {
-    // Add Mapbox CSS
+    // Add Leaflet CSS
     const cssLink = document.createElement('link');
     cssLink.rel = 'stylesheet';
-    cssLink.href = 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css';
+    cssLink.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
     document.head.appendChild(cssLink);
 
-    // Add Mapbox JS
+    // Add Leaflet JS
     const script = document.createElement('script');
-    script.src = 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js';
+    script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
     script.onload = () => {
-      setMapboxLoaded(true);
+      setLeafletLoaded(true);
     };
     document.head.appendChild(script);
 
@@ -55,38 +56,22 @@ export const Map = ({ onToiletClick, onAddToiletClick }: MapProps) => {
 
   // Initialize map
   useEffect(() => {
-    if (!mapboxLoaded || !mapContainer.current || map.current) return;
+    if (!leafletLoaded || !mapContainer.current || map.current) return;
 
     // Use a default center (Sofia) until user location is available
     const initialCenter = userLocation || { lat: 42.6977, lng: 23.3219 };
 
-    // Use OpenStreetMap style without requiring API key
-    map.current = new window.mapboxgl.Map({
-      container: mapContainer.current,
-      style: {
-        version: 8,
-        sources: {
-          'osm': {
-            type: 'raster',
-            tiles: ['https://{a-c}.tile.openstreetmap.org/{z}/{x}/{y}.png'],
-            tileSize: 256,
-            attribution: '© OpenStreetMap contributors'
-          }
-        },
-        layers: [{
-          id: 'osm',
-          type: 'raster',
-          source: 'osm'
-        }]
-      },
-      center: [initialCenter.lng, initialCenter.lat],
-      zoom: userLocation ? 16 : 13,
-      pitch: 0,
-      bearing: 0
-    });
+    // Initialize Leaflet map
+    map.current = window.L.map(mapContainer.current).setView(
+      [initialCenter.lat, initialCenter.lng], 
+      userLocation ? 16 : 13
+    );
 
-    // Add navigation controls
-    map.current.addControl(new window.mapboxgl.NavigationControl(), 'top-right');
+    // Add OpenStreetMap tile layer
+    window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors',
+      maxZoom: 19
+    }).addTo(map.current);
 
     // Track when map moves away from user location
     map.current.on('move', () => {
@@ -104,7 +89,7 @@ export const Map = ({ onToiletClick, onAddToiletClick }: MapProps) => {
     // Add click handler for adding toilets
     map.current.on('click', (e: any) => {
       if (user) { // Only allow if authenticated
-        const { lng, lat } = e.lngLat;
+        const { lat, lng } = e.latlng;
         onAddToiletClick({ lat, lng });
       }
     });
@@ -115,155 +100,137 @@ export const Map = ({ onToiletClick, onAddToiletClick }: MapProps) => {
         map.current = null;
       }
     };
-  }, [mapboxLoaded, userLocation, user, onAddToiletClick]);
+  }, [leafletLoaded, userLocation, user, onAddToiletClick]);
 
   // Update user location and center map
   useEffect(() => {
     if (!map.current || !userLocation) return;
 
     // Remove existing user marker
-    if (map.current.userMarker) {
-      map.current.userMarker.remove();
+    if (userMarker.current) {
+      map.current.removeLayer(userMarker.current);
     }
 
-    // Add user location marker
-    const userEl = document.createElement('div');
-    userEl.className = 'user-location-marker';
-    userEl.style.cssText = `
-      width: 20px;
-      height: 20px;
-      border: 3px solid #3b82f6;
-      background: white;
-      border-radius: 50%;
-      box-shadow: 0 0 0 rgba(59, 130, 246, 0.4);
-      animation: pulse 2s infinite;
-    `;
-
-    map.current.userMarker = new window.mapboxgl.Marker(userEl)
-      .setLngLat([userLocation.lng, userLocation.lat])
-      .addTo(map.current);
+    // Create blue circle marker for user location
+    userMarker.current = window.L.circleMarker([userLocation.lat, userLocation.lng], {
+      color: '#3b82f6',
+      fillColor: '#3b82f6',
+      fillOpacity: 0.8,
+      radius: 8,
+      weight: 3
+    }).addTo(map.current);
 
     // Center map on user location with high zoom
-    map.current.flyTo({
-      center: [userLocation.lng, userLocation.lat],
-      zoom: 16,
-      duration: 1000
-    });
-
-    // Add pulsing animation CSS if not already added
-    if (!document.getElementById('user-marker-animation')) {
-      const style = document.createElement('style');
-      style.id = 'user-marker-animation';
-      style.textContent = `
-        @keyframes pulse {
-          0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); }
-          70% { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
-          100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
-        }
-      `;
-      document.head.appendChild(style);
-    }
+    map.current.setView([userLocation.lat, userLocation.lng], 16);
   }, [userLocation]);
 
-  // Add toilet markers
+  // Update toilet markers
   useEffect(() => {
-    if (!map.current || !mapboxLoaded) return;
+    if (!map.current) return;
 
     // Clear existing markers
-    markers.current.forEach(marker => marker.remove());
+    markers.current.forEach(marker => {
+      map.current.removeLayer(marker);
+    });
     markers.current = [];
 
     // Add toilet markers
-    toilets.forEach((toilet) => {
-      const el = document.createElement('div');
-      el.className = 'toilet-marker';
-      el.style.cssText = `
-        width: 30px;
-        height: 40px;
-        background-color: #dc2626;
-        border-radius: 50% 50% 50% 0;
-        transform: rotate(-45deg) translate(-50%, -50%);
-        cursor: pointer;
-        border: 3px solid white;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-size: 14px;
-        font-weight: bold;
-      `;
-      
-      // Add toilet icon
-      const icon = document.createElement('div');
-      icon.textContent = 'T';
-      icon.style.transform = 'rotate(45deg)';
-      el.appendChild(icon);
+    toilets.forEach(toilet => {
+      const icon = window.L.divIcon({
+        className: 'toilet-marker',
+        html: `
+          <div style="
+            width: 30px;
+            height: 30px;
+            background: #dc2626;
+            border: 2px solid white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            cursor: pointer;
+          ">
+            <div style="
+              width: 8px;
+              height: 8px;
+              background: white;
+              border-radius: 50%;
+            "></div>
+          </div>
+        `,
+        iconSize: [30, 30],
+        iconAnchor: [15, 15]
+      });
 
-      el.addEventListener('click', () => onToiletClick(toilet));
-
-      const marker = new window.mapboxgl.Marker(el)
-        .setLngLat([toilet.coordinates.lng, toilet.coordinates.lat])
-        .addTo(map.current);
+      const marker = window.L.marker([toilet.coordinates.lat, toilet.coordinates.lng], { icon })
+        .addTo(map.current)
+        .on('click', () => onToiletClick(toilet));
 
       markers.current.push(marker);
     });
-  }, [toilets, mapboxLoaded, onToiletClick]);
+  }, [toilets, onToiletClick]);
 
-  const returnToUserLocation = () => {
-    if (map.current && userLocation) {
-      map.current.flyTo({
-        center: [userLocation.lng, userLocation.lat],
-        zoom: 16,
-        duration: 1000
-      });
+  const handleReturnToLocation = () => {
+    if (userLocation && map.current) {
+      map.current.setView([userLocation.lat, userLocation.lng], 16);
       setIsAwayFromUser(false);
+    }
+  };
+
+  const handleAddToilet = () => {
+    if (!user) {
+      // Show login prompt or trigger authentication
+      return;
+    }
+    
+    if (map.current) {
+      const center = map.current.getCenter();
+      onAddToiletClick({ lat: center.lat, lng: center.lng });
     }
   };
 
   return (
     <div className="relative w-full h-full">
-      <div 
-        ref={mapContainer} 
-        className="w-full h-full"
-        style={{ minHeight: '400px' }}
-      />
+      {/* Map Container */}
+      <div ref={mapContainer} className="w-full h-full" />
       
-      {/* Loading state */}
-      {(!mapboxLoaded || locationLoading) && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
-          <div className="text-gray-500">
-            {locationLoading ? 'Finding your location...' : 'Loading map...'}
+      {/* Loading overlay */}
+      {(!leafletLoaded || locationLoading) && (
+        <div className="absolute inset-0 bg-gray-100 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+            <p className="text-gray-600">Loading map...</p>
           </div>
         </div>
       )}
+      
+      {/* Map Controls */}
+      <div className="absolute top-4 right-4 space-y-2">
+        {/* Return to Location Button - only show when away from user */}
+        {isAwayFromUser && userLocation && (
+          <Button
+            onClick={handleReturnToLocation}
+            className="w-10 h-10 bg-white text-primary hover:bg-gray-50 shadow-md rounded-lg p-0"
+            variant="ghost"
+          >
+            <Crosshair className="w-4 h-4" />
+          </Button>
+        )}
+      </div>
 
-      {/* Return to location button */}
-      {isAwayFromUser && userLocation && (
-        <Button
-          onClick={returnToUserLocation}
-          className="absolute top-4 left-4 bg-white text-gray-700 hover:bg-gray-50 border shadow-lg"
-          size="sm"
-        >
-          <Crosshair className="w-4 h-4 mr-2" />
-          Back to my location
-        </Button>
-      )}
-
-      {/* Add toilet button (only when authenticated) */}
-      {user && (
-        <Button
-          onClick={() => onAddToiletClick(userLocation || { lat: 42.6977, lng: 23.3219 })}
-          className="absolute bottom-6 right-6 bg-red-600 hover:bg-red-700 text-white shadow-lg rounded-full w-14 h-14"
-        >
-          <Plus className="w-6 h-6" />
-        </Button>
-      )}
+      {/* Floating Add Button */}
+      <Button
+        onClick={handleAddToilet}
+        className="fixed bottom-6 right-6 w-14 h-14 bg-primary hover:bg-blue-700 text-white rounded-full shadow-lg p-0 z-30"
+        disabled={!user}
+      >
+        <Plus className="w-6 h-6" />
+      </Button>
     </div>
   );
 };
 
-// Helper function to calculate distance between two points
 function getDistance(point1: MapLocation, point2: MapLocation): number {
   const R = 6371e3; // Earth's radius in meters
   const φ1 = point1.lat * Math.PI/180;
@@ -276,5 +243,5 @@ function getDistance(point1: MapLocation, point2: MapLocation): number {
           Math.sin(Δλ/2) * Math.sin(Δλ/2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 
-  return R * c;
+  return R * c; // Distance in meters
 }
