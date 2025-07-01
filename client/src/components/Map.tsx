@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useMemo } from "react";
+import { useEffect, useRef, useState, useMemo, memo } from "react";
 import { Button } from "@/components/ui/button";
 import { Crosshair, Plus } from "lucide-react";
 import { useToilets } from "@/hooks/useToilets";
@@ -21,11 +21,12 @@ declare global {
     submitReview: (toiletId: string) => void;
     cancelReview: (toiletId: string) => void;
     openLoginModal: () => void;
+    getCurrentUser: () => any;
     currentRating?: { toiletId: string; rating: number };
   }
 }
 
-export const Map = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProps) => {
+const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<any>(null);
   const markers = useRef<any[]>([]);
@@ -731,6 +732,16 @@ export const Map = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProps)
     </div>
   );
 };
+
+// Memoize the Map component to prevent re-renders when user state changes
+export const Map = memo(MapComponent, (prevProps, nextProps) => {
+  // Only re-render if the callback functions have changed
+  return (
+    prevProps.onToiletClick === nextProps.onToiletClick &&
+    prevProps.onAddToiletClick === nextProps.onAddToiletClick &&
+    prevProps.onLoginClick === nextProps.onLoginClick
+  );
+});
 
 function getDistance(point1: MapLocation, point2: MapLocation): number {
   const R = 6371e3; // Earth's radius in meters
