@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Crosshair, Plus } from "lucide-react";
 import { useToilets } from "@/hooks/useToilets";
@@ -38,6 +38,11 @@ export const Map = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProps)
   
   // Use nearby toilets within 100m when user location is available
   const { data: toilets = [] } = useToilets(userLocation);
+  
+  // Memoize toilets to prevent unnecessary re-renders
+  const stableToilets = useMemo(() => {
+    return toilets.length > 0 ? toilets : [];
+  }, [toilets.length, toilets]);
 
   // Load Leaflet CSS and JS
   useEffect(() => {
@@ -264,24 +269,26 @@ export const Map = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProps)
     map.current.setView([userLocation.lat, userLocation.lng], 16);
   }, [userLocation]);
 
-  // Update toilet markers
+  // Update toilet markers  
   useEffect(() => {
-    if (!map.current || !window.L) return;
+    if (!map.current || !window.L || !stableToilets.length) return;
 
-    console.log('Map markers useEffect triggered, toilets count:', toilets.length);
+    console.log('Map markers useEffect triggered, stableToilets count:', stableToilets.length);
 
-    // Clear existing markers
-    markers.current.forEach(marker => {
-      try {
-        map.current.removeLayer(marker);
-      } catch (e) {
-        // Ignore errors if marker is already removed
-      }
-    });
-    markers.current = [];
+    // Only clear markers if we actually have new toilet data
+    if (markers.current.length > 0) {
+      markers.current.forEach(marker => {
+        try {
+          map.current.removeLayer(marker);
+        } catch (e) {
+          // Ignore errors if marker is already removed
+        }
+      });
+      markers.current = [];
+    }
 
     // Add toilet markers with Airbnb-style pins
-    toilets.forEach(toilet => {
+    stableToilets.forEach(toilet => {
       const icon = window.L.divIcon({
         className: 'toilet-marker',
         html: `
@@ -662,7 +669,7 @@ export const Map = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProps)
 
       markers.current.push(marker);
     });
-  }, [toilets]);
+  }, [stableToilets]);
 
   const handleReturnToLocation = () => {
     if (userLocation && map.current) {
