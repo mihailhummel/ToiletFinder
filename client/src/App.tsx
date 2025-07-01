@@ -126,24 +126,15 @@ function App() {
               </div>
             </div>
 
-            {/* Search Bar */}
-            <div className="px-4 pb-3">
-              <div className="relative">
-                <Input
-                  type="text"
-                  placeholder="Search area or address..."
-                  className="w-full pl-10 bg-gray-50 border-gray-200"
-                />
-                <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-              </div>
-            </div>
+
           </header>
 
           {/* Map Container */}
-          <main className="flex-1 pt-32 relative">
+          <main className="flex-1 pt-20 relative">
             <Map
               onToiletClick={setSelectedToilet}
               onAddToiletClick={handleMapClick}
+              onLoginClick={() => setShowLogin(true)}
             />
             
 

@@ -9,6 +9,7 @@ import type { Toilet, MapLocation } from "@/types/toilet";
 interface MapProps {
   onToiletClick: (toilet: Toilet) => void;
   onAddToiletClick: (location: MapLocation) => void;
+  onLoginClick: () => void;
 }
 
 // Declare Leaflet types for global window object
@@ -19,11 +20,12 @@ declare global {
     setRating: (toiletId: string, rating: number) => void;
     submitReview: (toiletId: string) => void;
     cancelReview: (toiletId: string) => void;
+    openLoginModal: () => void;
     currentRating?: { toiletId: string; rating: number };
   }
 }
 
-export const Map = ({ onToiletClick, onAddToiletClick }: MapProps) => {
+export const Map = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<any>(null);
   const markers = useRef<any[]>([]);
@@ -154,8 +156,12 @@ export const Map = ({ onToiletClick, onAddToiletClick }: MapProps) => {
           delete (window as any).currentRating;
         }
       };
+
+      (window as any).openLoginModal = () => {
+        onLoginClick();
+      };
     }
-  }, [user]);
+  }, [user, onLoginClick]);
 
   // Initialize map
   useEffect(() => {
@@ -535,9 +541,20 @@ export const Map = ({ onToiletClick, onAddToiletClick }: MapProps) => {
             border-radius: 8px;
             border: 1px solid #0ea5e9;
           ">
-            <div style="font-size: 14px; color: #0369a1; text-align: center;">
-              <strong>Sign in to rate and review toilets</strong>
-            </div>
+            <button onclick="window.openLoginModal()" style="
+              width: 100%;
+              padding: 12px;
+              background: linear-gradient(135deg, #0ea5e9, #0284c7);
+              color: white;
+              border: none;
+              border-radius: 6px;
+              font-size: 14px;
+              font-weight: 600;
+              cursor: pointer;
+              transition: all 0.2s;
+            " onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='translateY(0)'">
+              🔐 Sign in to rate and review toilets
+            </button>
           </div>
           <div style="display: none;">`}
             <div style="font-size: 13px; color: #64748b; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">
