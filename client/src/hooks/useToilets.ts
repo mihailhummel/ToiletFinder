@@ -1,6 +1,5 @@
-import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getToilets, getToiletsNearby, addToilet, getReviewsForToilet, addReview, addReport, hasUserReviewedToilet } from "@/lib/firebase";
+import { apiRequest } from "@/lib/queryClient";
 import type { Toilet, InsertToilet, InsertReview, InsertReport, Review, MapLocation } from "@/types/toilet";
 
 export const useToilets = (location?: MapLocation) => {
@@ -8,11 +7,18 @@ export const useToilets = (location?: MapLocation) => {
   
   return useQuery({
     queryKey,
-    queryFn: () => {
-      if (location) {
-        return getToiletsNearby(location.lat, location.lng);
-      }
-      return getToilets();
+    queryFn: async () => {
+      const params = location ? 
+        new URLSearchParams({
+          lat: location.lat.toString(),
+          lng: location.lng.toString(),
+          radius: '10'
+        }) : '';
+      
+      const url = `/api/toilets${params ? `?${params}` : ''}`;
+      const response = await fetch(url);
+      if (!response.ok) throw new Error('Failed to fetch toilets');
+      return response.json() as Promise<Toilet[]>;
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
@@ -22,7 +28,10 @@ export const useAddToilet = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: addToilet,
+    mutationFn: async (toilet: InsertToilet) => {
+      const response = await apiRequest('POST', '/api/toilets', toilet);
+      return response.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["toilets"] });
     },
@@ -32,7 +41,11 @@ export const useAddToilet = () => {
 export const useToiletReviews = (toiletId: string) => {
   return useQuery({
     queryKey: ["reviews", toiletId],
-    queryFn: () => getReviewsForToilet(toiletId),
+    queryFn: async () => {
+      const response = await fetch(`/api/toilets/${toiletId}/reviews`);
+      if (!response.ok) throw new Error('Failed to fetch reviews');
+      return response.json() as Promise<Review[]>;
+    },
     staleTime: 2 * 60 * 1000, // 2 minutes
   });
 };
@@ -41,7 +54,10 @@ export const useAddReview = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: addReview,
+    mutationFn: async (review: InsertReview) => {
+      const response = await apiRequest('POST', `/api/toilets/${review.toiletId}/reviews`, review);
+      return response.json();
+    },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["reviews", variables.toiletId] });
       queryClient.invalidateQueries({ queryKey: ["toilets"] });
@@ -51,14 +67,27 @@ export const useAddReview = () => {
 
 export const useAddReport = () => {
   return useMutation({
-    mutationFn: addReport,
+    mutationFn: async (report: InsertReport) => {
+      const response = await apiRequest('POST', '/api/reports', report);
+      return response.json();
+    },
   });
 };
 
 export const useUserReviewStatus = (toiletId: string, userId?: string) => {
   return useQuery({
     queryKey: ["user-review", toiletId, userId],
-    queryFn: () => userId ? hasUserReviewedToilet(toiletId, userId) : Promise.resolve(false),
+    queryFn: async () => {
+      if (!userId) return false;
+      
+      const params = new URLSearchParams();
+      params.set('userId', userId);
+      
+      const response = await fetch(`/api/toilets/${toiletId}/user-review-status?${params}`);
+      if (!response.ok) throw new Error('Failed to check review status');
+      const data = await response.json();
+      return data.hasReviewed as boolean;
+    },
     enabled: !!userId,
   });
 };
