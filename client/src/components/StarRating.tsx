@@ -55,11 +55,11 @@ export const StarRating = ({
           disabled={readonly}
         >
           <Star
-            className={`w-full h-full ${
+            className={`w-full h-full transition-colors duration-200 ${
               star <= displayRating
                 ? "text-yellow-400 fill-yellow-400"
-                : "text-gray-300"
-            } ${!readonly && "hover:text-yellow-400"}`}
+                : "text-gray-300 hover:text-yellow-300"
+            }`}
           />
         </button>
       ))}

@@ -18,6 +18,8 @@ declare global {
     L: any;
     getDirections: (lat: number, lng: number) => void;
     setRating: (toiletId: string, rating: number) => void;
+    hoverStars: (toiletId: string, rating: number) => void;
+    resetStars: (toiletId: string) => void;
     submitReview: (toiletId: string) => void;
     cancelReview: (toiletId: string) => void;
     openLoginModal: () => void;
@@ -75,6 +77,36 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
         window.open(url, '_blank');
       };
 
+      (window as any).hoverStars = (toiletId: string, rating: number) => {
+        const starsContainer = document.getElementById(`stars-${toiletId}`);
+        if (starsContainer) {
+          const stars = starsContainer.querySelectorAll('button');
+          stars.forEach((star, index) => {
+            if (index < rating) {
+              star.style.color = '#facc15'; // yellow-400
+            } else {
+              star.style.color = '#cbd5e1'; // gray-300
+            }
+          });
+        }
+      };
+
+      (window as any).resetStars = (toiletId: string) => {
+        const currentRating = (window as any).currentRating;
+        const starsContainer = document.getElementById(`stars-${toiletId}`);
+        if (starsContainer) {
+          const stars = starsContainer.querySelectorAll('button');
+          const selectedRating = (currentRating && currentRating.toiletId === toiletId) ? currentRating.rating : 0;
+          stars.forEach((star, index) => {
+            if (index < selectedRating) {
+              star.style.color = '#facc15'; // yellow-400
+            } else {
+              star.style.color = '#cbd5e1'; // gray-300
+            }
+          });
+        }
+      };
+
       (window as any).setRating = (toiletId: string, rating: number) => {
         // Update star display
         const starsContainer = document.getElementById(`stars-${toiletId}`);
@@ -82,11 +114,11 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
         const reviewForm = document.getElementById(`review-form-${toiletId}`);
         
         if (starsContainer && ratingText && reviewForm) {
-          // Update stars visual
+          // Update stars visual with yellow color
           const stars = starsContainer.querySelectorAll('button');
           stars.forEach((star, index) => {
             if (index < rating) {
-              star.style.color = '#FF385C';
+              star.style.color = '#facc15'; // yellow-400
             } else {
               star.style.color = '#cbd5e1';
             }
@@ -121,8 +153,9 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               rating: currentRating.rating,
-              text: reviewInput.value.trim() || null,
-              userId: user.uid || user.email || 'anonymous'
+              text: reviewInput.value.trim() || undefined,
+              userId: user.uid || user.email || 'anonymous',
+              userName: user.displayName || user.email?.split('@')[0] || 'Anonymous'
             })
           });
 
@@ -585,7 +618,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
                     cursor: pointer;
                     color: #cbd5e1;
                     transition: color 0.2s;
-                  " onmouseover="this.style.color='#FF385C'" onmouseout="this.style.color='#cbd5e1'">
+                  " onmouseover="window.hoverStars('${toilet.id}', ${rating})" onmouseout="window.resetStars('${toilet.id}')">
                     ★
                   </button>
                 `).join('')}

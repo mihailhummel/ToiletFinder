@@ -29,6 +29,20 @@
   --text-secondary: hsl(0, 0%, 40%);
 }
 
+/* Hide developer console panel */
+#react-refresh-overlay,
+.vite-error-overlay,
+[data-vite-dev-id] {
+  display: none !important;
+}
+
+/* Hide any console/debug panels */
+iframe[title="vite-plugin-checker-error-overlay"],
+iframe[src*="/@vite/client"],
+iframe[src*="/@react-refresh"] {
+  display: none !important;
+}
+
 .dark {
   --background: hsl(222, 84%, 5%);
   --foreground: hsl(210, 40%, 98%);

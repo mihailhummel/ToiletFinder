@@ -82,7 +82,7 @@ export const insertToiletSchema = z.object({
 
 export const insertReviewSchema = createInsertSchema(reviews, {
   rating: z.number().min(1).max(5),
-  text: z.string().optional(),
+  text: z.string().optional().nullable(),
 }).omit({ 
   id: true, 
   createdAt: true 
