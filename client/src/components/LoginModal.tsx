@@ -22,7 +22,7 @@ export const LoginModal = ({ isOpen, onClose }: LoginModalProps) => {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-sm">
+      <DialogContent className="sm:max-w-sm z-[9999]">
         <div className="text-center space-y-4">
           <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center mx-auto">
             <User className="w-8 h-8 text-white" />

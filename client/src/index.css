@@ -116,6 +116,20 @@
   }
 }
 
+/* Dialog/Modal z-index overrides to ensure they appear above the map */
+.dialog-overlay {
+  z-index: 9998 !important;
+}
+
+.dialog-content {
+  z-index: 9999 !important;
+}
+
+/* Override Radix UI dialog styles for proper layering */
+[data-radix-portal] {
+  z-index: 9998 !important;
+}
+
 /* PWA-specific styles */
 @media (display-mode: standalone) {
   body {

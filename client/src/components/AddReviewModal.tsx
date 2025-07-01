@@ -88,7 +88,7 @@ export const AddReviewModal = ({ toilet, isOpen, onClose }: AddReviewModalProps)
   if (hasReviewed) {
     return (
       <Dialog open={isOpen} onOpenChange={handleClose}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md z-[9999]">
           <DialogHeader>
             <DialogTitle>Already Reviewed</DialogTitle>
           </DialogHeader>
@@ -105,7 +105,7 @@ export const AddReviewModal = ({ toilet, isOpen, onClose }: AddReviewModalProps)
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md z-[9999]">
         <DialogHeader>
           <DialogTitle>Add Review</DialogTitle>
         </DialogHeader>
