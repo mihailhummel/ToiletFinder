@@ -1,0 +1,101 @@
+I want to create a mobile-responsive web app for people suffering from IBS (Irritable Bowel Syndrome) in Bulgaria. The goal is to help them easily find nearby public restrooms using an interactive map.
+
+🎯 The app should do the following:
+🗺️ 1. Display an Interactive Map
+Load a map centered on the user’s current geolocation (Bulgaria).
+
+Use Mapbox GL JS or Leaflet JS for map rendering.
+
+Show nearby toilets with custom markers (public toilets, restaurants, cafes, gas stations).
+
+Each marker should be clickable and show details like:
+
+Type of toilet (e.g., gas station, public, restaurant)
+
+Description (optional)
+
+Average user rating
+
+User reviews (if any)
+
+➕ 2. Allow Users to Add a New Toilet Location
+Add a “+” floating button to let users pin a new toilet on the map.
+
+When clicked:
+
+Auto-fill the latitude and longitude from the user’s current map center.
+
+Open a simple form:
+
+Type of place (dropdown: public toilet, restaurant, gas station, etc.)
+
+Notes or comment (optional)
+
+Save this data to Firebase Firestore.
+
+🔐 3. Allow Users to Log In via Google to Leave Reviews
+Use Firebase Authentication with Google sign-in only.
+
+A user should be able to:
+
+Write a short text review for any toilet pin
+
+Rate the toilet from 1 to 5 stars
+
+Only leave 1 review per location
+
+⚠️ 4. Allow Users to Report Issues with Toilet Pins
+Every toilet pin popup should include a "Report" button.
+
+The form should let users select:
+
+Reason: [Toilet doesn’t exist, Inaccessible, Closed, Other]
+
+Optional comment
+
+Reports should be stored in Firestore under a separate reports collection
+
+📱 5. Make the Web App Mobile-Friendly
+Design the interface with responsive CSS (e.g., media queries or CSS Grid/Flexbox).
+
+The layout should work smoothly on phones.
+
+Add a small top banner or popup that tells users:
+
+“You can add this app to your home screen for quicker access.”
+
+💾 6. Use Firebase for All Backend Logic
+Use Firebase Firestore to store:
+
+Toilet pins (toilets collection with location, type, user ID, timestamp)
+
+Reviews (reviews subcollection under each toilet)
+
+Reports (reports subcollection under each toilet)
+
+Use Firebase Auth for Google login.
+
+🛠️ 7. Folder Structure and Best Practices
+Please generate a clean file structure like:
+
+arduino
+Copy
+Edit
+/
+├── index.html
+├── style.css
+├── script.js
+├── firebase-config.js
+├── manifest.json (for PWA)
+├── service-worker.js (optional)
+✅ Important Notes:
+Do not require user registration — only Google login for reviews.
+
+The toilet map should auto-load pins near the user (use location filtering).
+
+Don't use any backend server — use Firebase only.
+
+Try to write readable and well-commented JavaScript.
+
+🔚 Goal:
+By the end, I want a functional MVP that I can launch and test on mobile — with map interaction, toilet pinning, Google login for reviews, reporting system, and a clean UI.
