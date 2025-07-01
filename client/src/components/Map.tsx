@@ -15,6 +15,8 @@ interface MapProps {
 declare global {
   interface Window {
     L: any;
+    viewToiletDetails: (toiletId: string) => void;
+    getDirections: (lat: number, lng: number) => void;
   }
 }
 
@@ -53,6 +55,23 @@ export const Map = ({ onToiletClick, onAddToiletClick }: MapProps) => {
       if (script.parentNode) document.head.removeChild(script);
     };
   }, []);
+
+  // Set up global functions for popup buttons
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.viewToiletDetails = (toiletId) => {
+        const toilet = toilets.find(t => t.id === toiletId);
+        if (toilet) {
+          onToiletClick(toilet);
+        }
+      };
+      
+      window.getDirections = (lat, lng) => {
+        const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+        window.open(url, '_blank');
+      };
+    }
+  }, [toilets, onToiletClick]);
 
   // Initialize map
   useEffect(() => {
@@ -214,11 +233,86 @@ export const Map = ({ onToiletClick, onAddToiletClick }: MapProps) => {
         iconAnchor: [20, 50]
       });
 
+      // Create popup content
+      const popupContent = `
+        <div style="max-width: 300px; font-family: system-ui;">
+          <div style="
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid #e5e7eb;
+            margin-bottom: 12px;
+          ">
+            <div style="
+              width: 32px;
+              height: 32px;
+              background: #FF385C;
+              border-radius: 50%;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              font-size: 16px;
+            ">🚽</div>
+            <div>
+              <div style="font-weight: 600; font-size: 16px; color: #222;">
+                ${toilet.type === 'public' ? 'Public Toilet' : 
+                  toilet.type === 'gas-station' ? 'Gas Station' :
+                  toilet.type === 'restaurant' ? 'Restaurant' :
+                  toilet.type === 'cafe' ? 'Cafe' :
+                  toilet.type === 'mall' ? 'Mall' : 'Other'}
+              </div>
+              ${toilet.averageRating ? `
+                <div style="display: flex; align-items: center; gap: 4px; font-size: 14px; color: #666;">
+                  <span style="color: #FF385C;">★</span>
+                  <span>${toilet.averageRating.toFixed(1)} (${toilet.reviewCount} reviews)</span>
+                </div>
+              ` : '<div style="font-size: 14px; color: #666;">No reviews yet</div>'}
+            </div>
+          </div>
+          
+          <div style="margin-bottom: 12px;">
+            <div style="font-size: 14px; color: #666; line-height: 1.4;">
+              ${toilet.notes || 'Public toilet facility'}
+            </div>
+          </div>
+          
+          <div style="display: flex; gap: 8px;">
+            <button onclick="window.viewToiletDetails('${toilet.id}')" style="
+              flex: 1;
+              padding: 8px 16px;
+              background: #FF385C;
+              color: white;
+              border: none;
+              border-radius: 6px;
+              font-size: 14px;
+              font-weight: 500;
+              cursor: pointer;
+            ">View Details</button>
+            <button onclick="window.getDirections(${toilet.coordinates.lat}, ${toilet.coordinates.lng})" style="
+              padding: 8px 12px;
+              background: #f3f4f6;
+              color: #374151;
+              border: none;
+              border-radius: 6px;
+              font-size: 14px;
+              cursor: pointer;
+            ">Directions</button>
+          </div>
+        </div>
+      `;
+
       const marker = window.L.marker([toilet.coordinates.lat, toilet.coordinates.lng], { icon })
         .addTo(map.current)
+        .bindPopup(popupContent, {
+          maxWidth: 320,
+          className: 'toilet-popup',
+          closeButton: true,
+          offset: [0, -40] // Offset to appear above the pin
+        })
         .on('click', (e) => {
-          e.originalEvent.stopPropagation();
-          onToiletClick(toilet);
+          e.originalEvent?.stopPropagation();
+          marker.openPopup();
         });
 
       markers.current.push(marker);
