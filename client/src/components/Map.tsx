@@ -67,9 +67,10 @@ export const Map = ({ onToiletClick, onAddToiletClick }: MapProps) => {
       userLocation ? 16 : 13
     );
 
-    // Add OpenStreetMap tile layer
-    window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap contributors',
+    // Add Airbnb-style tile layer using CartoDB Positron
+    window.L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      attribution: '© OpenStreetMap contributors © CARTO',
+      subdomains: 'abcd',
       maxZoom: 19
     }).addTo(map.current);
 
@@ -86,8 +87,13 @@ export const Map = ({ onToiletClick, onAddToiletClick }: MapProps) => {
       setIsAwayFromUser(distance > 50); // 50 meters threshold
     });
 
-    // Add click handler for adding toilets
+    // Add click handler for adding toilets (only if user is authenticated)
     map.current.on('click', (e: any) => {
+      // Don't trigger if clicking on a marker
+      if (e.originalEvent.target.closest('.toilet-marker')) {
+        return;
+      }
+      
       if (user) { // Only allow if authenticated
         const { lat, lng } = e.latlng;
         onAddToiletClick({ lat, lng });
@@ -111,14 +117,40 @@ export const Map = ({ onToiletClick, onAddToiletClick }: MapProps) => {
       map.current.removeLayer(userMarker.current);
     }
 
-    // Create blue circle marker for user location
-    userMarker.current = window.L.circleMarker([userLocation.lat, userLocation.lng], {
-      color: '#3b82f6',
-      fillColor: '#3b82f6',
-      fillOpacity: 0.8,
-      radius: 8,
-      weight: 3
-    }).addTo(map.current);
+    // Create modern user location marker with pulsing effect
+    const userIcon = window.L.divIcon({
+      className: 'user-location-marker',
+      html: `
+        <div style="
+          position: relative;
+          width: 20px;
+          height: 20px;
+        ">
+          <div style="
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: #3b82f6;
+            border: 3px solid white;
+            border-radius: 50%;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+            animation: pulse 2s infinite;
+          "></div>
+        </div>
+        <style>
+          @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+          }
+        </style>
+      `,
+      iconSize: [20, 20],
+      iconAnchor: [10, 10]
+    });
+
+    userMarker.current = window.L.marker([userLocation.lat, userLocation.lng], { icon: userIcon })
+      .addTo(map.current);
 
     // Center map on user location with high zoom
     map.current.setView([userLocation.lat, userLocation.lng], 16);
@@ -134,38 +166,60 @@ export const Map = ({ onToiletClick, onAddToiletClick }: MapProps) => {
     });
     markers.current = [];
 
-    // Add toilet markers
+    // Add toilet markers with Airbnb-style pins
     toilets.forEach(toilet => {
       const icon = window.L.divIcon({
         className: 'toilet-marker',
         html: `
           <div style="
-            width: 30px;
-            height: 30px;
-            background: #dc2626;
-            border: 2px solid white;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            position: relative;
+            width: 40px;
+            height: 50px;
             cursor: pointer;
           ">
             <div style="
-              width: 8px;
-              height: 8px;
-              background: white;
+              position: absolute;
+              bottom: 0;
+              left: 50%;
+              transform: translateX(-50%);
+              width: 36px;
+              height: 36px;
+              background: #FF385C;
+              border: 2px solid white;
               border-radius: 50%;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+              font-size: 18px;
+              color: white;
+              font-weight: bold;
+            ">
+              🚽
+            </div>
+            <div style="
+              position: absolute;
+              bottom: -8px;
+              left: 50%;
+              transform: translateX(-50%);
+              width: 0;
+              height: 0;
+              border-left: 6px solid transparent;
+              border-right: 6px solid transparent;
+              border-top: 8px solid #FF385C;
             "></div>
           </div>
         `,
-        iconSize: [30, 30],
-        iconAnchor: [15, 15]
+        iconSize: [40, 50],
+        iconAnchor: [20, 50]
       });
 
       const marker = window.L.marker([toilet.coordinates.lat, toilet.coordinates.lng], { icon })
         .addTo(map.current)
-        .on('click', () => onToiletClick(toilet));
+        .on('click', (e) => {
+          e.originalEvent.stopPropagation();
+          onToiletClick(toilet);
+        });
 
       markers.current.push(marker);
     });
@@ -206,15 +260,15 @@ export const Map = ({ onToiletClick, onAddToiletClick }: MapProps) => {
       )}
       
       {/* Map Controls */}
-      <div className="absolute top-4 right-4 space-y-2">
+      <div className="absolute top-4 right-4 space-y-2 z-50">
         {/* Return to Location Button - only show when away from user */}
         {isAwayFromUser && userLocation && (
           <Button
             onClick={handleReturnToLocation}
-            className="w-10 h-10 bg-white text-primary hover:bg-gray-50 shadow-md rounded-lg p-0"
+            className="w-12 h-12 bg-white text-blue-600 hover:bg-gray-50 shadow-lg rounded-full p-0 border border-gray-200"
             variant="ghost"
           >
-            <Crosshair className="w-4 h-4" />
+            <Crosshair className="w-5 h-5" />
           </Button>
         )}
       </div>
@@ -222,8 +276,9 @@ export const Map = ({ onToiletClick, onAddToiletClick }: MapProps) => {
       {/* Floating Add Button */}
       <Button
         onClick={handleAddToilet}
-        className="fixed bottom-6 right-6 w-14 h-14 bg-primary hover:bg-blue-700 text-white rounded-full shadow-lg p-0 z-30"
+        className="fixed bottom-6 right-6 w-14 h-14 bg-red-500 hover:bg-red-600 text-white rounded-full shadow-lg p-0 z-50"
         disabled={!user}
+        title={!user ? "Sign in to add locations" : "Add toilet location"}
       >
         <Plus className="w-6 h-6" />
       </Button>
