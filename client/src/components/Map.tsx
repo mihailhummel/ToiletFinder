@@ -268,6 +268,8 @@ export const Map = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProps)
   useEffect(() => {
     if (!map.current || !window.L) return;
 
+    console.log('Map markers useEffect triggered, toilets count:', toilets.length);
+
     // Clear existing markers
     markers.current.forEach(marker => {
       try {
