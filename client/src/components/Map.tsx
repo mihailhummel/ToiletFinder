@@ -15,7 +15,6 @@ interface MapProps {
 declare global {
   interface Window {
     L: any;
-    viewToiletDetails: (toiletId: string) => void;
     getDirections: (lat: number, lng: number) => void;
   }
 }
@@ -59,19 +58,12 @@ export const Map = ({ onToiletClick, onAddToiletClick }: MapProps) => {
   // Set up global functions for popup buttons
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      window.viewToiletDetails = (toiletId: string) => {
-        const toilet = toilets.find(t => t.id === toiletId);
-        if (toilet) {
-          onToiletClick(toilet);
-        }
-      };
-      
       window.getDirections = (lat: number, lng: number) => {
         const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
         window.open(url, '_blank');
       };
     }
-  }, [toilets, onToiletClick]);
+  }, []);
 
   // Initialize map
   useEffect(() => {
@@ -435,35 +427,26 @@ export const Map = ({ onToiletClick, onAddToiletClick }: MapProps) => {
             </div>
           ` : ''}
           
-          <!-- Action buttons -->
-          <div style="display: flex; gap: 8px; padding-top: 4px;">
+          <!-- Action button -->
+          <div style="padding-top: 4px;">
             <button onclick="window.getDirections(${toilet.coordinates.lat}, ${toilet.coordinates.lng})" style="
-              flex: 1;
-              padding: 12px 16px;
+              width: 100%;
+              padding: 14px 16px;
               background: linear-gradient(135deg, #FF385C, #E31C5F);
               color: white;
               border: none;
               border-radius: 8px;
-              font-size: 14px;
+              font-size: 15px;
               font-weight: 600;
               cursor: pointer;
               transition: all 0.2s;
               box-shadow: 0 2px 4px rgba(255, 56, 92, 0.2);
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              gap: 8px;
             " onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 8px rgba(255, 56, 92, 0.3)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(255, 56, 92, 0.2)'">
               🧭 Get Directions
-            </button>
-            <button onclick="window.viewToiletDetails('${toilet.id}')" style="
-              padding: 12px 16px;
-              background: #f3f4f6;
-              color: #374151;
-              border: 1px solid #d1d5db;
-              border-radius: 8px;
-              font-size: 14px;
-              font-weight: 600;
-              cursor: pointer;
-              transition: all 0.2s;
-            " onmouseover="this.style.background='#e5e7eb'" onmouseout="this.style.background='#f3f4f6'">
-              📝 Reviews
             </button>
           </div>
         </div>
