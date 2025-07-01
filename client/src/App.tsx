@@ -143,39 +143,10 @@ function App() {
           <main className="flex-1 pt-32 relative">
             <Map
               onToiletClick={setSelectedToilet}
-              userLocation={userLocation}
-              onMapClick={handleMapClick}
+              onAddToiletClick={handleMapClick}
             />
             
-            {/* Map Controls */}
-            <div className="absolute top-4 right-4 space-y-2">
-              {/* My Location Button */}
-              <Button
-                onClick={handleLocateUser}
-                disabled={locationLoading}
-                className="w-10 h-10 bg-white text-primary hover:bg-gray-50 shadow-md rounded-lg p-0"
-                variant="ghost"
-              >
-                <MapPin className="w-4 h-4" />
-              </Button>
-              
-              {/* Filter Button */}
-              <Button
-                onClick={() => setShowFilter(true)}
-                className="w-10 h-10 bg-white text-gray-600 hover:bg-gray-50 shadow-md rounded-lg p-0"
-                variant="ghost"
-              >
-                <Filter className="w-4 h-4" />
-              </Button>
-            </div>
 
-            {/* Floating Add Button */}
-            <Button
-              onClick={handleAddToilet}
-              className="fixed bottom-6 right-6 w-14 h-14 bg-primary hover:bg-blue-700 text-white rounded-full shadow-lg p-0 z-30"
-            >
-              <Plus className="w-6 h-6" />
-            </Button>
           </main>
 
           {/* Modals */}
