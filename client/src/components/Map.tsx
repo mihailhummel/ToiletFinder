@@ -162,10 +162,15 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
           if (response.ok) {
             // Reset form
             (window as any).cancelReview(toiletId);
-            alert('Review submitted successfully!');
+            alert('✅ Review submitted successfully!');
             // Instead of reloading, we'll just reset the form - the review is already submitted
           } else {
-            alert('Failed to submit review. Please try again.');
+            const errorData = await response.json();
+            if (response.status === 409) {
+              alert('You have already reviewed this toilet. Each user can only submit one review per location.');
+            } else {
+              alert(`Failed to submit review: ${errorData.error || 'Please try again.'}`);
+            }
           }
         } catch (error) {
           alert('Error submitting review. Please try again.');
