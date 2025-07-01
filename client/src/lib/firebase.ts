@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getAuth, GoogleAuthProvider, signInWithRedirect, signOut, onAuthStateChanged, User } from "firebase/auth";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, User } from "firebase/auth";
 import { getFirestore, collection, addDoc, getDocs, query, where, orderBy, doc, updateDoc, deleteDoc, getDoc, increment, writeBatch } from "firebase/firestore";
 import type { Toilet, Review, Report, InsertToilet, InsertReview, InsertReport } from "@shared/schema";
 
@@ -20,7 +20,7 @@ const provider = new GoogleAuthProvider();
 
 // Auth functions
 export const signInWithGoogle = () => {
-  return signInWithRedirect(auth, provider);
+  return signInWithPopup(auth, provider);
 };
 
 export const signOutUser = () => {

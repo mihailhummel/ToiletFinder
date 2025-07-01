@@ -43,15 +43,26 @@ export const useAuth = () => {
 
     try {
       const { signInWithGoogle } = await import("@/lib/firebase");
-      await signInWithGoogle();
+      const result = await signInWithGoogle();
+      console.log("Sign in successful:", result.user);
     } catch (error) {
       console.error("Sign in error:", error);
-      // Fallback to mock mode
-      setUser({
-        uid: 'mock-user-123',
-        displayName: 'Test User',
-        email: 'test@example.com'
-      } as User);
+      
+      // Check if it's a configuration error vs popup blocked
+      const errorCode = (error as any)?.code;
+      if (errorCode === 'auth/popup-blocked') {
+        alert('Popup was blocked. Please allow popups for this site and try again.');
+      } else if (errorCode === 'auth/unauthorized-domain') {
+        alert('Domain not authorized. Please check Firebase configuration.');
+      } else {
+        alert('Sign in failed. Using test mode instead.');
+        // Fallback to mock mode
+        setUser({
+          uid: 'mock-user-123',
+          displayName: 'Test User',
+          email: 'test@example.com'
+        } as User);
+      }
     }
   };
 
