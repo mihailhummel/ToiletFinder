@@ -121,7 +121,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               rating: currentRating.rating,
-              comment: reviewInput.value.trim() || null,
+              text: reviewInput.value.trim() || null,
               userId: user.uid || user.email || 'anonymous'
             })
           });

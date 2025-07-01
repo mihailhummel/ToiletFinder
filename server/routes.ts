@@ -72,6 +72,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true });
     } catch (error) {
       if (error instanceof z.ZodError) {
+        console.error("Review validation error:", error.errors);
         res.status(400).json({ error: "Invalid review data", details: error.errors });
       } else {
         console.error("Error creating review:", error);
