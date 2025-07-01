@@ -16,6 +16,10 @@ declare global {
   interface Window {
     L: any;
     getDirections: (lat: number, lng: number) => void;
+    setRating: (toiletId: string, rating: number) => void;
+    submitReview: (toiletId: string) => void;
+    cancelReview: (toiletId: string) => void;
+    currentRating?: { toiletId: string; rating: number };
   }
 }
 
@@ -62,8 +66,96 @@ export const Map = ({ onToiletClick, onAddToiletClick }: MapProps) => {
         const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
         window.open(url, '_blank');
       };
+
+      (window as any).setRating = (toiletId: string, rating: number) => {
+        // Update star display
+        const starsContainer = document.getElementById(`stars-${toiletId}`);
+        const ratingText = document.getElementById(`rating-text-${toiletId}`);
+        const reviewForm = document.getElementById(`review-form-${toiletId}`);
+        
+        if (starsContainer && ratingText && reviewForm) {
+          // Update stars visual
+          const stars = starsContainer.querySelectorAll('button');
+          stars.forEach((star, index) => {
+            if (index < rating) {
+              star.style.color = '#FF385C';
+            } else {
+              star.style.color = '#cbd5e1';
+            }
+          });
+          
+          // Update text and show review form
+          ratingText.textContent = `${rating} star${rating !== 1 ? 's' : ''} selected`;
+          reviewForm.style.display = 'block';
+          
+          // Store rating temporarily
+          (window as any).currentRating = { toiletId, rating };
+        }
+      };
+
+      (window as any).submitReview = async (toiletId: string) => {
+        const reviewInput = document.getElementById(`review-input-${toiletId}`) as HTMLTextAreaElement;
+        const currentRating = (window as any).currentRating;
+        
+        if (!user) {
+          alert('Please sign in to leave a review');
+          return;
+        }
+        
+        if (!currentRating || currentRating.toiletId !== toiletId) {
+          alert('Please select a rating first');
+          return;
+        }
+
+        try {
+          const response = await fetch(`/api/toilets/${toiletId}/reviews`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              rating: currentRating.rating,
+              comment: reviewInput.value.trim() || null,
+              userId: user.uid || user.email || 'anonymous'
+            })
+          });
+
+          if (response.ok) {
+            // Reset form
+            (window as any).cancelReview(toiletId);
+            alert('Review submitted successfully!');
+            // Trigger a refetch of toilets data
+            window.location.reload();
+          } else {
+            alert('Failed to submit review. Please try again.');
+          }
+        } catch (error) {
+          alert('Error submitting review. Please try again.');
+        }
+      };
+
+      (window as any).cancelReview = (toiletId: string) => {
+        const starsContainer = document.getElementById(`stars-${toiletId}`);
+        const ratingText = document.getElementById(`rating-text-${toiletId}`);
+        const reviewForm = document.getElementById(`review-form-${toiletId}`);
+        const reviewInput = document.getElementById(`review-input-${toiletId}`) as HTMLTextAreaElement;
+        
+        if (starsContainer && ratingText && reviewForm && reviewInput) {
+          // Reset stars
+          const stars = starsContainer.querySelectorAll('button');
+          stars.forEach(star => {
+            (star as HTMLElement).style.color = '#cbd5e1';
+          });
+          
+          // Reset text and hide form
+          ratingText.textContent = 'Tap to rate';
+          reviewForm.style.display = 'none';
+          reviewInput.value = '';
+          
+          // Clear stored rating
+          delete (window as any).currentRating;
+        }
+      };
     }
-  }, []);
+  }, [user]);
 
   // Initialize map
   useEffect(() => {
@@ -427,6 +519,87 @@ export const Map = ({ onToiletClick, onAddToiletClick }: MapProps) => {
             </div>
           ` : ''}
           
+          <!-- Quick rating section (only show if user is authenticated) -->
+          ${user ? `
+          <div id="rating-section-${toilet.id}" style="
+            margin-bottom: 16px;
+            padding: 12px;
+            background: #f8fafc;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+          ">` : `
+          <div style="
+            margin-bottom: 16px;
+            padding: 12px;
+            background: #f0f9ff;
+            border-radius: 8px;
+            border: 1px solid #0ea5e9;
+          ">
+            <div style="font-size: 14px; color: #0369a1; text-align: center;">
+              <strong>Sign in to rate and review toilets</strong>
+            </div>
+          </div>
+          <div style="display: none;">`}
+            <div style="font-size: 13px; color: #64748b; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">
+              Rate this toilet
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+              <div id="stars-${toilet.id}" style="display: flex; gap: 2px;">
+                ${[1,2,3,4,5].map(rating => `
+                  <button onclick="window.setRating('${toilet.id}', ${rating})" style="
+                    background: none;
+                    border: none;
+                    font-size: 20px;
+                    cursor: pointer;
+                    color: #cbd5e1;
+                    transition: color 0.2s;
+                  " onmouseover="this.style.color='#FF385C'" onmouseout="this.style.color='#cbd5e1'">
+                    ★
+                  </button>
+                `).join('')}
+              </div>
+              <span id="rating-text-${toilet.id}" style="font-size: 14px; color: #64748b;">
+                Tap to rate
+              </span>
+            </div>
+            <div id="review-form-${toilet.id}" style="display: none;">
+              <textarea id="review-input-${toilet.id}" placeholder="Share your experience (optional)" style="
+                width: 100%;
+                min-height: 60px;
+                padding: 8px 12px;
+                border: 1px solid #d1d5db;
+                border-radius: 6px;
+                font-size: 14px;
+                font-family: inherit;
+                resize: vertical;
+                margin-bottom: 8px;
+              "></textarea>
+              <div style="display: flex; gap: 8px;">
+                <button onclick="window.submitReview('${toilet.id}')" style="
+                  flex: 1;
+                  padding: 8px 12px;
+                  background: #10b981;
+                  color: white;
+                  border: none;
+                  border-radius: 6px;
+                  font-size: 14px;
+                  font-weight: 500;
+                  cursor: pointer;
+                ">Submit Review</button>
+                <button onclick="window.cancelReview('${toilet.id}')" style="
+                  padding: 8px 12px;
+                  background: #f3f4f6;
+                  color: #6b7280;
+                  border: none;
+                  border-radius: 6px;
+                  font-size: 14px;
+                  cursor: pointer;
+                ">Cancel</button>
+              </div>
+            </div>
+          </div>
+          ${user ? '' : '</div>'}
+
           <!-- Action button -->
           <div style="padding-top: 4px;">
             <button onclick="window.getDirections(${toilet.coordinates.lat}, ${toilet.coordinates.lng})" style="
