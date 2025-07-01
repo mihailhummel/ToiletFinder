@@ -59,14 +59,14 @@ export const Map = ({ onToiletClick, onAddToiletClick }: MapProps) => {
   // Set up global functions for popup buttons
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      window.viewToiletDetails = (toiletId) => {
+      window.viewToiletDetails = (toiletId: string) => {
         const toilet = toilets.find(t => t.id === toiletId);
         if (toilet) {
           onToiletClick(toilet);
         }
       };
       
-      window.getDirections = (lat, lng) => {
+      window.getDirections = (lat: number, lng: number) => {
         const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
         window.open(url, '_blank');
       };
@@ -177,11 +177,15 @@ export const Map = ({ onToiletClick, onAddToiletClick }: MapProps) => {
 
   // Update toilet markers
   useEffect(() => {
-    if (!map.current) return;
+    if (!map.current || !window.L) return;
 
     // Clear existing markers
     markers.current.forEach(marker => {
-      map.current.removeLayer(marker);
+      try {
+        map.current.removeLayer(marker);
+      } catch (e) {
+        // Ignore errors if marker is already removed
+      }
     });
     markers.current = [];
 
@@ -310,14 +314,14 @@ export const Map = ({ onToiletClick, onAddToiletClick }: MapProps) => {
           closeButton: true,
           offset: [0, -40] // Offset to appear above the pin
         })
-        .on('click', (e) => {
+        .on('click', (e: any) => {
           e.originalEvent?.stopPropagation();
           marker.openPopup();
         });
 
       markers.current.push(marker);
     });
-  }, [toilets, onToiletClick]);
+  }, [toilets]);
 
   const handleReturnToLocation = () => {
     if (userLocation && map.current) {
