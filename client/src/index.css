@@ -131,11 +131,21 @@
 }
 
 /* Leaflet popup styling */
+.toilet-popup {
+  z-index: 10000 !important;
+}
+
+/* Ensure Leaflet popup pane is above modals */
+.leaflet-popup-pane {
+  z-index: 10000 !important;
+}
+
 .toilet-popup .leaflet-popup-content-wrapper {
   border-radius: 12px !important;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15) !important;
   border: 1px solid #e5e7eb !important;
   padding: 0 !important;
+  z-index: 10000 !important;
 }
 
 .toilet-popup .leaflet-popup-content {
