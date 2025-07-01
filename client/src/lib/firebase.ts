@@ -3,13 +3,6 @@ import { getAuth, GoogleAuthProvider, signInWithRedirect, signOut, onAuthStateCh
 import { getFirestore, collection, addDoc, getDocs, query, where, orderBy, doc, updateDoc, deleteDoc, getDoc, increment, writeBatch } from "firebase/firestore";
 import type { Toilet, Review, Report, InsertToilet, InsertReview, InsertReport } from "@shared/schema";
 
-// Debug: Log environment variables to check if they're loading
-console.log('Firebase Config Debug:', {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY ? 'Present' : 'Missing',
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID ? 'Present' : 'Missing',
-  appId: import.meta.env.VITE_FIREBASE_APP_ID ? 'Present' : 'Missing'
-});
-
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "",
   authDomain: `${import.meta.env.VITE_FIREBASE_PROJECT_ID || ""}.firebaseapp.com`,
