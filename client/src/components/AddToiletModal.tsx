@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { X, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
@@ -83,6 +83,9 @@ export const AddToiletModal = ({ isOpen, onClose, location }: AddToiletModalProp
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Add New Toilet</DialogTitle>
+          <DialogDescription>
+            Add a new toilet location to help others find nearby facilities
+          </DialogDescription>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">

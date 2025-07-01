@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { StarRating } from "./StarRating";
 import { useToast } from "@/hooks/use-toast";
@@ -91,6 +91,9 @@ export const AddReviewModal = ({ toilet, isOpen, onClose }: AddReviewModalProps)
         <DialogContent className="sm:max-w-md z-[9999]">
           <DialogHeader>
             <DialogTitle>Already Reviewed</DialogTitle>
+            <DialogDescription>
+              You can only submit one review per toilet location
+            </DialogDescription>
           </DialogHeader>
           <div className="text-center py-4">
             <p className="text-gray-600 mb-4">
@@ -108,6 +111,9 @@ export const AddReviewModal = ({ toilet, isOpen, onClose }: AddReviewModalProps)
       <DialogContent className="sm:max-w-md z-[9999]">
         <DialogHeader>
           <DialogTitle>Add Review</DialogTitle>
+          <DialogDescription>
+            Share your experience to help others find quality facilities
+          </DialogDescription>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">

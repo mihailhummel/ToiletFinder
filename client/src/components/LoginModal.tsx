@@ -1,4 +1,4 @@
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { User } from "lucide-react";
@@ -23,6 +23,12 @@ export const LoginModal = ({ isOpen, onClose }: LoginModalProps) => {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-sm z-[9999]">
+        <DialogHeader>
+          <DialogTitle>Sign In</DialogTitle>
+          <DialogDescription>
+            Sign in with Google to add toilet locations and reviews
+          </DialogDescription>
+        </DialogHeader>
         <div className="text-center space-y-4">
           <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center mx-auto">
             <User className="w-8 h-8 text-white" />
