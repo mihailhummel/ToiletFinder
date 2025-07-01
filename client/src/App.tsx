@@ -1,0 +1,212 @@
+import { useState, useEffect } from "react";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { queryClient } from "./lib/queryClient";
+import { Toaster } from "@/components/ui/toaster";
+import { TooltipProvider } from "@/components/ui/tooltip";
+
+// Components
+import { PWABanner } from "./components/PWABanner";
+import { Map } from "./components/Map";
+import { FilterPanel, type FilterOptions } from "./components/FilterPanel";
+import { AddToiletModal } from "./components/AddToiletModal";
+import { ToiletDetailsModal } from "./components/ToiletDetailsModal";
+import { LoginModal } from "./components/LoginModal";
+
+// Hooks
+import { useAuth } from "./hooks/useAuth";
+import { useGeolocation } from "./hooks/useGeolocation";
+import { useToast } from "./hooks/use-toast";
+
+// Icons
+import { User, MapPin, Filter, Plus, Search, Menu } from "lucide-react";
+import { Button } from "./components/ui/button";
+import { Input } from "./components/ui/input";
+
+// Types
+import type { Toilet, MapLocation } from "./types/toilet";
+
+function App() {
+  const [selectedToilet, setSelectedToilet] = useState<Toilet | null>(null);
+  const [showAddToilet, setShowAddToilet] = useState(false);
+  const [showFilter, setShowFilter] = useState(false);
+  const [showLogin, setShowLogin] = useState(false);
+  const [mapCenter, setMapCenter] = useState<MapLocation>({ lat: 42.6977, lng: 23.3219 });
+  const [filters, setFilters] = useState<FilterOptions>({
+    types: ["public", "restaurant", "cafe", "gas-station", "mall", "other"],
+    minRating: 1
+  });
+
+  const { user, loading: authLoading } = useAuth();
+  const { location: userLocation, getCurrentLocation, loading: locationLoading } = useGeolocation();
+  const { toast } = useToast();
+
+  // Get user location on mount
+  useEffect(() => {
+    getCurrentLocation();
+  }, []);
+
+  const handleUserMenuClick = () => {
+    if (user) {
+      // Show user menu - for now just a placeholder
+      toast({
+        title: "User Menu",
+        description: `Signed in as ${user.displayName || user.email}`
+      });
+    } else {
+      setShowLogin(true);
+    }
+  };
+
+  const handleLocateUser = () => {
+    getCurrentLocation();
+    if (userLocation) {
+      toast({
+        title: "Location found",
+        description: "Centered map on your location"
+      });
+    }
+  };
+
+  const handleAddToilet = () => {
+    if (!user) {
+      setShowLogin(true);
+      return;
+    }
+    setShowAddToilet(true);
+  };
+
+  const handleMapClick = (location: MapLocation) => {
+    setMapCenter(location);
+  };
+
+  if (authLoading) {
+    return (
+      <div className="fixed inset-0 bg-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+          <div className="text-gray-600">Loading...</div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <div className="h-screen flex flex-col bg-gray-50 overflow-hidden">
+          {/* PWA Banner */}
+          <PWABanner />
+
+          {/* Header */}
+          <header className="fixed top-0 left-0 right-0 bg-white shadow-md z-40">
+            <div className="flex items-center justify-between p-4">
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                  <MapPin className="w-4 h-4 text-white" />
+                </div>
+                <h1 className="text-lg font-semibold text-gray-900">ToiletMap BG</h1>
+              </div>
+              
+              <div className="flex items-center space-x-3">
+                {/* Location Status */}
+                <div className="flex items-center space-x-1 text-xs text-gray-600">
+                  <MapPin className="w-3 h-3 text-green-500" />
+                  <span>Sofia</span>
+                </div>
+                
+                {/* User Menu */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleUserMenuClick}
+                  className="w-8 h-8 rounded-full bg-gray-200 p-0"
+                >
+                  <User className="w-4 h-4 text-gray-600" />
+                </Button>
+              </div>
+            </div>
+
+            {/* Search Bar */}
+            <div className="px-4 pb-3">
+              <div className="relative">
+                <Input
+                  type="text"
+                  placeholder="Search area or address..."
+                  className="w-full pl-10 bg-gray-50 border-gray-200"
+                />
+                <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+              </div>
+            </div>
+          </header>
+
+          {/* Map Container */}
+          <main className="flex-1 pt-32 relative">
+            <Map
+              onToiletClick={setSelectedToilet}
+              userLocation={userLocation}
+              onMapClick={handleMapClick}
+            />
+            
+            {/* Map Controls */}
+            <div className="absolute top-4 right-4 space-y-2">
+              {/* My Location Button */}
+              <Button
+                onClick={handleLocateUser}
+                disabled={locationLoading}
+                className="w-10 h-10 bg-white text-primary hover:bg-gray-50 shadow-md rounded-lg p-0"
+                variant="ghost"
+              >
+                <MapPin className="w-4 h-4" />
+              </Button>
+              
+              {/* Filter Button */}
+              <Button
+                onClick={() => setShowFilter(true)}
+                className="w-10 h-10 bg-white text-gray-600 hover:bg-gray-50 shadow-md rounded-lg p-0"
+                variant="ghost"
+              >
+                <Filter className="w-4 h-4" />
+              </Button>
+            </div>
+
+            {/* Floating Add Button */}
+            <Button
+              onClick={handleAddToilet}
+              className="fixed bottom-6 right-6 w-14 h-14 bg-primary hover:bg-blue-700 text-white rounded-full shadow-lg p-0 z-30"
+            >
+              <Plus className="w-6 h-6" />
+            </Button>
+          </main>
+
+          {/* Modals */}
+          <FilterPanel
+            isOpen={showFilter}
+            onClose={() => setShowFilter(false)}
+            onFiltersChange={setFilters}
+          />
+
+          <AddToiletModal
+            isOpen={showAddToilet}
+            onClose={() => setShowAddToilet(false)}
+            location={mapCenter}
+          />
+
+          <ToiletDetailsModal
+            toilet={selectedToilet}
+            isOpen={!!selectedToilet}
+            onClose={() => setSelectedToilet(null)}
+          />
+
+          <LoginModal
+            isOpen={showLogin}
+            onClose={() => setShowLogin(false)}
+          />
+        </div>
+
+        <Toaster />
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+}
+
+export default App;
