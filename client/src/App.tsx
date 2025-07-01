@@ -9,7 +9,7 @@ import { PWABanner } from "./components/PWABanner";
 import { Map } from "./components/Map";
 import { FilterPanel, type FilterOptions } from "./components/FilterPanel";
 import { AddToiletModal } from "./components/AddToiletModal";
-import { ToiletDetailsModal } from "./components/ToiletDetailsModal";
+
 import { LoginModal } from "./components/LoginModal";
 
 // Hooks
@@ -153,11 +153,7 @@ function App() {
             location={mapCenter}
           />
 
-          <ToiletDetailsModal
-            toilet={selectedToilet}
-            isOpen={!!selectedToilet}
-            onClose={() => setSelectedToilet(null)}
-          />
+
 
           <LoginModal
             isOpen={showLogin}

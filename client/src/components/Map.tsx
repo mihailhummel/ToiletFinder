@@ -124,8 +124,7 @@ export const Map = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProps)
             // Reset form
             (window as any).cancelReview(toiletId);
             alert('Review submitted successfully!');
-            // Trigger a refetch of toilets data
-            window.location.reload();
+            // Instead of reloading, we'll just reset the form - the review is already submitted
           } else {
             alert('Failed to submit review. Please try again.');
           }
