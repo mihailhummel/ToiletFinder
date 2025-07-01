@@ -237,71 +237,234 @@ export const Map = ({ onToiletClick, onAddToiletClick }: MapProps) => {
         iconAnchor: [20, 50]
       });
 
-      // Create popup content
+      // Create enhanced popup content with all details
+      const getLocationName = (toilet: any) => {
+        const notes = toilet.notes || '';
+        const type = toilet.type;
+        
+        // Try to extract a specific name from notes
+        if (notes.toLowerCase().includes('shell')) return 'Toilet at Shell Gas Station';
+        if (notes.toLowerCase().includes('lidl')) return 'Toilet in Lidl Store';
+        if (notes.toLowerCase().includes('mall')) return 'Mall Restroom';
+        if (notes.toLowerCase().includes('park')) return 'Park Public Toilet';
+        if (notes.toLowerCase().includes('station')) return 'Train/Bus Station Toilet';
+        if (notes.toLowerCase().includes('restaurant')) return 'Restaurant Restroom';
+        if (notes.toLowerCase().includes('cafe')) return 'Cafe Restroom';
+        
+        // Fallback based on type
+        switch (type) {
+          case 'gas-station': return 'Gas Station Restroom';
+          case 'restaurant': return 'Restaurant Restroom';
+          case 'cafe': return 'Cafe Restroom';
+          case 'mall': return 'Shopping Mall Restroom';
+          case 'public': return 'Public Toilet';
+          default: return 'Public Restroom';
+        }
+      };
+
+      const getAvailabilityInfo = (toilet: any) => {
+        const notes = toilet.notes || '';
+        const type = toilet.type;
+        
+        // Check for specific availability info in notes
+        if (notes.toLowerCase().includes('free')) return { text: 'Free to use', color: '#10b981' };
+        if (notes.toLowerCase().includes('paid') || notes.toLowerCase().includes('fee')) return { text: 'Paid access', color: '#f59e0b' };
+        if (notes.toLowerCase().includes('customer')) return { text: 'Customers only', color: '#ef4444' };
+        if (notes.toLowerCase().includes('24')) return { text: 'Available 24/7', color: '#10b981' };
+        
+        // Default based on type
+        switch (type) {
+          case 'public': return { text: 'Public access', color: '#10b981' };
+          case 'gas-station': return { text: 'Customers preferred', color: '#f59e0b' };
+          case 'restaurant':
+          case 'cafe': return { text: 'Customers only', color: '#ef4444' };
+          case 'mall': return { text: 'Public during hours', color: '#10b981' };
+          default: return { text: 'Access may vary', color: '#6b7280' };
+        }
+      };
+
+      const getAccessibilityInfo = (toilet: any) => {
+        const notes = toilet.notes || '';
+        
+        if (notes.toLowerCase().includes('wheelchair') || notes.toLowerCase().includes('accessible')) {
+          return { text: 'Wheelchair accessible', icon: '♿', color: '#10b981' };
+        }
+        if (notes.toLowerCase().includes('stairs') || notes.toLowerCase().includes('step')) {
+          return { text: 'May have stairs', icon: '⚠️', color: '#f59e0b' };
+        }
+        return { text: 'Accessibility unknown', icon: '❓', color: '#6b7280' };
+      };
+
+      const locationName = getLocationName(toilet);
+      const availability = getAvailabilityInfo(toilet);
+      const accessibility = getAccessibilityInfo(toilet);
+
       const popupContent = `
-        <div style="max-width: 300px; font-family: system-ui;">
+        <div style="min-width: 320px; max-width: 380px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; line-height: 1.5;">
+          <!-- Header with location name and rating -->
           <div style="
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px 0;
+            padding: 16px 0 12px 0;
             border-bottom: 1px solid #e5e7eb;
-            margin-bottom: 12px;
+            margin-bottom: 16px;
           ">
             <div style="
-              width: 32px;
-              height: 32px;
-              background: #FF385C;
-              border-radius: 50%;
+              display: flex;
+              align-items: flex-start;
+              gap: 12px;
+              margin-bottom: 8px;
+            ">
+              <div style="
+                width: 40px;
+                height: 40px;
+                background: linear-gradient(135deg, #FF385C, #E31C5F);
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 18px;
+                flex-shrink: 0;
+                box-shadow: 0 2px 8px rgba(255, 56, 92, 0.3);
+              ">🚽</div>
+              <div style="flex: 1; min-width: 0;">
+                <h3 style="
+                  font-weight: 600;
+                  font-size: 18px;
+                  color: #111827;
+                  margin: 0 0 4px 0;
+                  line-height: 1.3;
+                ">${locationName}</h3>
+                ${toilet.averageRating && toilet.reviewCount > 0 ? `
+                  <div style="display: flex; align-items: center; gap: 6px;">
+                    <div style="display: flex; color: #FF385C;">
+                      ${'★'.repeat(Math.round(toilet.averageRating))}${'☆'.repeat(5 - Math.round(toilet.averageRating))}
+                    </div>
+                    <span style="font-size: 14px; color: #6b7280; font-weight: 500;">
+                      ${toilet.averageRating.toFixed(1)} (${toilet.reviewCount} review${toilet.reviewCount !== 1 ? 's' : ''})
+                    </span>
+                  </div>
+                ` : `
+                  <div style="font-size: 14px; color: #9ca3af; font-style: italic;">
+                    No reviews yet
+                  </div>
+                `}
+              </div>
+            </div>
+          </div>
+          
+          <!-- Key information cards -->
+          <div style="margin-bottom: 16px;">
+            <!-- Availability -->
+            <div style="
               display: flex;
               align-items: center;
-              justify-content: center;
-              font-size: 16px;
-            ">🚽</div>
-            <div>
-              <div style="font-weight: 600; font-size: 16px; color: #222;">
-                ${toilet.type === 'public' ? 'Public Toilet' : 
-                  toilet.type === 'gas-station' ? 'Gas Station' :
-                  toilet.type === 'restaurant' ? 'Restaurant' :
-                  toilet.type === 'cafe' ? 'Cafe' :
-                  toilet.type === 'mall' ? 'Mall' : 'Other'}
-              </div>
-              ${toilet.averageRating ? `
-                <div style="display: flex; align-items: center; gap: 4px; font-size: 14px; color: #666;">
-                  <span style="color: #FF385C;">★</span>
-                  <span>${toilet.averageRating.toFixed(1)} (${toilet.reviewCount} reviews)</span>
+              gap: 12px;
+              padding: 12px;
+              background: #f9fafb;
+              border-radius: 8px;
+              margin-bottom: 8px;
+              border-left: 4px solid ${availability.color};
+            ">
+              <div style="
+                width: 32px;
+                height: 32px;
+                background: ${availability.color};
+                border-radius: 6px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 14px;
+                color: white;
+                font-weight: bold;
+              ">💳</div>
+              <div>
+                <div style="font-size: 13px; color: #6b7280; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">
+                  Availability
                 </div>
-              ` : '<div style="font-size: 14px; color: #666;">No reviews yet</div>'}
+                <div style="font-size: 15px; color: #111827; font-weight: 600;">
+                  ${availability.text}
+                </div>
+              </div>
+            </div>
+            
+            <!-- Accessibility -->
+            <div style="
+              display: flex;
+              align-items: center;
+              gap: 12px;
+              padding: 12px;
+              background: #f9fafb;
+              border-radius: 8px;
+              border-left: 4px solid ${accessibility.color};
+            ">
+              <div style="
+                width: 32px;
+                height: 32px;
+                background: ${accessibility.color};
+                border-radius: 6px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 16px;
+              ">${accessibility.icon}</div>
+              <div>
+                <div style="font-size: 13px; color: #6b7280; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">
+                  Accessibility
+                </div>
+                <div style="font-size: 15px; color: #111827; font-weight: 600;">
+                  ${accessibility.text}
+                </div>
+              </div>
             </div>
           </div>
           
-          <div style="margin-bottom: 12px;">
-            <div style="font-size: 14px; color: #666; line-height: 1.4;">
-              ${toilet.notes || 'Public toilet facility'}
+          <!-- Description/Notes -->
+          ${toilet.notes ? `
+            <div style="
+              padding: 12px;
+              background: #f0f9ff;
+              border-radius: 8px;
+              border-left: 4px solid #0ea5e9;
+              margin-bottom: 16px;
+            ">
+              <div style="font-size: 13px; color: #0369a1; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">
+                Additional Info
+              </div>
+              <div style="font-size: 14px; color: #374151; line-height: 1.4;">
+                ${toilet.notes}
+              </div>
             </div>
-          </div>
+          ` : ''}
           
-          <div style="display: flex; gap: 8px;">
-            <button onclick="window.viewToiletDetails('${toilet.id}')" style="
+          <!-- Action buttons -->
+          <div style="display: flex; gap: 8px; padding-top: 4px;">
+            <button onclick="window.getDirections(${toilet.coordinates.lat}, ${toilet.coordinates.lng})" style="
               flex: 1;
-              padding: 8px 16px;
-              background: #FF385C;
+              padding: 12px 16px;
+              background: linear-gradient(135deg, #FF385C, #E31C5F);
               color: white;
               border: none;
-              border-radius: 6px;
+              border-radius: 8px;
               font-size: 14px;
-              font-weight: 500;
+              font-weight: 600;
               cursor: pointer;
-            ">View Details</button>
-            <button onclick="window.getDirections(${toilet.coordinates.lat}, ${toilet.coordinates.lng})" style="
-              padding: 8px 12px;
+              transition: all 0.2s;
+              box-shadow: 0 2px 4px rgba(255, 56, 92, 0.2);
+            " onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 8px rgba(255, 56, 92, 0.3)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(255, 56, 92, 0.2)'">
+              🧭 Get Directions
+            </button>
+            <button onclick="window.viewToiletDetails('${toilet.id}')" style="
+              padding: 12px 16px;
               background: #f3f4f6;
               color: #374151;
-              border: none;
-              border-radius: 6px;
+              border: 1px solid #d1d5db;
+              border-radius: 8px;
               font-size: 14px;
+              font-weight: 600;
               cursor: pointer;
-            ">Directions</button>
+              transition: all 0.2s;
+            " onmouseover="this.style.background='#e5e7eb'" onmouseout="this.style.background='#f3f4f6'">
+              📝 Reviews
+            </button>
           </div>
         </div>
       `;
@@ -309,10 +472,13 @@ export const Map = ({ onToiletClick, onAddToiletClick }: MapProps) => {
       const marker = window.L.marker([toilet.coordinates.lat, toilet.coordinates.lng], { icon })
         .addTo(map.current)
         .bindPopup(popupContent, {
-          maxWidth: 320,
+          maxWidth: 400,
+          minWidth: 350,
           className: 'toilet-popup',
           closeButton: true,
-          offset: [0, -40] // Offset to appear above the pin
+          offset: [0, -40], // Offset to appear above the pin
+          autoPan: true,
+          keepInView: true
         })
         .on('click', (e: any) => {
           e.originalEvent?.stopPropagation();
