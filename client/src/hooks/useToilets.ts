@@ -60,7 +60,7 @@ export const useAddReview = () => {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["reviews", variables.toiletId] });
-      queryClient.invalidateQueries({ queryKey: ["toilets"] });
+      // Don't invalidate toilets cache to avoid clearing map markers
     },
   });
 };
