@@ -276,7 +276,13 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
 
     console.log('Map markers useEffect triggered, stableToilets count:', stableToilets.length);
 
-    // Only clear markers if we actually have new toilet data
+    // Don't clear markers if we already have the same number - prevents disappearing
+    if (markers.current.length === stableToilets.length) {
+      console.log('Markers already match toilet count, skipping re-render');
+      return;
+    }
+
+    // Only clear markers if we need to update them
     if (markers.current.length > 0) {
       markers.current.forEach(marker => {
         try {

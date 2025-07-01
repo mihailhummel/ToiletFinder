@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
 import { Toaster } from "@/components/ui/toaster";
@@ -75,9 +75,17 @@ function App() {
     setShowAddToilet(true);
   };
 
-  const handleMapClick = (location: MapLocation) => {
+  const handleMapClick = useCallback((location: MapLocation) => {
     setMapCenter(location);
-  };
+  }, []);
+
+  const handleLoginClick = useCallback(() => {
+    setShowLogin(true);
+  }, []);
+
+  const handleToiletClick = useCallback((toilet: Toilet) => {
+    setSelectedToilet(toilet);
+  }, []);
 
   if (authLoading) {
     return (
@@ -132,9 +140,9 @@ function App() {
           {/* Map Container */}
           <main className="flex-1 pt-20 relative">
             <Map
-              onToiletClick={setSelectedToilet}
+              onToiletClick={handleToiletClick}
               onAddToiletClick={handleMapClick}
-              onLoginClick={() => setShowLogin(true)}
+              onLoginClick={handleLoginClick}
             />
             
 
