@@ -216,11 +216,17 @@ function App() {
             
             {/* Floating Action Button */}
             <Button
-              onClick={handleAddToilet}
-              className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-blue-600 hover:bg-blue-700 shadow-lg z-30"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log("Floating button clicked!");
+                handleAddToilet();
+              }}
+              className="fixed bottom-6 right-6 w-16 h-16 rounded-full bg-red-600 hover:bg-red-700 shadow-lg z-[9999] pointer-events-auto"
               size="icon"
+              style={{ position: 'fixed', zIndex: 9999, backgroundColor: '#dc2626' }}
             >
-              <Plus className="w-6 h-6 text-white" />
+              <Plus className="w-8 h-8 text-white" />
             </Button>
 
           </main>
