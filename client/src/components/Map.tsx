@@ -316,47 +316,59 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
 
   // Update user location and center map
   useEffect(() => {
-    if (!map.current || !userLocation) return;
+    if (!map.current || !userLocation) {
+      console.log('Map not ready or no user location:', { mapReady: !!map.current, userLocation });
+      return;
+    }
+
+    console.log('Adding user location marker at:', userLocation);
 
     // Remove existing user marker
     if (userMarker.current) {
       map.current.removeLayer(userMarker.current);
     }
 
-    // Create modern user location marker with pulsing effect
+    // Create larger, more visible user location marker with pulsing effect
     const userIcon = window.L.divIcon({
       className: 'user-location-marker',
       html: `
         <div style="
           position: relative;
-          width: 20px;
-          height: 20px;
+          width: 30px;
+          height: 30px;
+          z-index: 1000;
         ">
           <div style="
             position: absolute;
             width: 20px;
             height: 20px;
-            background: #3b82f6;
-            border: 3px solid white;
+            top: 5px;
+            left: 5px;
+            background: #0066ff;
+            border: 4px solid white;
             border-radius: 50%;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
-            animation: pulse 2s infinite;
+            box-shadow: 0 0 0 4px rgba(0, 102, 255, 0.3), 0 4px 8px rgba(0, 0, 0, 0.2);
+            animation: userPulse 2s infinite;
           "></div>
         </div>
         <style>
-          @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
-            70% { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+          @keyframes userPulse {
+            0% { box-shadow: 0 0 0 0 rgba(0, 102, 255, 0.8), 0 4px 8px rgba(0, 0, 0, 0.2); }
+            70% { box-shadow: 0 0 0 15px rgba(0, 102, 255, 0), 0 4px 8px rgba(0, 0, 0, 0.2); }
+            100% { box-shadow: 0 0 0 0 rgba(0, 102, 255, 0), 0 4px 8px rgba(0, 0, 0, 0.2); }
           }
         </style>
       `,
-      iconSize: [20, 20],
-      iconAnchor: [10, 10]
+      iconSize: [30, 30],
+      iconAnchor: [15, 15]
     });
 
-    userMarker.current = window.L.marker([userLocation.lat, userLocation.lng], { icon: userIcon })
-      .addTo(map.current);
+    userMarker.current = window.L.marker([userLocation.lat, userLocation.lng], { 
+      icon: userIcon,
+      zIndexOffset: 1000 // Make sure it appears above other markers
+    }).addTo(map.current);
+
+    console.log('User marker added to map');
 
     // Center map on user location with high zoom (100m radius)
     map.current.setView([userLocation.lat, userLocation.lng], 18);
