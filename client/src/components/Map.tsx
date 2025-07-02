@@ -128,22 +128,20 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
       (window as any).setRating = (toiletId: string, rating: number) => {
         // Update star display
         const starsContainer = document.getElementById(`stars-${toiletId}`);
-        const ratingText = document.getElementById(`rating-text-${toiletId}`);
         const reviewForm = document.getElementById(`review-form-${toiletId}`);
         
-        if (starsContainer && ratingText && reviewForm) {
+        if (starsContainer && reviewForm) {
           // Update stars visual with yellow color
           const stars = starsContainer.querySelectorAll('button');
           stars.forEach((star, index) => {
             if (index < rating) {
-              star.style.color = '#facc15'; // yellow-400
+              star.style.color = '#fbbf24'; // bright yellow
             } else {
               star.style.color = '#cbd5e1';
             }
           });
           
-          // Update text and show review form
-          ratingText.textContent = `${rating} star${rating !== 1 ? 's' : ''} selected`;
+          // Show review form
           reviewForm.style.display = 'block';
           
           // Store rating temporarily
@@ -198,19 +196,17 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
 
       (window as any).cancelReview = (toiletId: string) => {
         const starsContainer = document.getElementById(`stars-${toiletId}`);
-        const ratingText = document.getElementById(`rating-text-${toiletId}`);
         const reviewForm = document.getElementById(`review-form-${toiletId}`);
         const reviewInput = document.getElementById(`review-input-${toiletId}`) as HTMLTextAreaElement;
         
-        if (starsContainer && ratingText && reviewForm && reviewInput) {
+        if (starsContainer && reviewForm && reviewInput) {
           // Reset stars
           const stars = starsContainer.querySelectorAll('button');
           stars.forEach(star => {
             (star as HTMLElement).style.color = '#cbd5e1';
           });
           
-          // Reset text and hide form
-          ratingText.textContent = 'Tap to rate';
+          // Hide form and reset input
           reviewForm.style.display = 'none';
           reviewInput.value = '';
           
@@ -728,9 +724,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
                   </button>
                 `).join('')}
               </div>
-              <span id="rating-text-${toilet.id}" style="font-size: 14px; color: #64748b;">
-                Tap to rate
-              </span>
+
             </div>
             <div id="review-form-${toilet.id}" style="display: none;">
               <textarea id="review-input-${toilet.id}" placeholder="Share your experience (optional)" style="

@@ -281,7 +281,7 @@ iframe[src*="/@react-refresh"] {
   
   /* App header responsive */
   .app-header {
-    padding: 12px 16px !important;
+    /* padding: 12px 16px !important; */
   }
   
   /* Map container safe areas */
