@@ -98,15 +98,30 @@ function App() {
 
   const handleLocationSelectionRequest = useCallback((type: ToiletType, notes: string) => {
     console.log("Location selection requested for:", { type, notes });
-    console.log("Setting isAddingToilet to true");
-    // Step 3: User submitted form, now request location selection
-    setPendingToiletData({ type, notes });
-    setIsAddingToilet(true);
-    setPendingToiletLocation(undefined);
-    setShowAddToilet(false); // Close the modal
-    console.log("isAddingToilet should now be true");
+    
+    // Use functional updates to ensure state consistency
+    setPendingToiletData(() => {
+      console.log("Setting pendingToiletData to:", { type, notes });
+      return { type, notes };
+    });
+    
+    setIsAddingToilet(() => {
+      console.log("Setting isAddingToilet to true");
+      return true;
+    });
+    
+    setPendingToiletLocation(() => {
+      console.log("Clearing pendingToiletLocation");
+      return undefined;
+    });
+    
+    setShowAddToilet(() => {
+      console.log("Closing modal");
+      return false;
+    });
+    
     toast({
-      title: "Select Location",
+      title: "Select Location", 
       description: "Tap on the map where you want to add the toilet"
     });
   }, [toast]);
@@ -261,14 +276,21 @@ function App() {
           <AddToiletModal
             isOpen={showAddToilet}
             onClose={() => {
-              console.log("AddToiletModal onClose called");
+              console.log("AddToiletModal onClose called, current states:", { 
+                isAddingToilet, 
+                pendingToiletData,
+                pendingToiletLocation 
+              });
               setShowAddToilet(false);
-              // Only reset these if we're not in location selection mode
-              if (!isAddingToilet) {
+              // Only reset if we have a location (successful submission) or user cancelled
+              if (pendingToiletLocation || !pendingToiletData) {
+                console.log("Resetting states in onClose");
                 setPendingToiletLocation(undefined);
                 setPendingToiletData(null);
+                setIsAddingToilet(false);
+              } else {
+                console.log("NOT resetting states - in location selection mode");
               }
-              // Don't reset isAddingToilet here - it's managed by the workflow
             }}
             location={pendingToiletLocation}
             onRequestLocationSelection={handleLocationSelectionRequest}
