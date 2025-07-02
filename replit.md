@@ -124,6 +124,9 @@ Changelog:
 - July 02, 2025. Fixed user location marker visibility and modal z-index issues
 - July 02, 2025. Resolved location marker persistence problem with proper verification and re-adding logic
 - July 02, 2025. Perfected user location marker with blue dot (CircleMarker) and pulsing ring (DivIcon) with 1.5s animation
+- July 02, 2025. MAJOR: Imported complete OpenStreetMap toilet dataset for Bulgaria - expanded from ~80 to 961 facilities
+- July 02, 2025. Created efficient bulk import system using Overpass API and parallel processing
+- July 02, 2025. Added comprehensive toilet information including opening hours, fees, accessibility, and operators
 ```
 
 ## User Preferences
