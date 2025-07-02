@@ -354,10 +354,10 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
             height: 24px;
             top: 8px;
             left: 8px;
-            background: #FF385C;
+            background: #3b82f6;
             border: 5px solid white;
             border-radius: 50%;
-            box-shadow: 0 0 0 5px rgba(255, 56, 92, 0.4), 0 6px 12px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 0 0 5px rgba(59, 130, 246, 0.4), 0 6px 12px rgba(0, 0, 0, 0.3);
             animation: userLocationPulse 2s infinite;
             z-index: 9999;
           "></div>
@@ -368,15 +368,15 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
           }
           @keyframes userLocationPulse {
             0% { 
-              box-shadow: 0 0 0 0 rgba(255, 56, 92, 0.9), 0 6px 12px rgba(0, 0, 0, 0.3);
+              box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.9), 0 6px 12px rgba(0, 0, 0, 0.3);
               transform: scale(1);
             }
             70% { 
-              box-shadow: 0 0 0 20px rgba(255, 56, 92, 0), 0 6px 12px rgba(0, 0, 0, 0.3);
+              box-shadow: 0 0 0 20px rgba(59, 130, 246, 0), 0 6px 12px rgba(0, 0, 0, 0.3);
               transform: scale(1.1);
             }
             100% { 
-              box-shadow: 0 0 0 0 rgba(255, 56, 92, 0), 0 6px 12px rgba(0, 0, 0, 0.3);
+              box-shadow: 0 0 0 0 rgba(59, 130, 246, 0), 0 6px 12px rgba(0, 0, 0, 0.3);
               transform: scale(1);
             }
           }
