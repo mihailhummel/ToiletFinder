@@ -280,7 +280,13 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
 
   // Initialize map
   useEffect(() => {
-    if (!leafletLoaded || !mapContainer.current || map.current) return;
+    if (!leafletLoaded || !mapContainer.current) return;
+    
+    // Don't reinitialize if map already exists and is functional
+    if (map.current && map.current.getContainer()) {
+      console.log('Map already initialized and functional, skipping reinitialization');
+      return;
+    }
 
     // Use a default center (Sofia) until user location is available
     const initialCenter = userLocation || { lat: 42.6977, lng: 23.3219 };
@@ -335,14 +341,28 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
       }
       // Reset markers initialization flag when map is cleaned up
       markersInitialized.current = false;
+      userLocationSet.current = false;
     };
   }, [leafletLoaded, stableUserLocation, user, onAddToiletClick]);
+
+  // Use ref to track if user location marker is already set
+  const userLocationSet = useRef(false);
 
   // Update user location and center map
   useEffect(() => {
     if (!map.current || !stableUserLocation || !leafletLoaded) {
       console.log('Map not ready or no user location:', { mapReady: !!map.current, userLocation: stableUserLocation, leafletLoaded });
       return;
+    }
+
+    // Don't re-add user location marker if it's already set at the same location
+    if (userLocationSet.current && userMarker.current && userRingMarker.current) {
+      const existingLatLng = userMarker.current.getLatLng();
+      if (Math.abs(existingLatLng.lat - stableUserLocation.lat) < 0.0001 && 
+          Math.abs(existingLatLng.lng - stableUserLocation.lng) < 0.0001) {
+        console.log('User location marker already set at this location, skipping');
+        return;
+      }
     }
 
     console.log('Adding user location marker at:', stableUserLocation);
@@ -407,6 +427,9 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
 
     // Center map on user location with 200m radius view
     map.current.setView([stableUserLocation.lat, stableUserLocation.lng], 16);
+    
+    // Mark user location as set
+    userLocationSet.current = true;
   }, [stableUserLocation, leafletLoaded]);
 
   // Use ref to track if markers are already initialized to prevent re-rendering
@@ -916,6 +939,13 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
 
 // Memoize the Map component to prevent re-renders when user state changes
 export const Map = memo(MapComponent, (prevProps, nextProps) => {
+  // Log to debug callback changes
+  console.log('Map memo check:', {
+    toiletClickSame: prevProps.onToiletClick === nextProps.onToiletClick,
+    addToiletSame: prevProps.onAddToiletClick === nextProps.onAddToiletClick,
+    loginSame: prevProps.onLoginClick === nextProps.onLoginClick
+  });
+  
   // Only re-render if the callback functions have changed
   return (
     prevProps.onToiletClick === nextProps.onToiletClick &&
