@@ -95,10 +95,13 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
         if (starsContainer) {
           const stars = starsContainer.querySelectorAll('button');
           stars.forEach((star, index) => {
+            const starElement = star as HTMLElement;
             if (index < rating) {
-              star.style.color = '#facc15'; // yellow-400
+              starElement.style.color = '#fbbf24'; // bright yellow
+              starElement.style.transform = 'scale(1.1)';
             } else {
-              star.style.color = '#cbd5e1'; // gray-300
+              starElement.style.color = '#cbd5e1'; // gray-300
+              starElement.style.transform = 'scale(1)';
             }
           });
         }
@@ -111,11 +114,13 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
           const stars = starsContainer.querySelectorAll('button');
           const selectedRating = (currentRating && currentRating.toiletId === toiletId) ? currentRating.rating : 0;
           stars.forEach((star, index) => {
+            const starElement = star as HTMLElement;
             if (index < selectedRating) {
-              star.style.color = '#facc15'; // yellow-400
+              starElement.style.color = '#fbbf24'; // bright yellow
             } else {
-              star.style.color = '#cbd5e1'; // gray-300
+              starElement.style.color = '#cbd5e1'; // gray-300
             }
+            starElement.style.transform = 'scale(1)'; // reset scale
           });
         }
       };
@@ -697,20 +702,24 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
               Rate this toilet
             </div>
             <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-              <div id="stars-${toilet.id}" style="display: flex; gap: 2px;">
+              <div id="stars-${toilet.id}" style="display: flex; gap: 0px;">
                 ${[1,2,3,4,5].map(rating => `
                   <button onclick="window.setRating('${toilet.id}', ${rating})" style="
                     background: none;
                     border: none;
-                    font-size: 18px;
+                    font-size: 16px;
                     cursor: pointer;
                     color: #cbd5e1;
-                    transition: color 0.2s;
-                    padding: 4px;
-                    min-width: 32px;
-                    min-height: 32px;
-                    border-radius: 6px;
-                  " ontouchstart="window.hoverStars('${toilet.id}', ${rating})" ontouchend="window.resetStars('${toilet.id}')">
+                    transition: all 0.2s ease;
+                    padding: 2px;
+                    min-width: 24px;
+                    min-height: 24px;
+                    border-radius: 4px;
+                  " 
+                  onmouseover="window.hoverStars('${toilet.id}', ${rating})" 
+                  onmouseout="window.resetStars('${toilet.id}')"
+                  ontouchstart="window.hoverStars('${toilet.id}', ${rating})" 
+                  ontouchend="window.resetStars('${toilet.id}')">
                     ★
                   </button>
                 `).join('')}
@@ -851,7 +860,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
       )}
       
       {/* Map Controls */}
-      <div className="absolute top-6 right-6 space-y-3" style={{ zIndex: 5000 }}>
+      <div className="absolute top-6 right-6 space-y-3" style={{ zIndex: 1000 }}>
         {/* Return to Location Button - always show when user location available */}
         {userLocation && (
           <Button
@@ -869,7 +878,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
       <Button
         onClick={handleAddToilet}
         className="fixed bottom-8 right-8 w-16 h-16 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-full shadow-xl p-0 transition-all duration-200 hover:scale-105 active:scale-95 border-2 border-white"
-        style={{ zIndex: 5001 }}
+        style={{ zIndex: 1000 }}
         disabled={!user}
         title={!user ? "Sign in to add locations" : "Add toilet location"}
       >
