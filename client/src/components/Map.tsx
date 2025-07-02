@@ -332,6 +332,41 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
         iconAnchor: [20, 50]
       });
 
+      // Generate additional info sections
+      const getOpeningHours = () => {
+        if (toilet.tags?.opening_hours) return toilet.tags.opening_hours;
+        return null;
+      };
+
+      const getFeeInfo = () => {
+        if (toilet.tags?.fee === 'no') return 'Free';
+        if (toilet.tags?.fee === 'yes') return 'Paid';
+        if (toilet.notes?.toLowerCase().includes('fee: no')) return 'Free';
+        return null;
+      };
+
+      const getAccessibilityInfo = () => {
+        if (toilet.tags?.wheelchair === 'yes') return 'Wheelchair accessible';
+        if (toilet.tags?.wheelchair === 'no') return 'Not wheelchair accessible';
+        if (toilet.notes?.toLowerCase().includes('wheelchair accessible: no')) return 'Not wheelchair accessible';
+        if (toilet.notes?.toLowerCase().includes('wheelchair accessible: yes')) return 'Wheelchair accessible';
+        return null;
+      };
+
+      const getGenderInfo = () => {
+        const male = toilet.tags?.male === 'yes';
+        const female = toilet.tags?.female === 'yes';
+        if (male && female) return 'Male & Female';
+        if (male) return 'Male only';
+        if (female) return 'Female only';
+        return null;
+      };
+
+      const openingHours = getOpeningHours();
+      const feeInfo = getFeeInfo();
+      const accessibilityInfo = getAccessibilityInfo();
+      const genderInfo = getGenderInfo();
+
       const popupContent = `
         <div style="font-family: system-ui, -apple-system, sans-serif; min-width: 280px;">
           <div style="margin-bottom: 12px;">
@@ -344,6 +379,36 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
               </div>
             </div>
           </div>
+          
+          ${openingHours || feeInfo || accessibilityInfo || genderInfo ? `
+          <div style="margin-bottom: 12px; border-top: 1px solid #e5e7eb; padding-top: 12px;">
+            ${openingHours ? `
+              <div style="display: flex; align-items: center; margin-bottom: 6px;">
+                <span style="font-size: 14px; color: #6b7280; margin-right: 8px;">🕒</span>
+                <span style="font-size: 13px; color: #374151;">${openingHours}</span>
+              </div>
+            ` : ''}
+            ${feeInfo ? `
+              <div style="display: flex; align-items: center; margin-bottom: 6px;">
+                <span style="font-size: 14px; color: #6b7280; margin-right: 8px;">💰</span>
+                <span style="font-size: 13px; color: #374151;">${feeInfo}</span>
+              </div>
+            ` : ''}
+            ${accessibilityInfo ? `
+              <div style="display: flex; align-items: center; margin-bottom: 6px;">
+                <span style="font-size: 14px; color: #6b7280; margin-right: 8px;">♿</span>
+                <span style="font-size: 13px; color: #374151;">${accessibilityInfo}</span>
+              </div>
+            ` : ''}
+            ${genderInfo ? `
+              <div style="display: flex; align-items: center; margin-bottom: 6px;">
+                <span style="font-size: 14px; color: #6b7280; margin-right: 8px;">👥</span>
+                <span style="font-size: 13px; color: #374151;">${genderInfo}</span>
+              </div>
+            ` : ''}
+          </div>
+          ` : ''}
+          
           <div id="reviews-${toilet.id}"></div>
           <div style="padding-top: 16px;">
             <button onclick="window.getDirections(${toilet.coordinates.lat}, ${toilet.coordinates.lng})" style="
