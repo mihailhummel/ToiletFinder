@@ -160,7 +160,7 @@ function App() {
           <main className="flex-1 pt-20 relative">
             <Map
               onToiletClick={handleToiletClick}
-              onAddToiletClick={handleMapClick}
+              onAddToiletClick={handleAddToilet}
               onLoginClick={handleLoginClick}
             />
             

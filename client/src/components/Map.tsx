@@ -36,7 +36,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
   const userMarker = useRef<any>(null);
   const [leafletLoaded, setLeafletLoaded] = useState(false);
   const [isAwayFromUser, setIsAwayFromUser] = useState(false);
-  const [userMarkerPosition, setUserMarkerPosition] = useState<{ x: number, y: number } | null>(null);
+
   
   const { location: userLocation, loading: locationLoading, getCurrentLocation } = useGeolocation();
   
@@ -305,22 +305,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
       setIsAwayFromUser(distance > 50); // 50 meters threshold
     });
 
-    // Update marker position on moveend for smoother experience
-    map.current.on('moveend', () => {
-      if (!userLocation) return;
-      const point = map.current.latLngToContainerPoint([userLocation.lat, userLocation.lng]);
-      setUserMarkerPosition({ x: point.x, y: point.y });
-    });
 
-    // Also update during zoom for immediate feedback
-    map.current.on('zoom', () => {
-      if (!userLocation) return;
-      clearTimeout(updateTimeout);
-      updateTimeout = setTimeout(() => {
-        const point = map.current.latLngToContainerPoint([userLocation.lat, userLocation.lng]);
-        setUserMarkerPosition({ x: point.x, y: point.y });
-      }, 16); // ~60fps
-    });
 
     // Add click handler for adding toilets (only if user is authenticated)
     map.current.on('click', (e: any) => {
@@ -357,19 +342,29 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
       map.current.removeLayer(userMarker.current);
     }
 
-    // Convert lat/lng to pixel coordinates for CSS overlay
-    const point = map.current.latLngToContainerPoint([userLocation.lat, userLocation.lng]);
-    setUserMarkerPosition({ x: point.x, y: point.y });
-
-    // Also add a fallback Leaflet marker (but it might not be visible)
+    // Create a prominent user location marker using Leaflet
     userMarker.current = window.L.circleMarker([userLocation.lat, userLocation.lng], {
-      radius: 12,
+      radius: 8,
       fillColor: '#3b82f6',
       color: 'white',
-      weight: 4,
+      weight: 3,
       opacity: 1,
-      fillOpacity: 0.9,
-      interactive: false
+      fillOpacity: 1,
+      interactive: false,
+      pane: 'overlayPane' // Ensure it appears above map tiles
+    }).addTo(map.current);
+
+    // Add a pulsing ring effect using a second marker
+    const pulseMarker = window.L.circleMarker([userLocation.lat, userLocation.lng], {
+      radius: 15,
+      fillColor: 'transparent',
+      color: '#3b82f6',
+      weight: 2,
+      opacity: 0.6,
+      fillOpacity: 0,
+      interactive: false,
+      className: 'pulse-ring',
+      pane: 'overlayPane'
     }).addTo(map.current);
 
     console.log('User marker added to map');
@@ -821,24 +816,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
       {/* Map Container */}
       <div ref={mapContainer} className="w-full h-full" />
       
-      {/* CSS-based user location marker overlay */}
-      {userMarkerPosition && (
-        <div
-          className="absolute pointer-events-none transition-all duration-75 ease-out"
-          style={{
-            left: userMarkerPosition.x - 20,
-            top: userMarkerPosition.y - 20,
-            zIndex: 999999
-          }}
-        >
-          <div className="relative w-10 h-10">
-            {/* Pulsing background circle */}
-            <div className="absolute inset-0 bg-blue-500 rounded-full opacity-30 animate-ping"></div>
-            {/* Main location dot */}
-            <div className="absolute top-2 left-2 w-6 h-6 bg-blue-500 border-4 border-white rounded-full shadow-lg"></div>
-          </div>
-        </div>
-      )}
+
       
       {/* Loading overlay */}
       {(!leafletLoaded || locationLoading) && (
