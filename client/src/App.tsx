@@ -100,31 +100,28 @@ function App() {
   const handleLocationSelectionRequest = useCallback((type: ToiletType, notes: string) => {
     console.log("Location selection requested for:", { type, notes });
     
-    // Set flag to prevent onClose from interfering
+    // Set the flag first to prevent onClose from interfering
     setIsTransitioningToLocationMode(true);
     
-    // Use functional updates to ensure state consistency
-    setPendingToiletData(() => {
-      console.log("Setting pendingToiletData to:", { type, notes });
-      return { type, notes };
-    });
+    // Set states
+    console.log("Setting pendingToiletData to:", { type, notes });
+    setPendingToiletData({ type, notes });
     
-    setIsAddingToilet(() => {
-      console.log("Setting isAddingToilet to true");
-      return true;
-    });
+    console.log("Setting isAddingToilet to true");
+    setIsAddingToilet(true);
     
-    setPendingToiletLocation(() => {
-      console.log("Clearing pendingToiletLocation");
-      return undefined;
-    });
+    console.log("Clearing pendingToiletLocation");
+    setPendingToiletLocation(undefined);
     
-    // Close modal after a slight delay to ensure state is set
+    // Close modal without triggering onClose reset
+    console.log("Closing modal programmatically");
+    setShowAddToilet(false);
+    
+    // Clear the flag after modal is closed
     setTimeout(() => {
-      setShowAddToilet(false);
       setIsTransitioningToLocationMode(false);
-      console.log("Modal closed, transition complete");
-    }, 50);
+      console.log("Transition flag cleared, ready for map clicks");
+    }, 100);
     
     toast({
       title: "Select Location", 
@@ -288,7 +285,7 @@ function App() {
                 return;
               }
               
-              console.log("Processing normal onClose");
+              console.log("Processing normal user close");
               setShowAddToilet(false);
               setPendingToiletLocation(undefined);
               setPendingToiletData(null);
