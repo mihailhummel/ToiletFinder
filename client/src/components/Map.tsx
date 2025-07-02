@@ -327,59 +327,43 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
 
     console.log('Adding user location marker at:', userLocation);
 
-    // Remove existing user markers
+    // Remove existing user marker
     if (userMarker.current) {
       map.current.removeLayer(userMarker.current);
     }
-    if (userRingMarker.current) {
-      map.current.removeLayer(userRingMarker.current);
-    }
 
-    // Create a slightly bigger blue user location marker
-    userMarker.current = window.L.circleMarker([userLocation.lat, userLocation.lng], {
-      radius: 10,
-      fillColor: '#3b82f6',
-      color: '#ffffff',
-      weight: 3,
-      opacity: 1,
-      fillOpacity: 1,
+    // Create user location marker with DivIcon for reliable animation
+    const userLocationIcon = window.L.divIcon({
+      className: 'user-location-marker-container',
+      html: `
+        <div class="user-location-dot"></div>
+        <div class="user-location-pulse"></div>
+      `,
+      iconSize: [40, 40],
+      iconAnchor: [20, 20]
+    });
+
+    userMarker.current = window.L.marker([userLocation.lat, userLocation.lng], {
+      icon: userLocationIcon,
       interactive: false,
       zIndexOffset: 1000
     }).addTo(map.current);
 
-    // Add a pulsing outer ring
-    userRingMarker.current = window.L.circleMarker([userLocation.lat, userLocation.lng], {
-      radius: 18,
-      fillColor: 'transparent',
-      color: '#3b82f6',
-      weight: 2,
-      opacity: 0.6,
-      fillOpacity: 0,
-      interactive: false,
-      className: 'user-location-pulse',
-      zIndexOffset: 999
-    }).addTo(map.current);
-
     console.log('User marker added to map');
     
-    // Verify markers are actually on the map
+    // Verify marker is actually on the map
     setTimeout(() => {
       if (map.current && userMarker.current) {
         const hasMarker = map.current.hasLayer(userMarker.current);
-        const hasRing = map.current.hasLayer(userRingMarker.current);
-        console.log('Marker verification:', { hasMarker, hasRing, markerLatLng: userMarker.current.getLatLng() });
+        console.log('Marker verification:', { hasMarker, markerLatLng: userMarker.current.getLatLng() });
         
         // Force map to redraw
         map.current.invalidateSize();
         
-        // If markers aren't showing, try re-adding them
+        // If marker isn't showing, try re-adding it
         if (!hasMarker) {
           console.log('Re-adding user marker');
           userMarker.current.addTo(map.current);
-        }
-        if (!hasRing) {
-          console.log('Re-adding ring marker'); 
-          userRingMarker.current.addTo(map.current);
         }
       }
     }, 200);
