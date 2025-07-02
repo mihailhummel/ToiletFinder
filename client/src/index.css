@@ -126,21 +126,25 @@ iframe[src*="/@react-refresh"] {
   display: block !important;
 }
 
-/* Simple pulse animation for CircleMarkers */
+/* Pulse animation that works reliably */
 @keyframes pulse {
   0% {
     opacity: 0.6;
+    transform: scale(1);
   }
   50% {
     opacity: 0.2;
+    transform: scale(1.2);
   }
   100% {
     opacity: 0.6;
+    transform: scale(1);
   }
 }
 
-.user-location-pulse {
-  animation: pulse 2s infinite;
+.pulse-ring-container {
+  background: transparent !important;
+  border: none !important;
 }
 
 /* Loading animation */

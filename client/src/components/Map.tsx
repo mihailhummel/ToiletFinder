@@ -347,16 +347,17 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
       zIndexOffset: 1000
     }).addTo(map.current);
 
-    // Add a pulsing outer ring
-    userRingMarker.current = window.L.circleMarker([userLocation.lat, userLocation.lng], {
-      radius: 18,
-      fillColor: 'transparent',
-      color: '#3b82f6',
-      weight: 2,
-      opacity: 0.6,
-      fillOpacity: 0,
+    // Add a pulsing outer ring using DivIcon with inline animation
+    const pulseIcon = window.L.divIcon({
+      className: 'pulse-ring-container',
+      html: '<div style="width: 36px; height: 36px; border: 2px solid #3b82f6; border-radius: 50%; animation: pulse 2s infinite; opacity: 0.6;"></div>',
+      iconSize: [36, 36],
+      iconAnchor: [18, 18]
+    });
+
+    userRingMarker.current = window.L.marker([userLocation.lat, userLocation.lng], {
+      icon: pulseIcon,
       interactive: false,
-      className: 'user-location-pulse',
       zIndexOffset: 999
     }).addTo(map.current);
 
