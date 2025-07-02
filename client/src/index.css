@@ -126,55 +126,21 @@ iframe[src*="/@react-refresh"] {
   display: block !important;
 }
 
-/* User location marker styles */
-.user-location-marker-container {
-  position: relative;
-  width: 40px;
-  height: 40px;
-}
-
-.user-location-dot {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 20px;
-  height: 20px;
-  background-color: #3b82f6;
-  border: 3px solid white;
-  border-radius: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 2;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-}
-
-.user-location-pulse {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 36px;
-  height: 36px;
-  border: 2px solid #3b82f6;
-  border-radius: 50%;
-  background: transparent;
-  transform: translate(-50%, -50%);
-  transform-origin: center;
-  z-index: 1;
-  animation: pulse 2s infinite;
-}
-
+/* Simple pulse animation for CircleMarkers */
 @keyframes pulse {
   0% {
     opacity: 0.6;
-    transform: translate(-50%, -50%) scale(1);
   }
   50% {
-    opacity: 0.1;
-    transform: translate(-50%, -50%) scale(1.2);
+    opacity: 0.2;
   }
   100% {
     opacity: 0.6;
-    transform: translate(-50%, -50%) scale(1);
   }
+}
+
+.user-location-pulse {
+  animation: pulse 2s infinite;
 }
 
 /* Loading animation */
