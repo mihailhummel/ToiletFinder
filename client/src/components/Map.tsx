@@ -800,7 +800,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
             ⚠️ This toilet doesn't exist
           </button>
           
-          ${isAdmin ? `
+          ${isAdmin && currentUser?.email === 'mihail.dilyanov@gmail.com' ? `
           <!-- Admin Delete Button -->
           <button 
             onclick="window.deleteToilet('${toilet.id}')" 

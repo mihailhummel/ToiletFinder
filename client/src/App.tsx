@@ -69,10 +69,13 @@ function App() {
   };
 
   const handleAddToilet = useCallback(() => {
+    console.log("Add toilet button clicked, user:", !!user);
     if (!user) {
+      console.log("No user found, showing login modal");
       setShowLogin(true);
       return;
     }
+    console.log("Starting add toilet mode");
     // Step 1: Start add toilet mode
     setIsAddingToilet(true);
     setPendingToiletLocation(undefined);
@@ -83,7 +86,9 @@ function App() {
   }, [user, toast]);
 
   const handleMapClick = useCallback((location: MapLocation) => {
+    console.log("Map clicked, isAddingToilet:", isAddingToilet, "location:", location);
     if (isAddingToilet) {
+      console.log("Processing map click for toilet addition");
       // Step 4: User clicks on map to select location
       setPendingToiletLocation(location);
       setIsAddingToilet(false); // Exit add toilet mode
