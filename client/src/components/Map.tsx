@@ -140,11 +140,127 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
         }
       };
 
+      (window as any).setRating = (toiletId: string, rating: number) => {
+        (window as any).currentRating = { toiletId, rating };
+        
+        // Update star display
+        for (let i = 1; i <= 5; i++) {
+          const star = document.getElementById(`star-${toiletId}-${i}`);
+          if (star) {
+            star.innerHTML = i <= rating ? '★' : '☆';
+            star.style.color = i <= rating ? '#facc15' : '#d1d5db';
+          }
+        }
+        
+        // Enable submit button
+        const submitBtn = document.getElementById(`submit-btn-${toiletId}`) as HTMLButtonElement;
+        const cancelBtn = document.getElementById(`cancel-btn-${toiletId}`);
+        if (submitBtn && cancelBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = 'Submit Review';
+          submitBtn.style.opacity = '1';
+          cancelBtn.style.display = 'inline-block';
+        }
+      };
+
+      (window as any).hoverStars = (toiletId: string, rating: number) => {
+        for (let i = 1; i <= 5; i++) {
+          const star = document.getElementById(`star-${toiletId}-${i}`);
+          if (star) {
+            star.innerHTML = i <= rating ? '★' : '☆';
+            star.style.color = i <= rating ? '#facc15' : '#d1d5db';
+          }
+        }
+      };
+
+      (window as any).resetStars = (toiletId: string) => {
+        const currentRating = (window as any).currentRating;
+        const rating = currentRating?.toiletId === toiletId ? currentRating.rating : 0;
+        
+        for (let i = 1; i <= 5; i++) {
+          const star = document.getElementById(`star-${toiletId}-${i}`);
+          if (star) {
+            star.innerHTML = i <= rating ? '★' : '☆';
+            star.style.color = i <= rating ? '#facc15' : '#d1d5db';
+          }
+        }
+      };
+
+      (window as any).submitReview = async (toiletId: string) => {
+        const currentRating = (window as any).currentRating;
+        if (!currentRating || currentRating.toiletId !== toiletId) return;
+        
+        if (!user) {
+          onLoginClick();
+          return;
+        }
+
+        try {
+          const response = await fetch(`/api/toilets/${toiletId}/reviews`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              rating: currentRating.rating,
+              text: '',
+              userName: user.displayName,
+              userId: user.uid
+            })
+          });
+
+          if (response.ok) {
+            (window as any).currentRating = undefined;
+            (window as any).loadReviews(toiletId);
+            
+            // Reset UI
+            const submitBtn = document.getElementById(`submit-btn-${toiletId}`) as HTMLButtonElement;
+            const cancelBtn = document.getElementById(`cancel-btn-${toiletId}`);
+            if (submitBtn && cancelBtn) {
+              submitBtn.disabled = true;
+              submitBtn.innerHTML = 'Submit';
+              submitBtn.style.opacity = '0.6';
+              cancelBtn.style.display = 'none';
+            }
+            
+            for (let i = 1; i <= 5; i++) {
+              const star = document.getElementById(`star-${toiletId}-${i}`);
+              if (star) {
+                star.innerHTML = '☆';
+                star.style.color = '#d1d5db';
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Error submitting review:', error);
+        }
+      };
+
+      (window as any).cancelReview = (toiletId: string) => {
+        (window as any).currentRating = undefined;
+        
+        // Reset UI
+        const submitBtn = document.getElementById(`submit-btn-${toiletId}`) as HTMLButtonElement;
+        const cancelBtn = document.getElementById(`cancel-btn-${toiletId}`);
+        if (submitBtn && cancelBtn) {
+          submitBtn.disabled = true;
+          submitBtn.innerHTML = 'Submit';
+          submitBtn.style.opacity = '0.6';
+          cancelBtn.style.display = 'none';
+        }
+        
+        for (let i = 1; i <= 5; i++) {
+          const star = document.getElementById(`star-${toiletId}-${i}`);
+          if (star) {
+            star.innerHTML = '☆';
+            star.style.color = '#d1d5db';
+          }
+        }
+      };
+
       (window as any).openLoginModal = () => {
         onLoginClick();
       };
     }
-  }, []);
+  }, [user, onLoginClick]);
 
   // Initialize map
   useEffect(() => {
@@ -333,80 +449,56 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
       });
 
       const popupContent = `
-        <div style="padding: 0; margin: 0; max-width: 320px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-          <!-- Header -->
-          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
-            <div style="width: 40px; height: 40px; background: #FF385C; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;">
-              🚽
-            </div>
-            <div style="flex: 1;">
-              <h3 style="margin: 0; font-size: 18px; font-weight: 600; color: #222; line-height: 1.2;">
-                ${toilet.notes || 'Public Toilet'}
-              </h3>
-              <p style="margin: 4px 0 0 0; font-size: 14px; color: #717171;">No reviews yet</p>
-            </div>
-          </div>
-
-          <!-- Info Cards -->
-          <div style="margin-bottom: 20px;">
-            <!-- Availability -->
-            <div style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 16px; padding: 12px; background: #f7f7f7; border-radius: 12px; border-left: 4px solid #00A699;">
-              <div style="width: 24px; height: 24px; background: #00A699; border-radius: 6px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px;">
-                <div style="width: 12px; height: 12px; background: white; border-radius: 2px;"></div>
+        <div style="font-family: system-ui, -apple-system, sans-serif; min-width: 280px; padding: 20px;">
+          <div style="margin-bottom: 16px;">
+            <h3 style="margin: 0 0 8px 0; font-size: 18px; font-weight: 600; color: #1f2937;">
+              ${toilet.notes || 'Public Toilet'}
+            </h3>
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+              <div style="display: inline-flex; align-items: center; background: #f3f4f6; padding: 6px 12px; border-radius: 16px; font-size: 12px; color: #6b7280; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">
+                ${toilet.type?.replace('_', ' ') || 'public'}
               </div>
-              <div>
-                <p style="margin: 0; font-size: 12px; font-weight: 600; color: #717171; text-transform: uppercase; letter-spacing: 0.5px;">AVAILABILITY</p>
-                <p style="margin: 2px 0 0 0; font-size: 14px; font-weight: 500; color: #222;">Public access</p>
-              </div>
-            </div>
-
-            <!-- Accessibility -->
-            <div style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 16px; padding: 12px; background: #f7f7f7; border-radius: 12px; border-left: 4px solid #B0B0B0;">
-              <div style="width: 24px; height: 24px; background: #B0B0B0; border-radius: 6px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px;">
-                <div style="width: 12px; height: 12px; background: white; border-radius: 50%; position: relative;">
-                  <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 8px; height: 1px; background: #B0B0B0;"></div>
+              ${toilet.averageRating ? `
+                <div style="display: flex; align-items: center; gap: 4px;">
+                  <span style="color: #facc15; font-size: 14px;">★</span>
+                  <span style="font-size: 14px; font-weight: 500; color: #374151;">${toilet.averageRating.toFixed(1)}</span>
+                  <span style="font-size: 12px; color: #6b7280;">(${toilet.reviewCount})</span>
                 </div>
-              </div>
-              <div>
-                <p style="margin: 0; font-size: 12px; font-weight: 600; color: #717171; text-transform: uppercase; letter-spacing: 0.5px;">ACCESSIBILITY</p>
-                <p style="margin: 2px 0 0 0; font-size: 14px; font-weight: 500; color: #222;">
-                  ${toilet.notes?.toLowerCase().includes('wheelchair accessible: yes') ? 'Wheelchair accessible' : 
-                    toilet.notes?.toLowerCase().includes('wheelchair accessible: no') ? 'Not wheelchair accessible' : 
-                    'Accessibility unknown'}
-                </p>
-              </div>
+              ` : ''}
             </div>
           </div>
-
+          
           <!-- Rating Section -->
-          <div style="margin-bottom: 20px;">
-            <p style="margin: 0 0 12px 0; font-size: 14px; font-weight: 600; color: #717171; text-transform: uppercase; letter-spacing: 0.5px;">RATE THIS TOILET</p>
-            <div style="display: flex; align-items: center; justify-content: space-between;">
-              <div style="display: flex; gap: 8px;">
+          <div style="margin: 20px 0; padding: 16px; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0;">
+            <div style="margin-bottom: 12px;">
+              <p style="margin: 0; font-size: 14px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">RATE THIS TOILET</p>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+              <div style="display: flex; gap: 4px;">
                 ${[1,2,3,4,5].map(star => `
                   <button 
                     onclick="window.setRating('${toilet.id}', ${star})" 
                     onmouseover="window.hoverStars('${toilet.id}', ${star})" 
                     onmouseout="window.resetStars('${toilet.id}')"
-                    style="background: none; border: none; cursor: pointer; padding: 4px; font-size: 20px; line-height: 1;"
+                    style="background: none; border: none; cursor: pointer; padding: 2px; font-size: 24px; line-height: 1; color: #d1d5db; transition: color 0.2s ease;"
                     id="star-${toilet.id}-${star}"
                   >
-                    ⭐
+                    ☆
                   </button>
                 `).join('')}
               </div>
               <div style="display: flex; gap: 8px;">
                 <button 
                   onclick="window.submitReview('${toilet.id}')" 
-                  style="background: #FF385C; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer;"
+                  style="background: #64748b; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; opacity: 0.6; transition: all 0.2s ease;"
                   id="submit-btn-${toilet.id}"
                   disabled
                 >
-                  Tap to rate
+                  Submit
                 </button>
                 <button 
                   onclick="window.cancelReview('${toilet.id}')" 
-                  style="background: #f7f7f7; color: #717171; border: none; padding: 8px 12px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; display: none;"
+                  style="background: #f1f5f9; color: #64748b; border: none; padding: 8px 12px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; display: none;"
                   id="cancel-btn-${toilet.id}"
                 >
                   Cancel
@@ -415,37 +507,25 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
             </div>
           </div>
 
-          <!-- Reviews Section -->
-          <div id="reviews-${toilet.id}" style="margin-bottom: 20px;">
-            <p style="margin: 0; font-size: 14px; color: #717171; text-align: center; padding: 20px 0;">
-              No reviews yet. Be the first to review this toilet!
-            </p>
+          <div id="reviews-${toilet.id}"></div>
+          
+          <div style="margin-top: 20px;">
+            <button onclick="window.getDirections(${toilet.coordinates.lat}, ${toilet.coordinates.lng})" style="
+              width: 100%;
+              padding: 14px 20px;
+              background: linear-gradient(135deg, #FF385C 0%, #e11d48 100%);
+              color: white;
+              border: none;
+              border-radius: 12px;
+              font-size: 16px;
+              font-weight: 600;
+              cursor: pointer;
+              transition: all 0.2s ease;
+              box-shadow: 0 4px 12px rgba(255, 56, 92, 0.25);
+            ">
+              🧭 Get Directions
+            </button>
           </div>
-
-          <!-- Directions Button -->
-          <button 
-            onclick="window.getDirections(${toilet.coordinates.lat}, ${toilet.coordinates.lng})" 
-            style="
-              width: 100%; 
-              padding: 16px; 
-              background: #FF385C; 
-              color: white; 
-              border: none; 
-              border-radius: 12px; 
-              font-size: 16px; 
-              font-weight: 600; 
-              cursor: pointer; 
-              display: flex; 
-              align-items: center; 
-              justify-content: center; 
-              gap: 8px;
-              transition: background-color 0.2s ease;
-            "
-            onmouseover="this.style.background='#E31E52'"
-            onmouseout="this.style.background='#FF385C'"
-          >
-            🧭 Get Directions
-          </button>
         </div>
       `;
 
