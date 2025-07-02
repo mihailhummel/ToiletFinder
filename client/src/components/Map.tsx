@@ -307,18 +307,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
 
 
 
-    // Add click handler for adding toilets (only if user is authenticated)
-    map.current.on('click', (e: any) => {
-      // Don't trigger if clicking on a marker
-      if (e.originalEvent.target.closest('.toilet-marker')) {
-        return;
-      }
-      
-      if (user) { // Only allow if authenticated
-        const { lat, lng } = e.latlng;
-        onAddToiletClick({ lat, lng });
-      }
-    });
+    // No map click handler - use only the + button for adding toilets
 
     return () => {
       if (map.current) {
@@ -342,34 +331,47 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
       map.current.removeLayer(userMarker.current);
     }
 
-    // Create a custom pane with higher z-index for user location
+    // Create a custom pane with very high z-index for user location
     if (!map.current.getPane('userLocationPane')) {
       const userPane = map.current.createPane('userLocationPane');
-      userPane.style.zIndex = '650'; // Higher than overlayPane (400)
+      userPane.style.zIndex = '1000'; // Much higher than overlayPane (400)
+      userPane.style.pointerEvents = 'none'; // Don't block map interactions
     }
 
-    // Create a prominent user location marker using Leaflet
-    userMarker.current = window.L.circleMarker([userLocation.lat, userLocation.lng], {
-      radius: 10,
-      fillColor: '#3b82f6',
-      color: 'white',
-      weight: 4,
-      opacity: 1,
-      fillOpacity: 1,
-      interactive: false,
-      pane: 'userLocationPane' // Use custom pane with higher z-index
-    }).addTo(map.current);
+    // Create a highly visible user location marker using DivIcon
+    const userIcon = window.L.divIcon({
+      className: 'user-location-marker',
+      html: `
+        <div style="
+          width: 20px; 
+          height: 20px; 
+          background-color: #FF385C; 
+          border: 4px solid white; 
+          border-radius: 50%; 
+          box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+          position: relative;
+          z-index: 1000;
+        "></div>
+        <div style="
+          width: 40px; 
+          height: 40px; 
+          background-color: rgba(255, 56, 92, 0.2); 
+          border: 2px solid #FF385C; 
+          border-radius: 50%; 
+          position: absolute;
+          top: -10px;
+          left: -10px;
+          animation: pulse 2s infinite;
+          z-index: 999;
+        "></div>
+      `,
+      iconSize: [20, 20],
+      iconAnchor: [10, 10]
+    });
 
-    // Add a pulsing ring effect using a second marker
-    const pulseMarker = window.L.circleMarker([userLocation.lat, userLocation.lng], {
-      radius: 18,
-      fillColor: 'transparent',
-      color: '#3b82f6',
-      weight: 2,
-      opacity: 0.4,
-      fillOpacity: 0,
+    userMarker.current = window.L.marker([userLocation.lat, userLocation.lng], {
+      icon: userIcon,
       interactive: false,
-      className: 'pulse-ring',
       pane: 'userLocationPane'
     }).addTo(map.current);
 

@@ -34,6 +34,9 @@ export const AddToiletModal = ({ isOpen, onClose, location }: AddToiletModalProp
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    e.stopPropagation();
+    
+    console.log("Add toilet form submitted", { user: !!user, location, type, notes });
     
     if (!user) {
       toast({
@@ -70,12 +73,20 @@ export const AddToiletModal = ({ isOpen, onClose, location }: AddToiletModalProp
       setType("public");
       setNotes("");
     } catch (error) {
+      console.error("Error adding toilet:", error);
       toast({
         title: "Error",
         description: "Failed to add toilet location. Please try again.",
         variant: "destructive"
       });
     }
+  };
+
+  const handleCancel = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log("Cancel button clicked");
+    onClose();
   };
 
   return (
@@ -135,7 +146,7 @@ export const AddToiletModal = ({ isOpen, onClose, location }: AddToiletModalProp
             <Button
               type="button"
               variant="outline"
-              onClick={onClose}
+              onClick={handleCancel}
               className="flex-1"
             >
               Cancel
