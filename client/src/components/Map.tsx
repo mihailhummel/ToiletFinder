@@ -45,7 +45,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
   useEffect(() => {
     getCurrentLocation();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
-  const { data: toilets = [] } = useToilets(userLocation);
+  const { data: toilets = [] } = useToilets(); // Load all toilets in Bulgaria
   const { user } = useAuth();
 
   // Stable references to prevent unnecessary re-renders
@@ -422,15 +422,15 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
         </div>
       )}
       
-      <div className="absolute top-6 right-6 space-y-3" style={{ zIndex: 1000 }}>
+      <div className="fixed bottom-8 left-8 space-y-3" style={{ zIndex: 1000 }}>
         {stableUserLocation && (
           <Button
             onClick={handleReturnToLocation}
-            className="w-14 h-14 bg-white text-blue-600 hover:bg-gray-50 shadow-xl rounded-full p-0 border border-gray-200 transition-all duration-200 hover:scale-105 active:scale-95"
+            className="w-16 h-16 bg-white text-blue-600 shadow-xl rounded-full p-0 border border-gray-200 transition-transform duration-200 hover:scale-105 active:scale-95"
             variant="ghost"
             title="Return to my location"
           >
-            <Crosshair className="w-6 h-6" />
+            <Crosshair className="w-8 h-8" />
           </Button>
         )}
       </div>
@@ -442,7 +442,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
         disabled={!user}
         title={!user ? "Sign in to add locations" : "Add toilet location"}
       >
-        <Plus className="w-7 h-7" />
+        <Plus className="w-8 h-8" />
       </Button>
     </div>
   );

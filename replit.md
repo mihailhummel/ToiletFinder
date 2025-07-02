@@ -131,6 +131,9 @@ Changelog:
 - July 02, 2025. Identified potential for commercial API integration to supplement OSM data with user ratings and amenities
 - July 02, 2025. CRITICAL FIX: Resolved marker disappearing issue by wrapping callback functions in useCallback
 - July 02, 2025. Added Google profile picture integration in header and user menu
+- July 02, 2025. RESTORED COMPLETE DATASET: Fixed toilet loading to display all 961 Bulgaria locations instead of 156 nearby
+- July 02, 2025. Enhanced UI: Removed locate button hover effect, increased button symbol sizes, moved locate button to bottom-left
+- July 02, 2025. Fixed infinite render loop in Map component by removing getCurrentLocation from useEffect dependencies
 ```
 
 ## User Preferences
