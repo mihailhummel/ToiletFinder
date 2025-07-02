@@ -96,8 +96,8 @@ export const useDeleteToilet = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async (toiletId: string) => {
-      const response = await apiRequest('DELETE', `/api/toilets/${toiletId}`);
+    mutationFn: async ({ toiletId, adminEmail }: { toiletId: string; adminEmail: string }) => {
+      const response = await apiRequest('DELETE', `/api/toilets/${toiletId}`, { adminEmail });
       return response.json();
     },
     onSuccess: () => {

@@ -162,12 +162,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Admin-only delete toilet endpoint
   app.delete("/api/toilets/:toiletId", async (req: Request, res: Response) => {
+    const { toiletId } = req.params;
+    const { adminEmail } = req.body;
+    
+    // Check if user is admin first
+    if (adminEmail !== 'mihail.dilyanov@gmail.com') {
+      return res.status(403).json({ error: "Only admin can delete toilets" });
+    }
+    
     try {
-      const { toiletId } = req.params;
-      
-      // For now, we'll add admin check in the frontend
-      // In production, you'd verify the user's JWT token here
-      
       await storage.deleteToilet(toiletId);
       res.json({ success: true });
     } catch (error) {

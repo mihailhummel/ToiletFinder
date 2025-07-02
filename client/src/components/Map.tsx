@@ -327,7 +327,10 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
         }
 
         try {
-          await deleteToiletMutation.mutateAsync(toiletId);
+          await deleteToiletMutation.mutateAsync({ 
+            toiletId, 
+            adminEmail: currentUser?.email || '' 
+          });
           // Close all popups after deletion
           if (map.current) {
             map.current.closePopup();
@@ -338,7 +341,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
         }
       };
     }
-  }, [user, onLoginClick, isAdmin, deleteToiletMutation]);
+  }, [user, onLoginClick, isAdmin, deleteToiletMutation, currentUser]);
 
   // Initialize map
   useEffect(() => {
