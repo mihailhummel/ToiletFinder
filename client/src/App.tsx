@@ -48,13 +48,13 @@ function App() {
     getCurrentLocation();
   }, []);
 
-  const handleUserMenuClick = () => {
+  const handleUserMenuClick = useCallback(() => {
     if (user) {
       setShowUserMenu(true);
     } else {
       setShowLogin(true);
     }
-  };
+  }, [user]);
 
   const handleLocateUser = () => {
     getCurrentLocation();
@@ -66,13 +66,13 @@ function App() {
     }
   };
 
-  const handleAddToilet = () => {
+  const handleAddToilet = useCallback(() => {
     if (!user) {
       setShowLogin(true);
       return;
     }
     setShowAddToilet(true);
-  };
+  }, [user]);
 
   const handleMapClick = useCallback((location: MapLocation) => {
     setMapCenter(location);

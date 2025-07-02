@@ -939,13 +939,6 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
 
 // Memoize the Map component to prevent re-renders when user state changes
 export const Map = memo(MapComponent, (prevProps, nextProps) => {
-  // Log to debug callback changes
-  console.log('Map memo check:', {
-    toiletClickSame: prevProps.onToiletClick === nextProps.onToiletClick,
-    addToiletSame: prevProps.onAddToiletClick === nextProps.onAddToiletClick,
-    loginSame: prevProps.onLoginClick === nextProps.onLoginClick
-  });
-  
   // Only re-render if the callback functions have changed
   return (
     prevProps.onToiletClick === nextProps.onToiletClick &&
