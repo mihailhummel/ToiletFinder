@@ -276,7 +276,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
         onLoginClick();
       };
     }
-  }, [user, onLoginClick]);
+  }, [onLoginClick]);
 
   // Initialize map
   useEffect(() => {
@@ -343,7 +343,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
       markersInitialized.current = false;
       userLocationSet.current = false;
     };
-  }, [leafletLoaded, stableUserLocation, user, onAddToiletClick]);
+  }, [leafletLoaded, stableUserLocation, onAddToiletClick]);
 
   // Use ref to track if user location marker is already set
   const userLocationSet = useRef(false);

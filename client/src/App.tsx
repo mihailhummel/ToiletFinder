@@ -90,10 +90,13 @@ function App() {
     try {
       await signOutUser();
       setShowUserMenu(false);
-      toast({
-        title: "Signed out",
-        description: "You have been signed out successfully"
-      });
+      // Delay the toast to prevent it from affecting the Map re-render
+      setTimeout(() => {
+        toast({
+          title: "Signed out",
+          description: "You have been signed out successfully"
+        });
+      }, 100);
     } catch (error) {
       toast({
         title: "Error",
