@@ -127,20 +127,26 @@ iframe[src*="/@react-refresh"] {
 }
 
 /* Pulse animation for user location */
-@keyframes pulse {
+@keyframes userLocationPulse {
   0% {
-    opacity: 0.6;
+    opacity: 0.7;
+    transform: scale(1);
   }
   50% {
-    opacity: 0.2;
+    opacity: 0.3;
+    transform: scale(1.1);
   }
   100% {
-    opacity: 0.6;
+    opacity: 0.7;
+    transform: scale(1);
   }
 }
 
+/* Target the SVG path inside the pulsing marker */
+.leaflet-marker-pane .user-location-pulse,
+.user-location-pulse,
 .user-location-pulse path {
-  animation: pulse 2s infinite;
+  animation: userLocationPulse 2s ease-in-out infinite !important;
 }
 
 /* Loading animation */
