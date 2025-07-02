@@ -160,6 +160,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin-only delete toilet endpoint
+  app.delete("/api/toilets/:toiletId", async (req: Request, res: Response) => {
+    try {
+      const { toiletId } = req.params;
+      
+      // For now, we'll add admin check in the frontend
+      // In production, you'd verify the user's JWT token here
+      
+      await storage.deleteToilet(toiletId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting toilet:", error);
+      res.status(500).json({ error: "Failed to delete toilet" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

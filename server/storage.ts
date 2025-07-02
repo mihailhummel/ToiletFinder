@@ -29,6 +29,9 @@ export interface IStorage {
   getToiletReportCount(toiletId: string): Promise<number>;
   hasUserReportedToilet(toiletId: string, userId: string): Promise<boolean>;
   removeToiletFromReports(toiletId: string): Promise<void>;
+  
+  // Admin operations
+  deleteToilet(toiletId: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -188,6 +191,14 @@ export class DatabaseStorage implements IStorage {
         removedAt: new Date() 
       })
       .where(eq(toilets.id, toiletId));
+  }
+
+  async deleteToilet(toiletId: string): Promise<void> {
+    // Hard delete the toilet and all related data
+    await db.delete(toiletReports).where(eq(toiletReports.toiletId, toiletId));
+    await db.delete(reviews).where(eq(reviews.toiletId, toiletId));
+    await db.delete(reports).where(eq(reports.toiletId, toiletId));
+    await db.delete(toilets).where(eq(toilets.id, toiletId));
   }
 
   private calculateDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {

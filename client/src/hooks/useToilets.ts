@@ -91,3 +91,17 @@ export const useUserReviewStatus = (toiletId: string, userId?: string) => {
     enabled: !!userId,
   });
 };
+
+export const useDeleteToilet = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (toiletId: string) => {
+      const response = await apiRequest('DELETE', `/api/toilets/${toiletId}`);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["toilets"] });
+    },
+  });
+};

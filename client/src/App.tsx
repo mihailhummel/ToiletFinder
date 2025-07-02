@@ -33,13 +33,15 @@ function App() {
   const [showFilter, setShowFilter] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [isAddingToilet, setIsAddingToilet] = useState(false); // Track if user is in add toilet mode
+  const [pendingToiletLocation, setPendingToiletLocation] = useState<MapLocation | undefined>(undefined);
   const [mapCenter, setMapCenter] = useState<MapLocation>({ lat: 42.6977, lng: 23.3219 });
   const [filters, setFilters] = useState<FilterOptions>({
     types: ["public", "restaurant", "cafe", "gas-station", "mall", "other"],
     minRating: 1
   });
 
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, isAdmin } = useAuth();
   const { location: userLocation, getCurrentLocation, loading: locationLoading } = useGeolocation();
   const { toast } = useToast();
 
@@ -71,12 +73,23 @@ function App() {
       setShowLogin(true);
       return;
     }
-    setShowAddToilet(true);
-  }, [user]);
+    // Step 1: Start add toilet mode
+    setIsAddingToilet(true);
+    setPendingToiletLocation(undefined);
+    toast({
+      title: "Add Toilet Mode",
+      description: "Click on the map where you want to add a toilet"
+    });
+  }, [user, toast]);
 
   const handleMapClick = useCallback((location: MapLocation) => {
-    setMapCenter(location);
-  }, []);
+    if (isAddingToilet) {
+      // Step 4: User clicks on map to select location
+      setPendingToiletLocation(location);
+      setIsAddingToilet(false); // Exit add toilet mode
+      setShowAddToilet(true); // Show the modal with the selected location
+    }
+  }, [isAddingToilet]);
 
   const handleLoginClick = useCallback(() => {
     setShowLogin(true);
@@ -190,10 +203,20 @@ function App() {
           <main className="flex-1 pt-20 relative overflow-hidden">
             <Map
               onToiletClick={handleToiletClick}
-              onAddToiletClick={handleAddToilet}
+              onAddToiletClick={handleMapClick}
               onLoginClick={handleLoginClick}
+              isAdmin={isAdmin}
+              currentUser={user}
             />
             
+            {/* Floating Action Button */}
+            <Button
+              onClick={handleAddToilet}
+              className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-blue-600 hover:bg-blue-700 shadow-lg z-30"
+              size="icon"
+            >
+              <Plus className="w-6 h-6 text-white" />
+            </Button>
 
           </main>
 
@@ -206,8 +229,12 @@ function App() {
 
           <AddToiletModal
             isOpen={showAddToilet}
-            onClose={() => setShowAddToilet(false)}
-            location={mapCenter}
+            onClose={() => {
+              setShowAddToilet(false);
+              setPendingToiletLocation(undefined);
+              setIsAddingToilet(false);
+            }}
+            location={pendingToiletLocation}
           />
 
 

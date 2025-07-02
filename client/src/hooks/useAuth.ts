@@ -81,10 +81,13 @@ export const useAuth = () => {
     }
   };
 
+  const isAdmin = user?.email === 'mihail.dilyanov@gmail.com';
+
   return {
     user,
     loading,
     signIn,
-    signOut
+    signOut,
+    isAdmin
   };
 };

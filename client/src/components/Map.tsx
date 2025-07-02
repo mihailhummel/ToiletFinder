@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useCallback, useMemo, memo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Crosshair, Plus } from 'lucide-react';
 import { useGeolocation } from '@/hooks/useGeolocation';
-import { useToilets } from '@/hooks/useToilets';
+import { useToilets, useDeleteToilet } from '@/hooks/useToilets';
 import { useAuth } from '@/hooks/useAuth';
 import type { Toilet, MapLocation } from '@/types/toilet';
 
@@ -10,6 +10,8 @@ interface MapProps {
   onToiletClick: (toilet: Toilet) => void;
   onAddToiletClick: (location: MapLocation) => void;
   onLoginClick: () => void;
+  isAdmin?: boolean;
+  currentUser?: any;
 }
 
 declare global {
@@ -28,7 +30,7 @@ declare global {
   }
 }
 
-const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProps) => {
+const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, currentUser }: MapProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<any>(null);
   const markers = useRef<any[]>([]);
@@ -47,6 +49,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const { data: toilets = [] } = useToilets(); // Load all toilets in Bulgaria
   const { user } = useAuth();
+  const deleteToiletMutation = useDeleteToilet();
 
   // Stable references to prevent unnecessary re-renders
   const stableToilets = useMemo(() => {
@@ -312,8 +315,30 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
           console.error('Error reporting toilet:', error);
         }
       };
+
+      (window as any).deleteToilet = async (toiletId: string) => {
+        if (!isAdmin) {
+          console.error('Only admin can delete toilets');
+          return;
+        }
+
+        if (!confirm('Are you sure you want to permanently delete this toilet? This action cannot be undone.')) {
+          return;
+        }
+
+        try {
+          await deleteToiletMutation.mutateAsync(toiletId);
+          // Close all popups after deletion
+          if (map.current) {
+            map.current.closePopup();
+          }
+        } catch (error) {
+          console.error('Error deleting toilet:', error);
+          alert('Failed to delete toilet. Please try again.');
+        }
+      };
     }
-  }, [user, onLoginClick]);
+  }, [user, onLoginClick, isAdmin, deleteToiletMutation]);
 
   // Initialize map
   useEffect(() => {
@@ -771,6 +796,34 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
           >
             ⚠️ This toilet doesn't exist
           </button>
+          
+          ${isAdmin ? `
+          <!-- Admin Delete Button -->
+          <button 
+            onclick="window.deleteToilet('${toilet.id}')" 
+            style="
+              width: 100%; 
+              padding: 12px; 
+              background: #dc2626; 
+              color: white; 
+              border: none; 
+              border-radius: 8px; 
+              font-size: 14px; 
+              font-weight: 500; 
+              cursor: pointer; 
+              display: flex; 
+              align-items: center; 
+              justify-content: center; 
+              gap: 6px;
+              transition: all 0.2s ease;
+              margin-top: 8px;
+            "
+            onmouseover="this.style.background='#b91c1c'"
+            onmouseout="this.style.background='#dc2626'"
+          >
+            🗑️ Admin: Delete Toilet
+          </button>
+          ` : ''}
         </div>
       `;
 
