@@ -142,7 +142,8 @@ iframe[src*="/@react-refresh"] {
   }
 }
 
-.pulse-ring {
+.pulse-ring,
+.user-location-pulse {
   animation: pulse 2s infinite;
 }
 

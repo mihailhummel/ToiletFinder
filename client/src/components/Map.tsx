@@ -34,6 +34,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
   const map = useRef<any>(null);
   const markers = useRef<any[]>([]);
   const userMarker = useRef<any>(null);
+  const userRingMarker = useRef<any>(null);
   const [leafletLoaded, setLeafletLoaded] = useState(false);
   const [isAwayFromUser, setIsAwayFromUser] = useState(false);
 
@@ -326,53 +327,37 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
 
     console.log('Adding user location marker at:', userLocation);
 
-    // Remove existing user marker
+    // Remove existing user markers
     if (userMarker.current) {
       map.current.removeLayer(userMarker.current);
     }
-
-    // Create a custom pane with very high z-index for user location
-    if (!map.current.getPane('userLocationPane')) {
-      const userPane = map.current.createPane('userLocationPane');
-      userPane.style.zIndex = '1000'; // Much higher than overlayPane (400)
-      userPane.style.pointerEvents = 'none'; // Don't block map interactions
+    if (userRingMarker.current) {
+      map.current.removeLayer(userRingMarker.current);
     }
 
-    // Create a highly visible blue user location marker using DivIcon
-    const userIcon = window.L.divIcon({
-      className: 'user-location-marker',
-      html: `
-        <div style="
-          width: 20px; 
-          height: 20px; 
-          background-color: #3b82f6; 
-          border: 4px solid white; 
-          border-radius: 50%; 
-          box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-          position: relative;
-          z-index: 1000;
-        "></div>
-        <div style="
-          width: 40px; 
-          height: 40px; 
-          background-color: rgba(59, 130, 246, 0.2); 
-          border: 2px solid #3b82f6; 
-          border-radius: 50%; 
-          position: absolute;
-          top: -10px;
-          left: -10px;
-          animation: pulse 2s infinite;
-          z-index: 999;
-        "></div>
-      `,
-      iconSize: [20, 20],
-      iconAnchor: [10, 10]
-    });
-
-    userMarker.current = window.L.marker([userLocation.lat, userLocation.lng], {
-      icon: userIcon,
+    // Create a large, highly visible blue user location marker
+    userMarker.current = window.L.circleMarker([userLocation.lat, userLocation.lng], {
+      radius: 15,
+      fillColor: '#3b82f6',
+      color: '#ffffff',
+      weight: 5,
+      opacity: 1,
+      fillOpacity: 1,
       interactive: false,
-      pane: 'userLocationPane'
+      zIndexOffset: 1000
+    }).addTo(map.current);
+
+    // Add a large pulsing outer ring for high visibility
+    userRingMarker.current = window.L.circleMarker([userLocation.lat, userLocation.lng], {
+      radius: 30,
+      fillColor: 'transparent',
+      color: '#3b82f6',
+      weight: 4,
+      opacity: 0.8,
+      fillOpacity: 0,
+      interactive: false,
+      className: 'user-location-pulse',
+      zIndexOffset: 999
     }).addTo(map.current);
 
     console.log('User marker added to map');
