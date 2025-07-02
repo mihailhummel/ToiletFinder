@@ -469,6 +469,107 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
         iconAnchor: [20, 50]
       });
 
+      // Parse toilet information
+      const getToiletTitle = (toilet: any) => {
+        const tags = toilet.tags || {};
+        const notes = toilet.notes || '';
+        
+        // Check for specific location context
+        if (tags['addr:housename']) {
+          return tags['addr:housename'];
+        }
+        
+        // Check type and access patterns
+        if (toilet.type === 'restaurant' || tags.access === 'customers') {
+          if (tags['addr:housename']) return 'Toilet at ' + tags['addr:housename'];
+          return 'Restaurant Toilet';
+        }
+        
+        if (toilet.type === 'gas_station') {
+          return 'Gas Station Toilet';
+        }
+        
+        if (toilet.type === 'mall') {
+          return 'Shopping Mall Toilet';
+        }
+        
+        if (tags.leisure === 'park' || notes.toLowerCase().includes('park')) {
+          return 'Public Toilet in Park';
+        }
+        
+        if (tags.tourism || tags.highway) {
+          return 'Public Toilet';
+        }
+        
+        // Default based on access
+        return 'Public Toilet';
+      };
+      
+      const getAvailabilityInfo = (toilet: any) => {
+        const tags = toilet.tags || {};
+        const notes = toilet.notes || '';
+        
+        // Check fee status
+        const hasFee = tags.fee === 'yes' || notes.toLowerCase().includes('fee: yes');
+        const isCustomers = tags.access === 'customers' || notes.toLowerCase().includes('access: customers');
+        
+        if (isCustomers) {
+          return {
+            text: 'For customers only',
+            color: '#F59E0B',
+            bgColor: '#FEF3C7'
+          };
+        }
+        
+        if (hasFee) {
+          return {
+            text: 'Paid public access',
+            color: '#7C3AED',
+            bgColor: '#EDE9FE'
+          };
+        }
+        
+        return {
+          text: 'Free public access',
+          color: '#10B981',
+          bgColor: '#D1FAE5'
+        };
+      };
+      
+      const getAccessibilityInfo = (toilet: any) => {
+        const tags = toilet.tags || {};
+        const notes = toilet.notes || '';
+        
+        const isAccessible = tags.wheelchair === 'yes' || notes.toLowerCase().includes('wheelchair accessible: yes');
+        const isNotAccessible = tags.wheelchair === 'no' || notes.toLowerCase().includes('wheelchair accessible: no');
+        
+        if (isAccessible) {
+          return {
+            text: 'Wheelchair accessible',
+            color: '#3B82F6',
+            bgColor: '#DBEAFE'
+          };
+        }
+        
+        if (isNotAccessible) {
+          return {
+            text: 'Not wheelchair accessible',
+            color: '#6B7280',
+            bgColor: '#F3F4F6'
+          };
+        }
+        
+        return {
+          text: 'Accessibility unknown',
+          color: '#6B7280',
+          bgColor: '#F3F4F6'
+        };
+      };
+      
+      const toiletTitle = getToiletTitle(toilet);
+      const availabilityInfo = getAvailabilityInfo(toilet);
+      const accessibilityInfo = getAccessibilityInfo(toilet);
+
       const popupContent = `
         <div style="padding: 20px; margin: 0; max-width: 340px; min-width: 300px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; box-sizing: border-box;">
           <!-- Header -->
@@ -478,7 +579,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
             </div>
             <div style="flex: 1;">
               <h3 style="margin: 0; font-size: 18px; font-weight: 600; color: #222; line-height: 1.2;">
-                ${toilet.notes || 'Public Toilet'}
+                ${toiletTitle}
               </h3>
               <div id="review-summary-${toilet.id}" style="margin: 4px 0 0 0; font-size: 14px; color: #717171;">No reviews yet</div>
             </div>
@@ -487,30 +588,26 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
           <!-- Info Cards -->
           <div style="margin-bottom: 20px;">
             <!-- Availability -->
-            <div style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 16px; padding: 12px; background: #f7f7f7; border-radius: 12px; border-left: 4px solid #00A699;">
-              <div style="width: 24px; height: 24px; background: #00A699; border-radius: 6px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px;">
+            <div style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 16px; padding: 12px; background: ${availabilityInfo.bgColor}; border-radius: 12px; border-left: 4px solid ${availabilityInfo.color};">
+              <div style="width: 24px; height: 24px; background: ${availabilityInfo.color}; border-radius: 6px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px;">
                 <div style="width: 12px; height: 12px; background: white; border-radius: 2px;"></div>
               </div>
               <div>
                 <p style="margin: 0; font-size: 12px; font-weight: 600; color: #717171; text-transform: uppercase; letter-spacing: 0.5px;">AVAILABILITY</p>
-                <p style="margin: 2px 0 0 0; font-size: 14px; font-weight: 500; color: #222;">Public access</p>
+                <p style="margin: 2px 0 0 0; font-size: 14px; font-weight: 500; color: #222;">${availabilityInfo.text}</p>
               </div>
             </div>
 
             <!-- Accessibility -->
-            <div style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 16px; padding: 12px; background: #f7f7f7; border-radius: 12px; border-left: 4px solid #B0B0B0;">
-              <div style="width: 24px; height: 24px; background: #B0B0B0; border-radius: 6px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px;">
+            <div style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 16px; padding: 12px; background: ${accessibilityInfo.bgColor}; border-radius: 12px; border-left: 4px solid ${accessibilityInfo.color};">
+              <div style="width: 24px; height: 24px; background: ${accessibilityInfo.color}; border-radius: 6px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px;">
                 <div style="width: 12px; height: 12px; background: white; border-radius: 50%; position: relative;">
-                  <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 8px; height: 1px; background: #B0B0B0;"></div>
+                  <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 8px; height: 1px; background: ${accessibilityInfo.color};"></div>
                 </div>
               </div>
               <div>
                 <p style="margin: 0; font-size: 12px; font-weight: 600; color: #717171; text-transform: uppercase; letter-spacing: 0.5px;">ACCESSIBILITY</p>
-                <p style="margin: 2px 0 0 0; font-size: 14px; font-weight: 500; color: #222;">
-                  ${toilet.notes?.toLowerCase().includes('wheelchair accessible: yes') ? 'Wheelchair accessible' : 
-                    toilet.notes?.toLowerCase().includes('wheelchair accessible: no') ? 'Not wheelchair accessible' : 
-                    'Accessibility unknown'}
-                </p>
+                <p style="margin: 2px 0 0 0; font-size: 14px; font-weight: 500; color: #222;">${accessibilityInfo.text}</p>
               </div>
             </div>
           </div>
