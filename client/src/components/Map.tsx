@@ -702,8 +702,8 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
               Rate this toilet
             </div>
             <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-              <div id="stars-${toilet.id}" style="display: flex; gap: 0px;">
-                ${[1,2,3,4,5].map(rating => `
+              <div id="stars-${toilet.id}" style="display: flex;">
+                ${[1,2,3,4,5].map((rating, index) => `
                   <button onclick="window.setRating('${toilet.id}', ${rating})" style="
                     background: none;
                     border: none;
@@ -711,10 +711,12 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
                     cursor: pointer;
                     color: #cbd5e1;
                     transition: all 0.2s ease;
-                    padding: 2px;
-                    min-width: 24px;
-                    min-height: 24px;
-                    border-radius: 4px;
+                    padding: 0px;
+                    width: 16px;
+                    height: 20px;
+                    border-radius: 2px;
+                    line-height: 1;
+                    margin-left: ${index > 0 ? '-2px' : '0px'};
                   " 
                   onmouseover="window.hoverStars('${toilet.id}', ${rating})" 
                   onmouseout="window.resetStars('${toilet.id}')"
