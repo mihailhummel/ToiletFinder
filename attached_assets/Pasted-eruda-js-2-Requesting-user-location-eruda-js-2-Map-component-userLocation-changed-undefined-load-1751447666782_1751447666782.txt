@@ -1,0 +1,148 @@
+eruda.js:2 Requesting user location...
+eruda.js:2 Map component userLocation changed: undefined loading: false
+eruda.js:2 Map not ready or no user location: {mapReady: false, userLocation: undefined, leafletLoaded: false}
+eruda.js:2 Location obtained: 42.6741285 23.2781865
+eruda.js:2 Map component userLocation changed: {lat: 42.6741285, lng: 23.2781865} loading: false
+eruda.js:2 Adding user location marker at: {lat: 42.6741285, lng: 23.2781865}
+eruda.js:2 User marker added to map
+eruda.js:2 Map markers useEffect triggered, stableToilets count: 81
+chunk-RPCDYKBN.js:11730 Uncaught Error: Should have a queue. This is likely a bug in React. Please file an issue.
+    at updateReducer (chunk-RPCDYKBN.js:11730:19)
+    at updateState (chunk-RPCDYKBN.js:12021:18)
+    at Object.useState (chunk-RPCDYKBN.js:12753:24)
+    at Object.useState (chunk-QCHXOAYK.js:1066:29)
+    at useToast (use-toast.ts:108:35)
+    at App (App.tsx:46:21)
+    at renderWithHooks (chunk-RPCDYKBN.js:11548:26)
+    at updateFunctionComponent (chunk-RPCDYKBN.js:14582:28)
+    at beginWork (chunk-RPCDYKBN.js:15924:22)
+    at HTMLUnknownElement.callCallback2 (chunk-RPCDYKBN.js:3674:22)
+updateReducer @ chunk-RPCDYKBN.js?v=3612c5f9:11730
+updateState @ chunk-RPCDYKBN.js?v=3612c5f9:12021
+useState @ chunk-RPCDYKBN.js?v=3612c5f9:12753
+useState @ chunk-QCHXOAYK.js?v=3612c5f9:1066
+useToast @ use-toast.ts:172
+App @ App.tsx:41
+renderWithHooks @ chunk-RPCDYKBN.js?v=3612c5f9:11548
+updateFunctionComponent @ chunk-RPCDYKBN.js?v=3612c5f9:14582
+beginWork @ chunk-RPCDYKBN.js?v=3612c5f9:15924
+callCallback2 @ chunk-RPCDYKBN.js?v=3612c5f9:3674
+invokeGuardedCallbackDev @ chunk-RPCDYKBN.js?v=3612c5f9:3699
+invokeGuardedCallback @ chunk-RPCDYKBN.js?v=3612c5f9:3733
+beginWork$1 @ chunk-RPCDYKBN.js?v=3612c5f9:19765
+performUnitOfWork @ chunk-RPCDYKBN.js?v=3612c5f9:19198
+workLoopSync @ chunk-RPCDYKBN.js?v=3612c5f9:19137
+renderRootSync @ chunk-RPCDYKBN.js?v=3612c5f9:19116
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=3612c5f9:18874
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=3612c5f9:9119
+flushSync @ chunk-RPCDYKBN.js?v=3612c5f9:18959
+scheduleRefresh @ chunk-RPCDYKBN.js?v=3612c5f9:20004
+(anonymous) @ @react-refresh:267
+performReactRefresh @ @react-refresh:256
+(anonymous) @ @react-refresh:677
+setTimeout
+(anonymous) @ @react-refresh:666
+validateRefreshBoundaryAndEnqueueUpdate @ @react-refresh:728
+(anonymous) @ Map.tsx:891
+(anonymous) @ client:34
+(anonymous) @ client:218
+(anonymous) @ client:193
+queueUpdate @ client:193
+await in queueUpdate
+(anonymous) @ client:642
+handleMessage @ client:640
+(anonymous) @ client:550Understand this error
+chunk-RPCDYKBN.js:11730 Uncaught Error: Should have a queue. This is likely a bug in React. Please file an issue.
+    at updateReducer (chunk-RPCDYKBN.js:11730:19)
+    at updateState (chunk-RPCDYKBN.js:12021:18)
+    at Object.useState (chunk-RPCDYKBN.js:12753:24)
+    at Object.useState (chunk-QCHXOAYK.js:1066:29)
+    at useToast (use-toast.ts:108:35)
+    at App (App.tsx:46:21)
+    at renderWithHooks (chunk-RPCDYKBN.js:11548:26)
+    at updateFunctionComponent (chunk-RPCDYKBN.js:14582:28)
+    at beginWork (chunk-RPCDYKBN.js:15924:22)
+    at HTMLUnknownElement.callCallback2 (chunk-RPCDYKBN.js:3674:22)
+updateReducer @ chunk-RPCDYKBN.js?v=3612c5f9:11730
+updateState @ chunk-RPCDYKBN.js?v=3612c5f9:12021
+useState @ chunk-RPCDYKBN.js?v=3612c5f9:12753
+useState @ chunk-QCHXOAYK.js?v=3612c5f9:1066
+useToast @ use-toast.ts:172
+App @ App.tsx:41
+renderWithHooks @ chunk-RPCDYKBN.js?v=3612c5f9:11548
+updateFunctionComponent @ chunk-RPCDYKBN.js?v=3612c5f9:14582
+beginWork @ chunk-RPCDYKBN.js?v=3612c5f9:15924
+callCallback2 @ chunk-RPCDYKBN.js?v=3612c5f9:3674
+invokeGuardedCallbackDev @ chunk-RPCDYKBN.js?v=3612c5f9:3699
+invokeGuardedCallback @ chunk-RPCDYKBN.js?v=3612c5f9:3733
+beginWork$1 @ chunk-RPCDYKBN.js?v=3612c5f9:19765
+performUnitOfWork @ chunk-RPCDYKBN.js?v=3612c5f9:19198
+workLoopSync @ chunk-RPCDYKBN.js?v=3612c5f9:19137
+renderRootSync @ chunk-RPCDYKBN.js?v=3612c5f9:19116
+recoverFromConcurrentError @ chunk-RPCDYKBN.js?v=3612c5f9:18736
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=3612c5f9:18879
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=3612c5f9:9119
+flushSync @ chunk-RPCDYKBN.js?v=3612c5f9:18959
+scheduleRefresh @ chunk-RPCDYKBN.js?v=3612c5f9:20004
+(anonymous) @ @react-refresh:267
+performReactRefresh @ @react-refresh:256
+(anonymous) @ @react-refresh:677
+setTimeout
+(anonymous) @ @react-refresh:666
+validateRefreshBoundaryAndEnqueueUpdate @ @react-refresh:728
+(anonymous) @ Map.tsx:891
+(anonymous) @ client:34
+(anonymous) @ client:218
+(anonymous) @ client:193
+queueUpdate @ client:193
+await in queueUpdate
+(anonymous) @ client:642
+handleMessage @ client:640
+(anonymous) @ client:550Understand this error
+eruda.js:2 The above error occurred in the <App> component:
+
+    at App (https://c3d6585f-f710-4fef-a355-02d4e8f77ff1-00-2i7rkwmkxpuks.janeway.replit.dev/src/App.tsx?t=1751447584527&v=shig_zL5lnTDOcGSTe8pV:35:47)
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+Mt.forEach.n.<computed> @ Console.js:61
+logCapturedError @ chunk-RPCDYKBN.js?v=3612c5f9:14032
+update.callback @ chunk-RPCDYKBN.js?v=3612c5f9:14052
+callCallback @ chunk-RPCDYKBN.js?v=3612c5f9:11248
+commitUpdateQueue @ chunk-RPCDYKBN.js?v=3612c5f9:11265
+commitLayoutEffectOnFiber @ chunk-RPCDYKBN.js?v=3612c5f9:17093
+commitLayoutMountEffects_complete @ chunk-RPCDYKBN.js?v=3612c5f9:17980
+commitLayoutEffects_begin @ chunk-RPCDYKBN.js?v=3612c5f9:17969
+commitLayoutEffects @ chunk-RPCDYKBN.js?v=3612c5f9:17920
+commitRootImpl @ chunk-RPCDYKBN.js?v=3612c5f9:19353
+commitRoot @ chunk-RPCDYKBN.js?v=3612c5f9:19277
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=3612c5f9:18895
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=3612c5f9:9119
+flushSync @ chunk-RPCDYKBN.js?v=3612c5f9:18959
+scheduleRefresh @ chunk-RPCDYKBN.js?v=3612c5f9:20004
+(anonymous) @ @react-refresh:267
+performReactRefresh @ @react-refresh:256
+(anonymous) @ @react-refresh:677
+setTimeout
+(anonymous) @ @react-refresh:666
+validateRefreshBoundaryAndEnqueueUpdate @ @react-refresh:728
+(anonymous) @ Map.tsx:891
+(anonymous) @ client:34
+(anonymous) @ client:218
+(anonymous) @ client:193
+queueUpdate @ client:193
+await in queueUpdate
+(anonymous) @ client:642
+handleMessage @ client:640
+(anonymous) @ client:550Understand this error
+chunk-RPCDYKBN.js:11730 Uncaught (in promise) Error: Should have a queue. This is likely a bug in React. Please file an issue.
+    at updateReducer (chunk-RPCDYKBN.js:11730:19)
+    at updateState (chunk-RPCDYKBN.js:12021:18)
+    at Object.useState (chunk-RPCDYKBN.js:12753:24)
+    at Object.useState (chunk-QCHXOAYK.js:1066:29)
+    at useToast (use-toast.ts:108:35)
+    at App (App.tsx:46:21)
+    at renderWithHooks (chunk-RPCDYKBN.js:11548:26)
+    at updateFunctionComponent (chunk-RPCDYKBN.js:14582:28)
+    at beginWork (chunk-RPCDYKBN.js:15924:22)
+    at beginWork$1 (chunk-RPCDYKBN.js:19753:22)
