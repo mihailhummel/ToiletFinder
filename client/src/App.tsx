@@ -36,6 +36,7 @@ function App() {
   const [isAddingToilet, setIsAddingToilet] = useState(false); // Track if user is in add toilet mode
   const [pendingToiletLocation, setPendingToiletLocation] = useState<MapLocation | undefined>(undefined);
   const [pendingToiletData, setPendingToiletData] = useState<{type: ToiletType; notes: string} | null>(null);
+  const [isTransitioningToLocationMode, setIsTransitioningToLocationMode] = useState(false);
   const [mapCenter, setMapCenter] = useState<MapLocation>({ lat: 42.6977, lng: 23.3219 });
   const [filters, setFilters] = useState<FilterOptions>({
     types: ["public", "restaurant", "cafe", "gas-station", "mall", "other"],
@@ -99,6 +100,9 @@ function App() {
   const handleLocationSelectionRequest = useCallback((type: ToiletType, notes: string) => {
     console.log("Location selection requested for:", { type, notes });
     
+    // Set flag to prevent onClose from interfering
+    setIsTransitioningToLocationMode(true);
+    
     // Use functional updates to ensure state consistency
     setPendingToiletData(() => {
       console.log("Setting pendingToiletData to:", { type, notes });
@@ -115,10 +119,12 @@ function App() {
       return undefined;
     });
     
-    setShowAddToilet(() => {
-      console.log("Closing modal");
-      return false;
-    });
+    // Close modal after a slight delay to ensure state is set
+    setTimeout(() => {
+      setShowAddToilet(false);
+      setIsTransitioningToLocationMode(false);
+      console.log("Modal closed, transition complete");
+    }, 50);
     
     toast({
       title: "Select Location", 
@@ -276,21 +282,17 @@ function App() {
           <AddToiletModal
             isOpen={showAddToilet}
             onClose={() => {
-              console.log("AddToiletModal onClose called, current states:", { 
-                isAddingToilet, 
-                pendingToiletData,
-                pendingToiletLocation 
-              });
-              setShowAddToilet(false);
-              // Only reset if we have a location (successful submission) or user cancelled
-              if (pendingToiletLocation || !pendingToiletData) {
-                console.log("Resetting states in onClose");
-                setPendingToiletLocation(undefined);
-                setPendingToiletData(null);
-                setIsAddingToilet(false);
-              } else {
-                console.log("NOT resetting states - in location selection mode");
+              console.log("AddToiletModal onClose called, transitioning:", isTransitioningToLocationMode);
+              if (isTransitioningToLocationMode) {
+                console.log("Ignoring onClose - in transition mode");
+                return;
               }
+              
+              console.log("Processing normal onClose");
+              setShowAddToilet(false);
+              setPendingToiletLocation(undefined);
+              setPendingToiletData(null);
+              setIsAddingToilet(false);
             }}
             location={pendingToiletLocation}
             onRequestLocationSelection={handleLocationSelectionRequest}
