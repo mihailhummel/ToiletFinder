@@ -524,7 +524,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
       const accessibility = getAccessibilityInfo(toilet);
 
       const popupContent = `
-        <div style="min-width: 280px; max-width: 340px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; line-height: 1.4; padding: 20px;">
+        <div style="min-width: 300px; max-width: 360px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; line-height: 1.5; padding: 24px; background: white; border-radius: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.12);">
           <!-- Header with location name and rating -->
           <div style="
             padding-bottom: 16px;
@@ -677,16 +677,18 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
           ">
             <button onclick="window.openLoginModal()" style="
               width: 100%;
-              padding: 12px;
+              padding: 16px;
               background: linear-gradient(135deg, #0ea5e9, #0284c7);
               color: white;
               border: none;
-              border-radius: 6px;
-              font-size: 14px;
+              border-radius: 12px;
+              font-size: 16px;
               font-weight: 600;
               cursor: pointer;
               transition: all 0.2s;
-            " onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='translateY(0)'">
+              box-shadow: 0 4px 16px rgba(14, 165, 233, 0.3);
+              min-height: 48px;
+            " ontouchstart="this.style.transform='scale(0.98)'" ontouchend="this.style.transform='scale(1)'"
               🔐 Sign in to rate and review toilets
             </button>
           </div>
@@ -700,11 +702,15 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
                   <button onclick="window.setRating('${toilet.id}', ${rating})" style="
                     background: none;
                     border: none;
-                    font-size: 20px;
+                    font-size: 24px;
                     cursor: pointer;
                     color: #cbd5e1;
                     transition: color 0.2s;
-                  " onmouseover="window.hoverStars('${toilet.id}', ${rating})" onmouseout="window.resetStars('${toilet.id}')">
+                    padding: 8px;
+                    min-width: 40px;
+                    min-height: 40px;
+                    border-radius: 8px;
+                  " ontouchstart="window.hoverStars('${toilet.id}', ${rating})" ontouchend="window.resetStars('${toilet.id}')">
                     ★
                   </button>
                 `).join('')}
@@ -845,16 +851,16 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
       )}
       
       {/* Map Controls */}
-      <div className="absolute top-4 right-4 space-y-2" style={{ zIndex: 10000 }}>
+      <div className="absolute top-6 right-6 space-y-3" style={{ zIndex: 10000 }}>
         {/* Return to Location Button - always show when user location available */}
         {userLocation && (
           <Button
             onClick={handleReturnToLocation}
-            className="w-12 h-12 bg-white text-blue-600 hover:bg-gray-50 shadow-lg rounded-full p-0 border border-gray-200"
+            className="w-14 h-14 bg-white text-blue-600 hover:bg-gray-50 shadow-xl rounded-full p-0 border border-gray-200 transition-all duration-200 hover:scale-105 active:scale-95"
             variant="ghost"
             title="Return to my location"
           >
-            <Crosshair className="w-5 h-5" />
+            <Crosshair className="w-6 h-6" />
           </Button>
         )}
       </div>
@@ -862,12 +868,12 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
       {/* Floating Add Button */}
       <Button
         onClick={handleAddToilet}
-        className="fixed bottom-6 right-6 w-14 h-14 bg-red-500 hover:bg-red-600 text-white rounded-full shadow-lg p-0"
+        className="fixed bottom-8 right-8 w-16 h-16 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-full shadow-xl p-0 transition-all duration-200 hover:scale-105 active:scale-95 border-2 border-white"
         style={{ zIndex: 10000 }}
         disabled={!user}
         title={!user ? "Sign in to add locations" : "Add toilet location"}
       >
-        <Plus className="w-6 h-6" />
+        <Plus className="w-7 h-7" />
       </Button>
     </div>
   );
