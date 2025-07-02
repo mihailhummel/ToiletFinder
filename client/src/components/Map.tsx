@@ -350,7 +350,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
     // Add a pulsing outer ring using DivIcon with inline animation
     const pulseIcon = window.L.divIcon({
       className: 'pulse-ring-container',
-      html: '<div style="width: 36px; height: 36px; border: 2px solid #3b82f6; border-radius: 50%; animation: pulse 2s infinite; opacity: 0.6;"></div>',
+      html: '<div style="width: 36px; height: 36px; border: 2px solid #3b82f6; border-radius: 50%; animation: pulse 1.5s infinite; opacity: 0.6;"></div>',
       iconSize: [36, 36],
       iconAnchor: [18, 18]
     });
