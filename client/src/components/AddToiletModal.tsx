@@ -14,6 +14,7 @@ interface AddToiletModalProps {
   onClose: () => void;
   location?: MapLocation;
   onRequestLocationSelection?: (type: ToiletType, notes: string) => void;
+  onCloseForLocationSelection?: () => void;
 }
 
 const toiletTypes: { value: ToiletType; label: string }[] = [
@@ -25,7 +26,7 @@ const toiletTypes: { value: ToiletType; label: string }[] = [
   { value: "other", label: "Other" },
 ];
 
-export const AddToiletModal = ({ isOpen, onClose, location, onRequestLocationSelection }: AddToiletModalProps) => {
+export const AddToiletModal = ({ isOpen, onClose, location, onRequestLocationSelection, onCloseForLocationSelection }: AddToiletModalProps) => {
   const [type, setType] = useState<ToiletType>("public");
   const [notes, setNotes] = useState("");
   
@@ -53,7 +54,7 @@ export const AddToiletModal = ({ isOpen, onClose, location, onRequestLocationSel
       console.log("No location, requesting location selection");
       if (onRequestLocationSelection) {
         onRequestLocationSelection(type, notes);
-        onClose(); // Close the form modal
+        // Don't call onClose() here - let the parent handle closing when transitioning to location mode
       }
       return;
     }

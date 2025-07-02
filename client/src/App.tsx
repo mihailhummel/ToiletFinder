@@ -103,6 +103,7 @@ function App() {
     setPendingToiletData({ type, notes });
     setIsAddingToilet(true);
     setPendingToiletLocation(undefined);
+    setShowAddToilet(false); // Close the modal
     console.log("isAddingToilet should now be true");
     toast({
       title: "Select Location",
