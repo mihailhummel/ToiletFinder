@@ -84,22 +84,26 @@ function App() {
   }, [user]);
 
   const handleMapClick = useCallback((location: MapLocation) => {
-    console.log("Map clicked, isAddingToilet:", isAddingToilet, "location:", location);
+    console.log("Map clicked, isAddingToilet:", isAddingToilet, "pendingToiletData:", pendingToiletData, "location:", location);
     if (isAddingToilet && pendingToiletData) {
       console.log("Processing map click for toilet addition with pending data:", pendingToiletData);
       // Step 4: User clicks on map to select location, show final confirmation
       setPendingToiletLocation(location);
       setIsAddingToilet(false); // Exit add toilet mode
       setShowAddToilet(true); // Show the modal with the selected location and data
+    } else {
+      console.log("Map click ignored - not in adding mode or no pending data");
     }
   }, [isAddingToilet, pendingToiletData]);
 
   const handleLocationSelectionRequest = useCallback((type: ToiletType, notes: string) => {
     console.log("Location selection requested for:", { type, notes });
+    console.log("Setting isAddingToilet to true");
     // Step 3: User submitted form, now request location selection
     setPendingToiletData({ type, notes });
     setIsAddingToilet(true);
     setPendingToiletLocation(undefined);
+    console.log("isAddingToilet should now be true");
     toast({
       title: "Select Location",
       description: "Tap on the map where you want to add the toilet"
@@ -222,6 +226,7 @@ function App() {
               onLoginClick={handleLoginClick}
               isAdmin={isAdmin}
               currentUser={user}
+              isAddingToilet={isAddingToilet}
             />
             
             {/* Floating Action Button */}
@@ -255,10 +260,14 @@ function App() {
           <AddToiletModal
             isOpen={showAddToilet}
             onClose={() => {
+              console.log("AddToiletModal onClose called");
               setShowAddToilet(false);
-              setPendingToiletLocation(undefined);
-              setPendingToiletData(null);
-              setIsAddingToilet(false);
+              // Only reset these if we're not in location selection mode
+              if (!isAddingToilet) {
+                setPendingToiletLocation(undefined);
+                setPendingToiletData(null);
+              }
+              // Don't reset isAddingToilet here - it's managed by the workflow
             }}
             location={pendingToiletLocation}
             onRequestLocationSelection={handleLocationSelectionRequest}

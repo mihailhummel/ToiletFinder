@@ -12,6 +12,7 @@ interface MapProps {
   onLoginClick: () => void;
   isAdmin?: boolean;
   currentUser?: any;
+  isAddingToilet?: boolean;
 }
 
 declare global {
@@ -30,7 +31,7 @@ declare global {
   }
 }
 
-const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, currentUser }: MapProps) => {
+const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, currentUser, isAddingToilet }: MapProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<any>(null);
   const markers = useRef<any[]>([]);
@@ -877,7 +878,13 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
 
   return (
     <div className="relative w-full h-full">
-      <div ref={mapContainer} className="w-full h-full" />
+      <div 
+        ref={mapContainer} 
+        className="w-full h-full" 
+        style={{ 
+          cursor: isAddingToilet ? 'crosshair' : 'grab' 
+        }}
+      />
       
       {(!leafletLoaded || locationLoading) && (
         <div className="absolute inset-0 bg-gray-100 flex items-center justify-center">
