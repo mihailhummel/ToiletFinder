@@ -332,100 +332,120 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
         iconAnchor: [20, 50]
       });
 
-      // Generate additional info sections
-      const getOpeningHours = () => {
-        if (toilet.tags?.opening_hours) return toilet.tags.opening_hours;
-        return null;
-      };
-
-      const getFeeInfo = () => {
-        if (toilet.tags?.fee === 'no') return 'Free';
-        if (toilet.tags?.fee === 'yes') return 'Paid';
-        if (toilet.notes?.toLowerCase().includes('fee: no')) return 'Free';
-        return null;
-      };
-
-      const getAccessibilityInfo = () => {
-        if (toilet.tags?.wheelchair === 'yes') return 'Wheelchair accessible';
-        if (toilet.tags?.wheelchair === 'no') return 'Not wheelchair accessible';
-        if (toilet.notes?.toLowerCase().includes('wheelchair accessible: no')) return 'Not wheelchair accessible';
-        if (toilet.notes?.toLowerCase().includes('wheelchair accessible: yes')) return 'Wheelchair accessible';
-        return null;
-      };
-
-      const getGenderInfo = () => {
-        const male = toilet.tags?.male === 'yes';
-        const female = toilet.tags?.female === 'yes';
-        if (male && female) return 'Male & Female';
-        if (male) return 'Male only';
-        if (female) return 'Female only';
-        return null;
-      };
-
-      const openingHours = getOpeningHours();
-      const feeInfo = getFeeInfo();
-      const accessibilityInfo = getAccessibilityInfo();
-      const genderInfo = getGenderInfo();
-
       const popupContent = `
-        <div style="font-family: system-ui, -apple-system, sans-serif; min-width: 280px;">
-          <div style="margin-bottom: 12px;">
-            <h3 style="margin: 0 0 8px 0; font-size: 16px; font-weight: 600; color: #1f2937;">
-              ${toilet.notes || 'Public Toilet'}
-            </h3>
-            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-              <div style="display: inline-flex; align-items: center; background: #f3f4f6; padding: 4px 8px; border-radius: 12px; font-size: 12px; color: #6b7280; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">
-                ${toilet.type?.replace('_', ' ') || 'public'}
+        <div style="padding: 0; margin: 0; max-width: 320px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+          <!-- Header -->
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+            <div style="width: 40px; height: 40px; background: #FF385C; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;">
+              🚽
+            </div>
+            <div style="flex: 1;">
+              <h3 style="margin: 0; font-size: 18px; font-weight: 600; color: #222; line-height: 1.2;">
+                ${toilet.notes || 'Public Toilet'}
+              </h3>
+              <p style="margin: 4px 0 0 0; font-size: 14px; color: #717171;">No reviews yet</p>
+            </div>
+          </div>
+
+          <!-- Info Cards -->
+          <div style="margin-bottom: 20px;">
+            <!-- Availability -->
+            <div style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 16px; padding: 12px; background: #f7f7f7; border-radius: 12px; border-left: 4px solid #00A699;">
+              <div style="width: 24px; height: 24px; background: #00A699; border-radius: 6px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px;">
+                <div style="width: 12px; height: 12px; background: white; border-radius: 2px;"></div>
+              </div>
+              <div>
+                <p style="margin: 0; font-size: 12px; font-weight: 600; color: #717171; text-transform: uppercase; letter-spacing: 0.5px;">AVAILABILITY</p>
+                <p style="margin: 2px 0 0 0; font-size: 14px; font-weight: 500; color: #222;">Public access</p>
+              </div>
+            </div>
+
+            <!-- Accessibility -->
+            <div style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 16px; padding: 12px; background: #f7f7f7; border-radius: 12px; border-left: 4px solid #B0B0B0;">
+              <div style="width: 24px; height: 24px; background: #B0B0B0; border-radius: 6px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px;">
+                <div style="width: 12px; height: 12px; background: white; border-radius: 50%; position: relative;">
+                  <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 8px; height: 1px; background: #B0B0B0;"></div>
+                </div>
+              </div>
+              <div>
+                <p style="margin: 0; font-size: 12px; font-weight: 600; color: #717171; text-transform: uppercase; letter-spacing: 0.5px;">ACCESSIBILITY</p>
+                <p style="margin: 2px 0 0 0; font-size: 14px; font-weight: 500; color: #222;">
+                  ${toilet.notes?.toLowerCase().includes('wheelchair accessible: yes') ? 'Wheelchair accessible' : 
+                    toilet.notes?.toLowerCase().includes('wheelchair accessible: no') ? 'Not wheelchair accessible' : 
+                    'Accessibility unknown'}
+                </p>
               </div>
             </div>
           </div>
-          
-          ${openingHours || feeInfo || accessibilityInfo || genderInfo ? `
-          <div style="margin-bottom: 12px; border-top: 1px solid #e5e7eb; padding-top: 12px;">
-            ${openingHours ? `
-              <div style="display: flex; align-items: center; margin-bottom: 6px;">
-                <span style="font-size: 14px; color: #6b7280; margin-right: 8px;">🕒</span>
-                <span style="font-size: 13px; color: #374151;">${openingHours}</span>
+
+          <!-- Rating Section -->
+          <div style="margin-bottom: 20px;">
+            <p style="margin: 0 0 12px 0; font-size: 14px; font-weight: 600; color: #717171; text-transform: uppercase; letter-spacing: 0.5px;">RATE THIS TOILET</p>
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <div style="display: flex; gap: 8px;">
+                ${[1,2,3,4,5].map(star => `
+                  <button 
+                    onclick="window.setRating('${toilet.id}', ${star})" 
+                    onmouseover="window.hoverStars('${toilet.id}', ${star})" 
+                    onmouseout="window.resetStars('${toilet.id}')"
+                    style="background: none; border: none; cursor: pointer; padding: 4px; font-size: 20px; line-height: 1;"
+                    id="star-${toilet.id}-${star}"
+                  >
+                    ⭐
+                  </button>
+                `).join('')}
               </div>
-            ` : ''}
-            ${feeInfo ? `
-              <div style="display: flex; align-items: center; margin-bottom: 6px;">
-                <span style="font-size: 14px; color: #6b7280; margin-right: 8px;">💰</span>
-                <span style="font-size: 13px; color: #374151;">${feeInfo}</span>
+              <div style="display: flex; gap: 8px;">
+                <button 
+                  onclick="window.submitReview('${toilet.id}')" 
+                  style="background: #FF385C; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer;"
+                  id="submit-btn-${toilet.id}"
+                  disabled
+                >
+                  Tap to rate
+                </button>
+                <button 
+                  onclick="window.cancelReview('${toilet.id}')" 
+                  style="background: #f7f7f7; color: #717171; border: none; padding: 8px 12px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; display: none;"
+                  id="cancel-btn-${toilet.id}"
+                >
+                  Cancel
+                </button>
               </div>
-            ` : ''}
-            ${accessibilityInfo ? `
-              <div style="display: flex; align-items: center; margin-bottom: 6px;">
-                <span style="font-size: 14px; color: #6b7280; margin-right: 8px;">♿</span>
-                <span style="font-size: 13px; color: #374151;">${accessibilityInfo}</span>
-              </div>
-            ` : ''}
-            ${genderInfo ? `
-              <div style="display: flex; align-items: center; margin-bottom: 6px;">
-                <span style="font-size: 14px; color: #6b7280; margin-right: 8px;">👥</span>
-                <span style="font-size: 13px; color: #374151;">${genderInfo}</span>
-              </div>
-            ` : ''}
+            </div>
           </div>
-          ` : ''}
-          
-          <div id="reviews-${toilet.id}"></div>
-          <div style="padding-top: 16px;">
-            <button onclick="window.getDirections(${toilet.coordinates.lat}, ${toilet.coordinates.lng})" style="
-              width: 100%;
-              padding: 12px 16px;
-              background: linear-gradient(135deg, #FF385C 0%, #e11d48 100%);
-              color: white;
-              border: none;
-              border-radius: 8px;
-              font-size: 14px;
-              font-weight: 600;
-              cursor: pointer;
-              transition: all 0.2s ease;
-            ">
-              🧭 Get Directions
-            </button>
+
+          <!-- Reviews Section -->
+          <div id="reviews-${toilet.id}" style="margin-bottom: 20px;">
+            <p style="margin: 0; font-size: 14px; color: #717171; text-align: center; padding: 20px 0;">
+              No reviews yet. Be the first to review this toilet!
+            </p>
           </div>
+
+          <!-- Directions Button -->
+          <button 
+            onclick="window.getDirections(${toilet.coordinates.lat}, ${toilet.coordinates.lng})" 
+            style="
+              width: 100%; 
+              padding: 16px; 
+              background: #FF385C; 
+              color: white; 
+              border: none; 
+              border-radius: 12px; 
+              font-size: 16px; 
+              font-weight: 600; 
+              cursor: pointer; 
+              display: flex; 
+              align-items: center; 
+              justify-content: center; 
+              gap: 8px;
+              transition: background-color 0.2s ease;
+            "
+            onmouseover="this.style.background='#E31E52'"
+            onmouseout="this.style.background='#FF385C'"
+          >
+            🧭 Get Directions
+          </button>
         </div>
       `;
 
