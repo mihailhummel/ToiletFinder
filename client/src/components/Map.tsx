@@ -52,8 +52,8 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
   }, [userLocation, locationLoading]);
   const { user } = useAuth();
   
-  // Use nearby toilets within 100m when user location is available
-  const { data: toilets = [] } = useToilets(userLocation);
+  // Load all toilets initially to show complete coverage
+  const { data: toilets = [] } = useToilets();
   
   // Memoize toilets to prevent unnecessary re-renders
   const stableToilets = useMemo(() => {
