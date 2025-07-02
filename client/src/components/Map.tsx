@@ -37,7 +37,14 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
   const [leafletLoaded, setLeafletLoaded] = useState(false);
   const [isAwayFromUser, setIsAwayFromUser] = useState(false);
   
-  const { location: userLocation, loading: locationLoading } = useGeolocation();
+
+  
+  const { location: userLocation, loading: locationLoading, getCurrentLocation } = useGeolocation();
+  
+  // Auto-request location on component mount
+  useEffect(() => {
+    getCurrentLocation();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const { data: toilets = [] } = useToilets(userLocation);
   const { user } = useAuth();
 
@@ -137,7 +144,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
         onLoginClick();
       };
     }
-  }, [onLoginClick]);
+  }, []);
 
   // Initialize map
   useEffect(() => {
@@ -189,7 +196,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
         map.current = null;
       }
     };
-  }, [leafletLoaded, stableUserLocation, onAddToiletClick]);
+  }, [leafletLoaded, stableUserLocation]);
 
   const userLocationSet = useRef(false);
 
