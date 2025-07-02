@@ -292,6 +292,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
     }).addTo(map.current);
 
     // Track when map moves away from user location and update marker position
+    let updateTimeout: number;
     map.current.on('move', () => {
       if (!userLocation) return;
       
@@ -302,10 +303,23 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
       );
       
       setIsAwayFromUser(distance > 50); // 50 meters threshold
-      
-      // Update CSS marker position when map moves
+    });
+
+    // Update marker position on moveend for smoother experience
+    map.current.on('moveend', () => {
+      if (!userLocation) return;
       const point = map.current.latLngToContainerPoint([userLocation.lat, userLocation.lng]);
       setUserMarkerPosition({ x: point.x, y: point.y });
+    });
+
+    // Also update during zoom for immediate feedback
+    map.current.on('zoom', () => {
+      if (!userLocation) return;
+      clearTimeout(updateTimeout);
+      updateTimeout = setTimeout(() => {
+        const point = map.current.latLngToContainerPoint([userLocation.lat, userLocation.lng]);
+        setUserMarkerPosition({ x: point.x, y: point.y });
+      }, 16); // ~60fps
     });
 
     // Add click handler for adding toilets (only if user is authenticated)
@@ -787,13 +801,17 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
   };
 
   const handleAddToilet = () => {
+    console.log('Add toilet button clicked, user:', !!user);
+    
     if (!user) {
-      // Show login prompt or trigger authentication
+      // Show login prompt
+      onLoginClick();
       return;
     }
     
     if (map.current) {
       const center = map.current.getCenter();
+      console.log('Triggering add toilet at:', center.lat, center.lng);
       onAddToiletClick({ lat: center.lat, lng: center.lng });
     }
   };
@@ -806,7 +824,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
       {/* CSS-based user location marker overlay */}
       {userMarkerPosition && (
         <div
-          className="absolute pointer-events-none"
+          className="absolute pointer-events-none transition-all duration-75 ease-out"
           style={{
             left: userMarkerPosition.x - 20,
             top: userMarkerPosition.y - 20,
