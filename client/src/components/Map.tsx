@@ -37,7 +37,17 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
   const [leafletLoaded, setLeafletLoaded] = useState(false);
   const [isAwayFromUser, setIsAwayFromUser] = useState(false);
   
-  const { location: userLocation, loading: locationLoading } = useGeolocation();
+  const { location: userLocation, loading: locationLoading, getCurrentLocation } = useGeolocation();
+  
+  // Get user location when map component mounts
+  useEffect(() => {
+    getCurrentLocation();
+  }, []);
+  
+  // Debug logging for user location
+  useEffect(() => {
+    console.log('Map component userLocation changed:', userLocation, 'loading:', locationLoading);
+  }, [userLocation, locationLoading]);
   const { user } = useAuth();
   
   // Use nearby toilets within 100m when user location is available
@@ -316,8 +326,8 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
 
   // Update user location and center map
   useEffect(() => {
-    if (!map.current || !userLocation) {
-      console.log('Map not ready or no user location:', { mapReady: !!map.current, userLocation });
+    if (!map.current || !userLocation || !leafletLoaded) {
+      console.log('Map not ready or no user location:', { mapReady: !!map.current, userLocation, leafletLoaded });
       return;
     }
 
@@ -334,45 +344,58 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
       html: `
         <div style="
           position: relative;
-          width: 30px;
-          height: 30px;
-          z-index: 1000;
+          width: 40px;
+          height: 40px;
+          z-index: 9999;
         ">
           <div style="
             position: absolute;
-            width: 20px;
-            height: 20px;
-            top: 5px;
-            left: 5px;
-            background: #0066ff;
-            border: 4px solid white;
+            width: 24px;
+            height: 24px;
+            top: 8px;
+            left: 8px;
+            background: #FF385C;
+            border: 5px solid white;
             border-radius: 50%;
-            box-shadow: 0 0 0 4px rgba(0, 102, 255, 0.3), 0 4px 8px rgba(0, 0, 0, 0.2);
-            animation: userPulse 2s infinite;
+            box-shadow: 0 0 0 5px rgba(255, 56, 92, 0.4), 0 6px 12px rgba(0, 0, 0, 0.3);
+            animation: userLocationPulse 2s infinite;
+            z-index: 9999;
           "></div>
         </div>
         <style>
-          @keyframes userPulse {
-            0% { box-shadow: 0 0 0 0 rgba(0, 102, 255, 0.8), 0 4px 8px rgba(0, 0, 0, 0.2); }
-            70% { box-shadow: 0 0 0 15px rgba(0, 102, 255, 0), 0 4px 8px rgba(0, 0, 0, 0.2); }
-            100% { box-shadow: 0 0 0 0 rgba(0, 102, 255, 0), 0 4px 8px rgba(0, 0, 0, 0.2); }
+          .user-location-marker {
+            z-index: 9999 !important;
+          }
+          @keyframes userLocationPulse {
+            0% { 
+              box-shadow: 0 0 0 0 rgba(255, 56, 92, 0.9), 0 6px 12px rgba(0, 0, 0, 0.3);
+              transform: scale(1);
+            }
+            70% { 
+              box-shadow: 0 0 0 20px rgba(255, 56, 92, 0), 0 6px 12px rgba(0, 0, 0, 0.3);
+              transform: scale(1.1);
+            }
+            100% { 
+              box-shadow: 0 0 0 0 rgba(255, 56, 92, 0), 0 6px 12px rgba(0, 0, 0, 0.3);
+              transform: scale(1);
+            }
           }
         </style>
       `,
-      iconSize: [30, 30],
-      iconAnchor: [15, 15]
+      iconSize: [40, 40],
+      iconAnchor: [20, 20]
     });
 
     userMarker.current = window.L.marker([userLocation.lat, userLocation.lng], { 
       icon: userIcon,
-      zIndexOffset: 1000 // Make sure it appears above other markers
+      zIndexOffset: 10000 // Make sure it appears above other markers
     }).addTo(map.current);
 
     console.log('User marker added to map');
 
     // Center map on user location with high zoom (100m radius)
     map.current.setView([userLocation.lat, userLocation.lng], 18);
-  }, [userLocation]);
+  }, [userLocation, leafletLoaded]);
 
   // Update toilet markers  
   useEffect(() => {
