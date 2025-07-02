@@ -1,6 +1,6 @@
 import { drizzle } from "drizzle-orm/neon-http";
 import { neon } from "@neondatabase/serverless";
-import { toilets, reviews, reports, type Toilet, type Review, type Report, type InsertToilet, type InsertReview, type InsertReport } from "@shared/schema";
+import { toilets, reviews, reports, toiletReports, type Toilet, type Review, type Report, type ToiletReport, type InsertToilet, type InsertReview, type InsertReport, type InsertToiletReport } from "@shared/schema";
 import { eq, and, avg, count, desc } from "drizzle-orm";
 
 if (!process.env.DATABASE_URL) {
@@ -23,6 +23,12 @@ export interface IStorage {
   
   // Report operations
   createReport(report: InsertReport): Promise<void>;
+  
+  // Toilet reporting operations
+  reportToiletNotExists(toiletReport: InsertToiletReport): Promise<void>;
+  getToiletReportCount(toiletId: string): Promise<number>;
+  hasUserReportedToilet(toiletId: string, userId: string): Promise<boolean>;
+  removeToiletFromReports(toiletId: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -33,6 +39,8 @@ export class DatabaseStorage implements IStorage {
       lng: toilet.coordinates.lng,
       notes: toilet.notes,
       userId: toilet.userId,
+      source: toilet.source || 'user',
+      addedByUserName: toilet.addedByUserName,
     }).returning({ id: toilets.id });
     
     return newToilet.id;
@@ -49,6 +57,13 @@ export class DatabaseStorage implements IStorage {
       lng: toilet.lng,
       notes: toilet.notes,
       userId: toilet.userId,
+      source: toilet.source,
+      addedByUserName: toilet.addedByUserName,
+      osmId: toilet.osmId,
+      tags: toilet.tags as any,
+      reportCount: toilet.reportCount,
+      isRemoved: toilet.isRemoved,
+      removedAt: toilet.removedAt,
       createdAt: toilet.createdAt,
       averageRating: toilet.averageRating || 0,
       reviewCount: toilet.reviewCount,
@@ -106,6 +121,73 @@ export class DatabaseStorage implements IStorage {
 
   async createReport(report: InsertReport): Promise<void> {
     await db.insert(reports).values(report);
+  }
+
+  async reportToiletNotExists(toiletReport: InsertToiletReport): Promise<void> {
+    // Check if user has already reported this toilet
+    const existingReport = await db
+      .select()
+      .from(toiletReports)
+      .where(and(
+        eq(toiletReports.toiletId, toiletReport.toiletId),
+        eq(toiletReports.userId, toiletReport.userId)
+      ))
+      .limit(1);
+
+    if (existingReport.length > 0) {
+      return; // User has already reported this toilet
+    }
+
+    // Add the report
+    await db.insert(toiletReports).values({
+      toiletId: toiletReport.toiletId,
+      userId: toiletReport.userId,
+      userName: toiletReport.userName,
+    });
+
+    // Update report count
+    const reportCount = await this.getToiletReportCount(toiletReport.toiletId);
+    
+    // If 10 or more reports, mark toilet as removed
+    if (reportCount >= 10) {
+      await this.removeToiletFromReports(toiletReport.toiletId);
+    } else {
+      // Update the report count
+      await db.update(toilets)
+        .set({ reportCount: reportCount })
+        .where(eq(toilets.id, toiletReport.toiletId));
+    }
+  }
+
+  async getToiletReportCount(toiletId: string): Promise<number> {
+    const result = await db
+      .select({ count: count() })
+      .from(toiletReports)
+      .where(eq(toiletReports.toiletId, toiletId));
+    
+    return result[0]?.count || 0;
+  }
+
+  async hasUserReportedToilet(toiletId: string, userId: string): Promise<boolean> {
+    const result = await db
+      .select()
+      .from(toiletReports)
+      .where(and(
+        eq(toiletReports.toiletId, toiletId),
+        eq(toiletReports.userId, userId)
+      ))
+      .limit(1);
+    
+    return result.length > 0;
+  }
+
+  async removeToiletFromReports(toiletId: string): Promise<void> {
+    await db.update(toilets)
+      .set({ 
+        isRemoved: true, 
+        removedAt: new Date() 
+      })
+      .where(eq(toilets.id, toiletId));
   }
 
   private calculateDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {

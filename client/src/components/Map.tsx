@@ -280,6 +280,38 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
       (window as any).openLoginModal = () => {
         onLoginClick();
       };
+
+      (window as any).reportToiletNotExists = async (toiletId: string) => {
+        if (!user) {
+          onLoginClick();
+          return;
+        }
+
+        try {
+          const response = await fetch(`/api/toilets/${toiletId}/report-not-exists`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userId: user.uid,
+              userName: user.displayName || 'Anonymous User'
+            })
+          });
+
+          if (response.ok) {
+            const reportBtn = document.getElementById(`report-btn-${toiletId}`);
+            if (reportBtn) {
+              reportBtn.innerHTML = '✅ Reported - Thank you!';
+              reportBtn.style.background = '#dcfce7';
+              reportBtn.style.color = '#166534';
+              reportBtn.style.borderColor = '#bbf7d0';
+              reportBtn.style.cursor = 'default';
+              reportBtn.setAttribute('onclick', '');
+            }
+          }
+        } catch (error) {
+          console.error('Error reporting toilet:', error);
+        }
+      };
     }
   }, [user, onLoginClick]);
 
@@ -325,6 +357,12 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
           }
         }, 100);
       }
+    });
+
+    // Add click handler for adding new toilets
+    map.current.on('click', (e: any) => {
+      const { lat, lng } = e.latlng;
+      onAddToiletClick({ lat, lng });
     });
 
     return () => {
@@ -421,8 +459,11 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
     });
     markers.current = [];
 
-    // Add toilet markers
-    stableToilets.forEach(toilet => {
+    // Add toilet markers (filter out removed toilets)
+    stableToilets.filter(toilet => !toilet.isRemoved).forEach(toilet => {
+      // Determine marker color based on toilet source
+      const markerColor = toilet.source === 'user' ? '#7C3AED' : '#FF385C'; // Purple for user-added, red for OSM
+      
       const icon = window.L.divIcon({
         className: 'toilet-marker',
         html: `
@@ -439,7 +480,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
               transform: translateX(-50%);
               width: 36px;
               height: 36px;
-              background: #FF385C;
+              background: ${markerColor};
               border: 2px solid white;
               border-radius: 50%;
               display: flex;
@@ -461,7 +502,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
               height: 0;
               border-left: 6px solid transparent;
               border-right: 6px solid transparent;
-              border-top: 8px solid #FF385C;
+              border-top: 8px solid ${markerColor};
             "></div>
           </div>
         `,
@@ -574,13 +615,18 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
         <div style="padding: 20px; margin: 0; max-width: 340px; min-width: 300px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; box-sizing: border-box;">
           <!-- Header -->
           <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
-            <div style="width: 40px; height: 40px; background: #FF385C; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;">
+            <div style="width: 40px; height: 40px; background: ${markerColor}; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;">
               🚽
             </div>
             <div style="flex: 1;">
               <h3 style="margin: 0; font-size: 18px; font-weight: 600; color: #222; line-height: 1.2;">
                 ${toiletTitle}
               </h3>
+              ${toilet.source === 'user' && toilet.addedByUserName ? `
+                <div style="margin: 2px 0 0 0; font-size: 12px; color: #7C3AED; font-weight: 500;">
+                  Added by ${toilet.addedByUserName}
+                </div>
+              ` : ''}
               <div id="review-summary-${toilet.id}" style="margin: 4px 0 0 0; font-size: 14px; color: #717171;">No reviews yet</div>
             </div>
           </div>
@@ -673,29 +719,57 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
             </p>
           </div>
 
-          <!-- Directions Button -->
+          <!-- Action Buttons -->
+          <div style="display: flex; gap: 12px; margin-bottom: 12px;">
+            <button 
+              onclick="window.getDirections(${toilet.coordinates.lat}, ${toilet.coordinates.lng})" 
+              style="
+                flex: 1;
+                padding: 16px; 
+                background: #FF385C; 
+                color: white; 
+                border: none; 
+                border-radius: 12px; 
+                font-size: 16px; 
+                font-weight: 600; 
+                cursor: pointer; 
+                display: flex; 
+                align-items: center; 
+                justify-content: center; 
+                gap: 8px;
+                transition: background-color 0.2s ease;
+              "
+              onmouseover="this.style.background='#E31E52'"
+              onmouseout="this.style.background='#FF385C'"
+            >
+              🧭 Get Directions
+            </button>
+          </div>
+          
+          <!-- Report Button -->
           <button 
-            onclick="window.getDirections(${toilet.coordinates.lat}, ${toilet.coordinates.lng})" 
+            id="report-btn-${toilet.id}"
+            onclick="window.reportToiletNotExists('${toilet.id}')" 
             style="
               width: 100%; 
-              padding: 16px; 
-              background: #FF385C; 
-              color: white; 
-              border: none; 
-              border-radius: 12px; 
-              font-size: 16px; 
-              font-weight: 600; 
+              padding: 12px; 
+              background: #f7f7f7; 
+              color: #717171; 
+              border: 1px solid #E5E5E5; 
+              border-radius: 8px; 
+              font-size: 14px; 
+              font-weight: 500; 
               cursor: pointer; 
               display: flex; 
               align-items: center; 
               justify-content: center; 
-              gap: 8px;
-              transition: background-color 0.2s ease;
+              gap: 6px;
+              transition: all 0.2s ease;
             "
-            onmouseover="this.style.background='#E31E52'"
-            onmouseout="this.style.background='#FF385C'"
+            onmouseover="this.style.background='#fee2e2'; this.style.color='#dc2626'; this.style.borderColor='#fca5a5'"
+            onmouseout="this.style.background='#f7f7f7'; this.style.color='#717171'; this.style.borderColor='#E5E5E5'"
           >
-            🧭 Get Directions
+            ⚠️ This toilet doesn't exist
           </button>
         </div>
       `;

@@ -16,15 +16,16 @@ ToiletMap Bulgaria is a mobile-responsive web application designed to help peopl
 
 ### Backend Architecture
 - **Runtime**: Node.js with Express.js
-- **Database**: Firebase Firestore for real-time data storage
+- **Database**: PostgreSQL with Drizzle ORM for structured data storage
 - **Authentication**: Firebase Auth with Google OAuth integration
-- **ORM**: Drizzle ORM configured for PostgreSQL (currently using Firebase)
+- **Admin System**: Mihail Dilyanov designated as admin with override capabilities
 - **Development**: Hot Module Replacement (HMR) with Vite middleware
 
 ### Data Storage Solutions
-- **Primary Database**: Firebase Firestore for real-time capabilities
+- **Primary Database**: PostgreSQL with Drizzle ORM for structured relational data
 - **Schema Design**: Zod schemas for type validation and runtime checks
-- **Collections**: toilets, reviews, reports with relational data structure
+- **Tables**: toilets, reviews, reports, toilet_reports with advanced admin controls
+- **Categorization**: Original OSM toilets vs user-generated content tracking
 - **Caching**: TanStack Query for client-side caching with stale-while-revalidate strategy
 
 ### Authentication and Authorization
@@ -133,6 +134,15 @@ Changelog:
 - July 02, 2025. Added Google profile picture integration in header and user menu
 - July 02, 2025. RESTORED COMPLETE DATASET: Fixed toilet loading to display all 961 Bulgaria locations instead of 156 nearby
 - July 02, 2025. Enhanced UI: Removed locate button hover effect, increased button symbol sizes, moved locate button to bottom-left
+- July 02, 2025. MAJOR ADMIN SYSTEM: Implemented comprehensive admin system with Mihail Dilyanov as designated admin
+- July 02, 2025. Added toilet categorization: Original OSM toilets (red markers) vs user-added toilets (purple markers)  
+- July 02, 2025. Implemented user-generated toilet locations with manual map pinning and descriptions
+- July 02, 2025. Added "Report toilet doesn't exist" functionality - 10 reports automatically removes location
+- July 02, 2025. Created PostgreSQL database schema with toilet_reports table for admin oversight
+- July 02, 2025. Added user attribution for user-generated toilets showing Google account names
+- July 02, 2025. Implemented map click-to-add functionality for new toilet locations
+- July 02, 2025. Enhanced popup design with color-coded markers and user attribution display
+- July 02, 2025. Migrated from Firebase to PostgreSQL with advanced Drizzle ORM schema
 - July 02, 2025. Fixed infinite render loop in Map component by removing getCurrentLocation from useEffect dependencies
 ```
 

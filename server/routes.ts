@@ -1,7 +1,7 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertToiletSchema, insertReviewSchema, insertReportSchema } from "@shared/schema";
+import { insertToiletSchema, insertReviewSchema, insertReportSchema, insertToiletReportSchema } from "@shared/schema";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -111,6 +111,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("Error creating report:", error);
         res.status(500).json({ error: "Failed to create report" });
       }
+    }
+  });
+
+  // Toilet reporting routes  
+  app.post("/api/toilets/:toiletId/report-not-exists", async (req: Request, res: Response) => {
+    try {
+      const { toiletId } = req.params;
+      const { userId, userName } = req.body;
+      
+      if (!userId || !userName) {
+        return res.status(400).json({ error: "userId and userName are required" });
+      }
+
+      await storage.reportToiletNotExists({
+        toiletId,
+        userId,
+        userName
+      });
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error reporting toilet:", error);
+      res.status(500).json({ error: "Failed to report toilet" });
+    }
+  });
+
+  app.get("/api/toilets/:toiletId/report-status", async (req: Request, res: Response) => {
+    try {
+      const { toiletId } = req.params;
+      const { userId } = req.query;
+      
+      const reportCount = await storage.getToiletReportCount(toiletId);
+      let hasUserReported = false;
+      
+      if (userId) {
+        hasUserReported = await storage.hasUserReportedToilet(toiletId, userId as string);
+      }
+      
+      res.json({ 
+        reportCount, 
+        hasUserReported,
+        isRemoved: reportCount >= 10
+      });
+    } catch (error) {
+      console.error("Error getting report status:", error);
+      res.status(500).json({ error: "Failed to get report status" });
     }
   });
 

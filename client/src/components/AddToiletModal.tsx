@@ -61,7 +61,9 @@ export const AddToiletModal = ({ isOpen, onClose, location }: AddToiletModalProp
         type,
         coordinates: location,
         notes: notes.trim() || undefined,
-        userId: user.uid
+        userId: user.uid,
+        source: 'user',
+        addedByUserName: user.displayName || 'Anonymous User'
       });
 
       toast({
