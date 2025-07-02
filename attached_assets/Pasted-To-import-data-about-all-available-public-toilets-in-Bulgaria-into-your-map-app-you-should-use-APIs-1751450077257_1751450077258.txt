@@ -1,0 +1,88 @@
+To import data about all available public toilets in Bulgaria into your map app, you should use APIs that provide global or Europe-wide public restroom data with the ability to filter by location (latitude/longitude or country). Here are the best options based on your requirements and the latest available sources:
+
+1. Available Public Bathrooms API (Zyla API Hub)
+Coverage: Global, including Bulgaria.
+
+Features:
+
+Search by latitude and longitude (so you can cover all of Bulgaria by querying relevant coordinates).
+
+Returns detailed info: location, availability, accessibility, amenities, user ratings, and comments.
+
+Data is updated frequently, with over 50,000+ new entries daily.
+
+Designed for easy integration into mapping and navigation apps.
+
+Integration: RESTful API, returns JSON objects for each bathroom, ideal for importing into your map app.
+
+How to use:
+
+Pass latitude and longitude for the area you want to cover.
+
+Parse the JSON response and plot the toilets on your map.
+
+API Documentation: Available through Zyla API Hub.
+
+2. OpenStreetMap (OSM) / MapComplete
+Coverage: Global, including Bulgaria.
+
+Features:
+
+Publicly editable map with a dedicated public toilets layer.
+
+Data can be accessed via OSM APIs or Overpass API.
+
+Free and open-source, with a large community keeping it up to date.
+
+Integration:
+
+Use Overpass API to query all nodes/ways/relations tagged with amenity=toilets within Bulgaria’s bounding box.
+
+Data is returned in JSON or XML, suitable for importing into your app.
+
+Example: MapComplete shows a public toilets map powered by OSM.
+
+3. MAPOG GIS Data Bulgaria
+Coverage: Bulgaria-specific.
+
+Features:
+
+GIS data includes public toilets, among other amenities.
+
+Integration:
+
+Check if the data is downloadable or accessible via an API.
+
+Import the relevant toilet location data into your app.
+
+API Comparison Table
+API Name	Coverage	Data Format	Access Method	Features	Suitable for Bulgaria?
+Available Public Bathrooms API	Global	JSON	REST	Location, amenities, ratings, accessibility	Yes
+OpenStreetMap (Overpass API)	Global	JSON/XML	REST	Location, community-updated, free/open	Yes
+MAPOG GIS Data Bulgaria	Bulgaria	GIS formats	Web/Download	Local amenities, including toilets	Yes
+Recommended Approach
+For the most comprehensive and up-to-date data, combine OpenStreetMap (via Overpass API) and the Available Public Bathrooms API.
+
+For Bulgaria-specific data, supplement with MAPOG GIS Data if you need local accuracy or additional metadata.
+
+Example: How to Query OSM for Toilets in Bulgaria
+text
+GET https://overpass-api.de/api/interpreter?data=[out:json];node["amenity"="toilets"](42.2,22.3,44.2,28.6);out;
+This query fetches all nodes tagged as toilets within Bulgaria’s approximate bounding box.
+
+How to Use in Replit
+Sign up for the API(s) (Zyla API Hub for Available Public Bathrooms, or use OSM Overpass API directly).
+
+Write code in Python (or your preferred language) to fetch data from the API endpoints.
+
+Parse the JSON/XML responses and import the data into your map app’s database or directly plot on your map.
+
+Summary:
+
+Use the Available Public Bathrooms API for a commercial, global, and feature-rich solution.
+
+Use OpenStreetMap/Overpass API for free, open, and community-driven data.
+
+Consider MAPOG GIS Data for Bulgaria-specific datasets.
+
+These APIs will allow you to import and display public toilet locations across Bulgaria in your mapping application.
