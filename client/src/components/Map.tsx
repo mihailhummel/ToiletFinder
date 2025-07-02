@@ -93,6 +93,20 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
           const response = await fetch(`/api/toilets/${toiletId}/reviews`);
           if (response.ok) {
             const reviews = await response.json();
+            
+            // Update review summary in header
+            const reviewSummary = document.getElementById(`review-summary-${toiletId}`);
+            if (reviewSummary && reviews.length > 0) {
+              const avgRating = (reviews.reduce((sum: number, r: any) => sum + r.rating, 0) / reviews.length).toFixed(1);
+              reviewSummary.innerHTML = `
+                <span style="display: flex; align-items: center; gap: 4px;">
+                  <span style="color: #facc15; font-size: 14px;">★</span>
+                  <span style="font-weight: 500;">${avgRating}</span>
+                  <span>(${reviews.length} review${reviews.length === 1 ? '' : 's'})</span>
+                </span>
+              `;
+            }
+            
             const reviewsContainer = document.getElementById(`reviews-${toiletId}`);
             if (reviewsContainer) {
               if (reviews.length > 0) {
@@ -104,19 +118,19 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
                     <div style="max-height: 200px; overflow-y: auto;">
                       ${reviews.slice(0, 5).map((review: any) => `
                         <div style="padding: 12px; background: #f9fafb; border-radius: 8px; margin-bottom: 8px;">
-                          <div style="display: flex; align-items: center; justify-between; margin-bottom: 6px;">
+                          <div style="display: flex; align-items: center; justify-content: between; margin-bottom: 6px;">
                             <div style="display: flex; align-items: center; gap: 8px;">
                               <div style="width: 24px; height: 24px; background: #3b82f6; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 12px; font-weight: 600;">
                                 ${review.userName.charAt(0).toUpperCase()}
                               </div>
                               <span style="font-size: 14px; font-weight: 500; color: #374151;">${review.userName}</span>
                             </div>
-                            <div style="display: flex; color: #facc15;">
+                            <div style="display: flex; color: #facc15; margin-left: auto;">
                               ${'★'.repeat(review.rating)}${'☆'.repeat(5 - review.rating)}
                             </div>
                           </div>
-                          ${review.text ? `<div style="font-size: 14px; color: #6b7280; line-height: 1.4;">${review.text}</div>` : ''}
-                          <div style="font-size: 12px; color: #9ca3af; margin-top: 4px;">
+                          ${review.text ? `<div style="font-size: 14px; color: #6b7280; line-height: 1.4; margin-top: 8px;">${review.text}</div>` : ''}
+                          <div style="font-size: 12px; color: #9ca3af; margin-top: 6px;">
                             ${new Date(review.createdAt).toLocaleDateString()}
                           </div>
                         </div>
@@ -125,13 +139,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
                   </div>
                 `;
               } else {
-                reviewsContainer.innerHTML = `
-                  <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #e5e7eb;">
-                    <div style="font-size: 14px; color: #9ca3af; font-style: italic; text-align: center; padding: 20px;">
-                      No reviews yet. Be the first to review this toilet!
-                    </div>
-                  </div>
-                `;
+                reviewsContainer.innerHTML = ``;
               }
             }
           }
@@ -152,20 +160,16 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
           }
         }
         
-        // Show text review input
+        // Hide tap message and show review input
+        const tapMessage = document.getElementById(`tap-message-${toiletId}`);
         const reviewInput = document.getElementById(`review-input-${toiletId}`);
-        if (reviewInput) {
-          reviewInput.style.display = 'block';
+        
+        if (tapMessage) {
+          tapMessage.style.display = 'none';
         }
         
-        // Enable submit button and show cancel button
-        const submitBtn = document.getElementById(`submit-btn-${toiletId}`) as HTMLButtonElement;
-        const cancelBtn = document.getElementById(`cancel-btn-${toiletId}`);
-        if (submitBtn && cancelBtn) {
-          submitBtn.disabled = false;
-          submitBtn.innerHTML = 'Submit Review';
-          submitBtn.style.opacity = '1';
-          cancelBtn.style.display = 'inline-block';
+        if (reviewInput) {
+          reviewInput.style.display = 'block';
         }
       };
 
@@ -222,15 +226,11 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
             (window as any).loadReviews(toiletId);
             
             // Reset UI
-            const submitBtn = document.getElementById(`submit-btn-${toiletId}`) as HTMLButtonElement;
-            const cancelBtn = document.getElementById(`cancel-btn-${toiletId}`);
+            const tapMessage = document.getElementById(`tap-message-${toiletId}`);
             const reviewInput = document.getElementById(`review-input-${toiletId}`);
             
-            if (submitBtn && cancelBtn) {
-              submitBtn.disabled = true;
-              submitBtn.innerHTML = 'Tap to rate';
-              submitBtn.style.opacity = '0.6';
-              cancelBtn.style.display = 'none';
+            if (tapMessage) {
+              tapMessage.style.display = 'block';
             }
             
             if (reviewInput) {
@@ -255,16 +255,12 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
         (window as any).currentRating = undefined;
         
         // Reset UI
-        const submitBtn = document.getElementById(`submit-btn-${toiletId}`) as HTMLButtonElement;
-        const cancelBtn = document.getElementById(`cancel-btn-${toiletId}`);
+        const tapMessage = document.getElementById(`tap-message-${toiletId}`);
         const reviewInput = document.getElementById(`review-input-${toiletId}`);
         const reviewTextElement = document.getElementById(`review-text-${toiletId}`) as HTMLTextAreaElement;
         
-        if (submitBtn && cancelBtn) {
-          submitBtn.disabled = true;
-          submitBtn.innerHTML = 'Tap to rate';
-          submitBtn.style.opacity = '0.6';
-          cancelBtn.style.display = 'none';
+        if (tapMessage) {
+          tapMessage.style.display = 'block';
         }
         
         if (reviewInput) {
@@ -474,7 +470,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
       });
 
       const popupContent = `
-        <div style="padding: 0; margin: 0; max-width: 320px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+        <div style="padding: 20px; margin: 0; max-width: 340px; min-width: 300px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; box-sizing: border-box;">
           <!-- Header -->
           <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
             <div style="width: 40px; height: 40px; background: #FF385C; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;">
@@ -484,7 +480,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
               <h3 style="margin: 0; font-size: 18px; font-weight: 600; color: #222; line-height: 1.2;">
                 ${toilet.notes || 'Public Toilet'}
               </h3>
-              <p style="margin: 4px 0 0 0; font-size: 14px; color: #717171;">No reviews yet</p>
+              <div id="review-summary-${toilet.id}" style="margin: 4px 0 0 0; font-size: 14px; color: #717171;">No reviews yet</div>
             </div>
           </div>
 
@@ -522,46 +518,54 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
           <!-- Rating Section -->
           <div style="margin-bottom: 20px;">
             <p style="margin: 0 0 12px 0; font-size: 14px; font-weight: 600; color: #717171; text-transform: uppercase; letter-spacing: 0.5px;">RATE THIS TOILET</p>
-            <div style="display: flex; align-items: center; justify-content: space-between;">
+            
+            <!-- Stars Row -->
+            <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 16px;">
               <div style="display: flex; gap: 8px;">
                 ${[1,2,3,4,5].map(star => `
                   <button 
                     onclick="window.setRating('${toilet.id}', ${star})" 
                     onmouseover="window.hoverStars('${toilet.id}', ${star})" 
                     onmouseout="window.resetStars('${toilet.id}')"
-                    style="background: none; border: none; cursor: pointer; padding: 4px; font-size: 20px; line-height: 1; color: #D1D5DB; transition: color 0.2s ease;"
+                    style="background: none; border: none; cursor: pointer; padding: 8px; font-size: 24px; line-height: 1; color: #D1D5DB; transition: color 0.2s ease; touch-action: manipulation;"
                     id="star-${toilet.id}-${star}"
                   >
                     ★
                   </button>
                 `).join('')}
               </div>
-              <div style="display: flex; gap: 8px;">
-                <button 
-                  onclick="window.submitReview('${toilet.id}')" 
-                  style="background: #FF385C; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; opacity: 0.6;"
-                  id="submit-btn-${toilet.id}"
-                  disabled
-                >
-                  Tap to rate
-                </button>
+            </div>
+            
+            <!-- Tap to rate message -->
+            <div id="tap-message-${toilet.id}" style="text-align: center; margin-bottom: 16px;">
+              <span style="font-size: 14px; color: #717171; font-style: italic;">Tap a star to rate</span>
+            </div>
+            
+            <!-- Text Review Input -->
+            <div id="review-input-${toilet.id}" style="display: none;">
+              <textarea 
+                id="review-text-${toilet.id}"
+                placeholder="Leave a text review (optional)"
+                style="width: 100%; padding: 12px; border: 1px solid #E5E5E5; border-radius: 8px; font-size: 14px; font-family: inherit; resize: vertical; min-height: 80px; box-sizing: border-box; margin-bottom: 12px;"
+              ></textarea>
+              
+              <!-- Submit and Cancel buttons under textarea -->
+              <div style="display: flex; gap: 8px; justify-content: flex-end;">
                 <button 
                   onclick="window.cancelReview('${toilet.id}')" 
-                  style="background: #f7f7f7; color: #717171; border: none; padding: 8px 12px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; display: none;"
+                  style="background: #f7f7f7; color: #717171; border: none; padding: 10px 16px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; touch-action: manipulation;"
                   id="cancel-btn-${toilet.id}"
                 >
                   Cancel
                 </button>
+                <button 
+                  onclick="window.submitReview('${toilet.id}')" 
+                  style="background: #FF385C; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; touch-action: manipulation;"
+                  id="submit-btn-${toilet.id}"
+                >
+                  Submit Review
+                </button>
               </div>
-            </div>
-            
-            <!-- Text Review Input -->
-            <div id="review-input-${toilet.id}" style="display: none; margin-top: 16px;">
-              <textarea 
-                id="review-text-${toilet.id}"
-                placeholder="Leave a text review (optional)"
-                style="width: 100%; padding: 12px; border: 1px solid #E5E5E5; border-radius: 8px; font-size: 14px; font-family: inherit; resize: vertical; min-height: 80px; box-sizing: border-box;"
-              ></textarea>
             </div>
           </div>
 
