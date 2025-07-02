@@ -361,6 +361,28 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
     }).addTo(map.current);
 
     console.log('User marker added to map');
+    
+    // Verify markers are actually on the map
+    setTimeout(() => {
+      if (map.current && userMarker.current) {
+        const hasMarker = map.current.hasLayer(userMarker.current);
+        const hasRing = map.current.hasLayer(userRingMarker.current);
+        console.log('Marker verification:', { hasMarker, hasRing, markerLatLng: userMarker.current.getLatLng() });
+        
+        // Force map to redraw
+        map.current.invalidateSize();
+        
+        // If markers aren't showing, try re-adding them
+        if (!hasMarker) {
+          console.log('Re-adding user marker');
+          userMarker.current.addTo(map.current);
+        }
+        if (!hasRing) {
+          console.log('Re-adding ring marker'); 
+          userRingMarker.current.addTo(map.current);
+        }
+      }
+    }, 200);
 
     // Center map on user location with high zoom (100m radius)
     map.current.setView([userLocation.lat, userLocation.lng], 18);
