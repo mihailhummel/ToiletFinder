@@ -86,6 +86,23 @@ function App() {
     setSelectedToilet(toilet);
   }, []);
 
+  const handleSignOut = useCallback(async () => {
+    try {
+      await signOutUser();
+      setShowUserMenu(false);
+      toast({
+        title: "Signed out",
+        description: "You have been signed out successfully"
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to sign out. Please try again.",
+        variant: "destructive"
+      });
+    }
+  }, [toast]);
+
   if (authLoading) {
     return (
       <div className="fixed inset-0 bg-white flex items-center justify-center">
@@ -227,22 +244,7 @@ function App() {
                 </div>
                 <Button
                   variant="outline"
-                  onClick={async () => {
-                    try {
-                      await signOutUser();
-                      setShowUserMenu(false);
-                      toast({
-                        title: "Signed out",
-                        description: "You have been signed out successfully"
-                      });
-                    } catch (error) {
-                      toast({
-                        title: "Error",
-                        description: "Failed to sign out. Please try again.",
-                        variant: "destructive"
-                      });
-                    }
-                  }}
+                  onClick={handleSignOut}
                   className="w-full"
                 >
                   <LogOut className="w-4 h-4 mr-2" />
