@@ -16,6 +16,7 @@ import { LoginModal } from "./components/LoginModal";
 import { useAuth } from "./hooks/useAuth";
 import { useGeolocation } from "./hooks/useGeolocation";
 import { useToast } from "./hooks/use-toast";
+import { signOutUser } from "./lib/firebase";
 
 // Icons
 import { User, MapPin, Filter, Plus, Search, Menu, LogOut } from "lucide-react";
@@ -210,13 +211,21 @@ function App() {
                 </div>
                 <Button
                   variant="outline"
-                  onClick={() => {
-                    // Sign out logic would go here
-                    setShowUserMenu(false);
-                    toast({
-                      title: "Signed out",
-                      description: "You have been signed out successfully"
-                    });
+                  onClick={async () => {
+                    try {
+                      await signOutUser();
+                      setShowUserMenu(false);
+                      toast({
+                        title: "Signed out",
+                        description: "You have been signed out successfully"
+                      });
+                    } catch (error) {
+                      toast({
+                        title: "Error",
+                        description: "Failed to sign out. Please try again.",
+                        variant: "destructive"
+                      });
+                    }
                   }}
                   className="w-full"
                 >

@@ -60,6 +60,11 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
     return toilets.length > 0 ? toilets : [];
   }, [toilets.length, toilets]);
 
+  // Stable user location to prevent unnecessary map re-renders
+  const stableUserLocation = useMemo(() => {
+    return userLocation;
+  }, [userLocation?.lat, userLocation?.lng]);
+
   // Load Leaflet CSS and JS
   useEffect(() => {
     // Add Leaflet CSS
@@ -307,6 +312,19 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
       setIsAwayFromUser(distance > 50); // 50 meters threshold
     });
 
+    // Prevent map from losing focus when modals open
+    map.current.on('blur', (e) => {
+      e.preventDefault();
+      if (map.current) {
+        // Force map to stay interactive
+        setTimeout(() => {
+          if (map.current) {
+            map.current.invalidateSize();
+          }
+        }, 100);
+      }
+    });
+
 
 
     // No map click handler - use only the + button for adding toilets
@@ -317,16 +335,16 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
         map.current = null;
       }
     };
-  }, [leafletLoaded, userLocation, user, onAddToiletClick]);
+  }, [leafletLoaded, stableUserLocation, user, onAddToiletClick]);
 
   // Update user location and center map
   useEffect(() => {
-    if (!map.current || !userLocation || !leafletLoaded) {
-      console.log('Map not ready or no user location:', { mapReady: !!map.current, userLocation, leafletLoaded });
+    if (!map.current || !stableUserLocation || !leafletLoaded) {
+      console.log('Map not ready or no user location:', { mapReady: !!map.current, userLocation: stableUserLocation, leafletLoaded });
       return;
     }
 
-    console.log('Adding user location marker at:', userLocation);
+    console.log('Adding user location marker at:', stableUserLocation);
 
     // Remove existing user markers
     if (userMarker.current) {
@@ -337,7 +355,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
     }
 
     // Create a blue user location marker (same as the red one that worked)
-    userMarker.current = window.L.circleMarker([userLocation.lat, userLocation.lng], {
+    userMarker.current = window.L.circleMarker([stableUserLocation.lat, stableUserLocation.lng], {
       radius: 10,
       fillColor: '#3b82f6',
       color: '#ffffff',
@@ -356,7 +374,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
       iconAnchor: [18, 18]
     });
 
-    userRingMarker.current = window.L.marker([userLocation.lat, userLocation.lng], {
+    userRingMarker.current = window.L.marker([stableUserLocation.lat, stableUserLocation.lng], {
       icon: pulseIcon,
       interactive: false,
       zIndexOffset: 999
@@ -387,8 +405,8 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
     }, 200);
 
     // Center map on user location with 200m radius view
-    map.current.setView([userLocation.lat, userLocation.lng], 16);
-  }, [userLocation, leafletLoaded]);
+    map.current.setView([stableUserLocation.lat, stableUserLocation.lng], 16);
+  }, [stableUserLocation, leafletLoaded]);
 
   // Update toilet markers  
   useEffect(() => {
@@ -396,17 +414,30 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
 
     console.log('Map markers useEffect triggered, stableToilets count:', stableToilets.length);
 
-    // Don't clear markers if we already have the same number - prevents disappearing
-    if (markers.current.length === stableToilets.length) {
-      console.log('Markers already match toilet count, skipping re-render');
-      return;
+    // Don't clear markers if we already have the same number and they exist on map - prevents disappearing
+    if (markers.current.length === stableToilets.length && markers.current.length > 0) {
+      // Verify at least some markers are still on the map
+      const markersStillOnMap = markers.current.filter(marker => {
+        try {
+          return map.current && map.current.hasLayer(marker);
+        } catch (e) {
+          return false;
+        }
+      });
+      
+      if (markersStillOnMap.length === markers.current.length) {
+        console.log('Markers already match toilet count and are on map, skipping re-render');
+        return;
+      }
     }
 
     // Only clear markers if we need to update them
     if (markers.current.length > 0) {
       markers.current.forEach(marker => {
         try {
-          map.current.removeLayer(marker);
+          if (map.current && map.current.hasLayer(marker)) {
+            map.current.removeLayer(marker);
+          }
         } catch (e) {
           // Ignore errors if marker is already removed
         }
