@@ -335,25 +335,25 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
       map.current.removeLayer(userRingMarker.current);
     }
 
-    // Create a large, highly visible blue user location marker
+    // Create a normal-sized blue user location marker
     userMarker.current = window.L.circleMarker([userLocation.lat, userLocation.lng], {
-      radius: 15,
+      radius: 8,
       fillColor: '#3b82f6',
       color: '#ffffff',
-      weight: 5,
+      weight: 3,
       opacity: 1,
       fillOpacity: 1,
       interactive: false,
       zIndexOffset: 1000
     }).addTo(map.current);
 
-    // Add a large pulsing outer ring for high visibility
+    // Add a subtle pulsing outer ring
     userRingMarker.current = window.L.circleMarker([userLocation.lat, userLocation.lng], {
-      radius: 30,
+      radius: 15,
       fillColor: 'transparent',
       color: '#3b82f6',
-      weight: 4,
-      opacity: 0.8,
+      weight: 2,
+      opacity: 0.6,
       fillOpacity: 0,
       interactive: false,
       className: 'user-location-pulse',
