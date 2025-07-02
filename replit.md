@@ -121,6 +121,8 @@ Changelog:
 - July 01, 2025. Initial setup
 - July 02, 2025. Added review display functionality - reviews now load and display in popup bubbles
 - July 02, 2025. Enhanced user location detection with automatic zoom to 100-meter radius (zoom level 18)
+- July 02, 2025. Fixed user location marker visibility and modal z-index issues
+- July 02, 2025. Resolved location marker persistence problem with proper verification and re-adding logic
 ```
 
 ## User Preferences
