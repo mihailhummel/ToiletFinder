@@ -270,7 +270,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
     // Initialize Leaflet map
     map.current = window.L.map(mapContainer.current).setView(
       [initialCenter.lat, initialCenter.lng], 
-      userLocation ? 16 : 13
+      userLocation ? 18 : 13
     );
 
     // Add Airbnb-style tile layer using CartoDB Positron
@@ -358,8 +358,8 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
     userMarker.current = window.L.marker([userLocation.lat, userLocation.lng], { icon: userIcon })
       .addTo(map.current);
 
-    // Center map on user location with high zoom
-    map.current.setView([userLocation.lat, userLocation.lng], 16);
+    // Center map on user location with high zoom (100m radius)
+    map.current.setView([userLocation.lat, userLocation.lng], 18);
   }, [userLocation]);
 
   // Update toilet markers  
@@ -779,7 +779,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
 
   const handleReturnToLocation = () => {
     if (userLocation && map.current) {
-      map.current.setView([userLocation.lat, userLocation.lng], 16);
+      map.current.setView([userLocation.lat, userLocation.lng], 18);
       setIsAwayFromUser(false);
     }
   };

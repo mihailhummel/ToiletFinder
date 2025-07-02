@@ -119,6 +119,8 @@ ToiletMap Bulgaria is a mobile-responsive web application designed to help peopl
 ```
 Changelog:
 - July 01, 2025. Initial setup
+- July 02, 2025. Added review display functionality - reviews now load and display in popup bubbles
+- July 02, 2025. Enhanced user location detection with automatic zoom to 100-meter radius (zoom level 18)
 ```
 
 ## User Preferences
