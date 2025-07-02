@@ -66,6 +66,11 @@ export const useGeolocation = () => {
     );
   };
 
+  // Auto-request location on hook initialization
+  useEffect(() => {
+    getCurrentLocation();
+  }, []);
+
   return {
     ...state,
     getCurrentLocation

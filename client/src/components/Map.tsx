@@ -338,14 +338,14 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
       userPane.style.pointerEvents = 'none'; // Don't block map interactions
     }
 
-    // Create a highly visible user location marker using DivIcon
+    // Create a highly visible blue user location marker using DivIcon
     const userIcon = window.L.divIcon({
       className: 'user-location-marker',
       html: `
         <div style="
           width: 20px; 
           height: 20px; 
-          background-color: #FF385C; 
+          background-color: #3b82f6; 
           border: 4px solid white; 
           border-radius: 50%; 
           box-shadow: 0 2px 8px rgba(0,0,0,0.3);
@@ -355,8 +355,8 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
         <div style="
           width: 40px; 
           height: 40px; 
-          background-color: rgba(255, 56, 92, 0.2); 
-          border: 2px solid #FF385C; 
+          background-color: rgba(59, 130, 246, 0.2); 
+          border: 2px solid #3b82f6; 
           border-radius: 50%; 
           position: absolute;
           top: -10px;
