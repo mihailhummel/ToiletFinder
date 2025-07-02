@@ -148,9 +148,17 @@ function App() {
                   variant="ghost"
                   size="sm"
                   onClick={handleUserMenuClick}
-                  className="w-8 h-8 rounded-full bg-gray-200 p-0"
+                  className="w-8 h-8 rounded-full bg-gray-200 p-0 overflow-hidden"
                 >
-                  <User className="w-4 h-4 text-gray-600" />
+                  {user?.photoURL ? (
+                    <img
+                      src={user.photoURL}
+                      alt={user.displayName || 'User'}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <User className="w-4 h-4 text-gray-600" />
+                  )}
                 </Button>
               </div>
             </div>
@@ -197,8 +205,16 @@ function App() {
               </DialogHeader>
               <div className="flex flex-col space-y-4">
                 <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
-                  <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center">
-                    <User className="w-6 h-6 text-white" />
+                  <div className="w-12 h-12 rounded-full overflow-hidden flex items-center justify-center bg-blue-600">
+                    {user?.photoURL ? (
+                      <img
+                        src={user.photoURL}
+                        alt={user.displayName || 'User'}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <User className="w-6 h-6 text-white" />
+                    )}
                   </div>
                   <div>
                     <p className="font-medium text-gray-900">

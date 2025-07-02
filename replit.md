@@ -129,6 +129,8 @@ Changelog:
 - July 02, 2025. Added comprehensive toilet information including opening hours, fees, accessibility, and operators
 - July 02, 2025. Researched additional data sources: Zyla API Hub (50K+ daily updates), MAPOG GIS, Bulgarian government portals
 - July 02, 2025. Identified potential for commercial API integration to supplement OSM data with user ratings and amenities
+- July 02, 2025. CRITICAL FIX: Resolved marker disappearing issue by wrapping callback functions in useCallback
+- July 02, 2025. Added Google profile picture integration in header and user menu
 ```
 
 ## User Preferences
