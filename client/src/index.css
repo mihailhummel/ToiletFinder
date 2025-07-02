@@ -186,18 +186,23 @@ iframe[src*="/@react-refresh"] {
   }
 }
 
-/* Dialog/Modal z-index overrides to ensure they appear above the map */
+/* Dialog/Modal z-index overrides to ensure they appear above the map but below markers */
 .dialog-overlay {
-  z-index: 9998 !important;
+  z-index: 8000 !important;
 }
 
 .dialog-content {
-  z-index: 9999 !important;
+  z-index: 8001 !important;
 }
 
 /* Override Radix UI dialog styles for proper layering */
 [data-radix-portal] {
-  z-index: 9998 !important;
+  z-index: 8000 !important;
+}
+
+/* Ensure modal overlays don't interfere with map markers */
+[data-state="open"] {
+  z-index: 8000 !important;
 }
 
 /* Leaflet popup styling */
@@ -276,7 +281,7 @@ iframe[src*="/@react-refresh"] {
   
   /* App header responsive */
   .app-header {
-    padding: 16px 20px !important;
+    padding: 12px 16px !important;
   }
   
   /* Map container safe areas */

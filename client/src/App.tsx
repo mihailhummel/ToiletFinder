@@ -107,14 +107,14 @@ function App() {
 
           {/* Header */}
           <header className="app-header fixed top-0 left-0 right-0 bg-white shadow-lg z-40 border-b">
-            <div className="flex items-center justify-between px-6 py-4">
+            <div className="flex items-center justify-between px-4 py-3">
               <div className="flex items-center space-x-4">
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center shadow-md">
-                  <span className="text-white font-bold text-lg">🚽</span>
+                <div className="w-9 h-9 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center shadow-md">
+                  <span className="text-white font-bold">🚽</span>
                 </div>
                 <div>
-                  <h1 className="text-xl font-bold text-gray-900">ToiletMap</h1>
-                  <p className="text-sm text-gray-600">Bulgaria</p>
+                  <h1 className="text-lg font-bold text-gray-900">ToiletMap</h1>
+                  <p className="text-xs text-gray-600">Bulgaria</p>
                 </div>
               </div>
               
@@ -160,7 +160,7 @@ function App() {
           </header>
 
           {/* Map Container */}
-          <main className="flex-1 pt-24 relative overflow-hidden">
+          <main className="flex-1 pt-20 relative overflow-hidden">
             <Map
               onToiletClick={handleToiletClick}
               onAddToiletClick={handleAddToilet}
