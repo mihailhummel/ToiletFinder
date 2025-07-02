@@ -342,29 +342,35 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
       map.current.removeLayer(userMarker.current);
     }
 
+    // Create a custom pane with higher z-index for user location
+    if (!map.current.getPane('userLocationPane')) {
+      const userPane = map.current.createPane('userLocationPane');
+      userPane.style.zIndex = '650'; // Higher than overlayPane (400)
+    }
+
     // Create a prominent user location marker using Leaflet
     userMarker.current = window.L.circleMarker([userLocation.lat, userLocation.lng], {
-      radius: 8,
+      radius: 10,
       fillColor: '#3b82f6',
       color: 'white',
-      weight: 3,
+      weight: 4,
       opacity: 1,
       fillOpacity: 1,
       interactive: false,
-      pane: 'overlayPane' // Ensure it appears above map tiles
+      pane: 'userLocationPane' // Use custom pane with higher z-index
     }).addTo(map.current);
 
     // Add a pulsing ring effect using a second marker
     const pulseMarker = window.L.circleMarker([userLocation.lat, userLocation.lng], {
-      radius: 15,
+      radius: 18,
       fillColor: 'transparent',
       color: '#3b82f6',
       weight: 2,
-      opacity: 0.6,
+      opacity: 0.4,
       fillOpacity: 0,
       interactive: false,
       className: 'pulse-ring',
-      pane: 'overlayPane'
+      pane: 'userLocationPane'
     }).addTo(map.current);
 
     console.log('User marker added to map');
