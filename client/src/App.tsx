@@ -18,9 +18,10 @@ import { useGeolocation } from "./hooks/useGeolocation";
 import { useToast } from "./hooks/use-toast";
 
 // Icons
-import { User, MapPin, Filter, Plus, Search, Menu } from "lucide-react";
+import { User, MapPin, Filter, Plus, Search, Menu, LogOut } from "lucide-react";
 import { Button } from "./components/ui/button";
 import { Input } from "./components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./components/ui/dialog";
 
 // Types
 import type { Toilet, MapLocation } from "./types/toilet";
@@ -30,6 +31,7 @@ function App() {
   const [showAddToilet, setShowAddToilet] = useState(false);
   const [showFilter, setShowFilter] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
   const [mapCenter, setMapCenter] = useState<MapLocation>({ lat: 42.6977, lng: 23.3219 });
   const [filters, setFilters] = useState<FilterOptions>({
     types: ["public", "restaurant", "cafe", "gas-station", "mall", "other"],
@@ -47,11 +49,7 @@ function App() {
 
   const handleUserMenuClick = () => {
     if (user) {
-      // Show user menu - for now just a placeholder
-      toast({
-        title: "User Menu",
-        description: `Signed in as ${user.displayName || user.email}`
-      });
+      setShowUserMenu(true);
     } else {
       setShowLogin(true);
     }
@@ -189,6 +187,45 @@ function App() {
             isOpen={showLogin}
             onClose={() => setShowLogin(false)}
           />
+
+          {/* User Menu Modal */}
+          <Dialog open={showUserMenu} onOpenChange={setShowUserMenu}>
+            <DialogContent className="sm:max-w-md z-[60000]">
+              <DialogHeader>
+                <DialogTitle>User Menu</DialogTitle>
+              </DialogHeader>
+              <div className="flex flex-col space-y-4">
+                <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
+                  <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center">
+                    <User className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900">
+                      {user?.displayName || 'User'}
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      {user?.email}
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    // Sign out logic would go here
+                    setShowUserMenu(false);
+                    toast({
+                      title: "Signed out",
+                      description: "You have been signed out successfully"
+                    });
+                  }}
+                  className="w-full"
+                >
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Sign Out
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
 
         <Toaster />

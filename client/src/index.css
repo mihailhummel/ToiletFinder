@@ -309,3 +309,12 @@ button:active,
     padding-top: calc(12px + env(safe-area-inset-top));
   }
 }
+
+/* Ensure modals appear above map */
+[data-radix-portal] {
+  z-index: 60000 !important;
+}
+
+[data-radix-dialog-overlay] {
+  z-index: 59999 !important;
+}
