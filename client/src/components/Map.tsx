@@ -285,8 +285,11 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
     // Don't reinitialize if map already exists and is functional
     if (map.current && map.current.getContainer()) {
       console.log('Map already initialized and functional, skipping reinitialization');
+      console.log('Map ID:', map.current._container?.id, 'Container exists:', !!map.current.getContainer());
       return;
     }
+    
+    console.log('Initializing new map instance');
 
     // Use a default center (Sofia) until user location is available
     const initialCenter = userLocation || { lat: 42.6977, lng: 23.3219 };
@@ -303,6 +306,16 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
       subdomains: 'abcd',
       maxZoom: 19
     }).addTo(map.current);
+
+    // Add event listeners to detect when layers are removed
+    map.current.on('layerremove', (event: any) => {
+      if (markers.current.includes(event.layer)) {
+        console.warn('Toilet marker was removed from map!', event);
+      }
+      if (event.layer === userMarker.current) {
+        console.warn('User marker was removed from map!', event);
+      }
+    });
 
     // Track when map moves away from user location and update marker position
     let updateTimeout: number;
@@ -878,6 +891,24 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
     // Mark markers as initialized to prevent unnecessary re-renders
     markersInitialized.current = true;
     console.log(`Added ${stableToilets.length} toilet markers to map`);
+    
+    // Verify markers are actually on the map after adding
+    setTimeout(() => {
+      if (map.current) {
+        const actualMarkersOnMap = markers.current.filter(marker => {
+          try {
+            return map.current.hasLayer(marker);
+          } catch (e) {
+            return false;
+          }
+        });
+        console.log(`Verification: ${actualMarkersOnMap.length} of ${markers.current.length} markers are on map`);
+        
+        if (actualMarkersOnMap.length !== markers.current.length) {
+          console.warn('Some markers disappeared from map after adding!');
+        }
+      }
+    }, 500);
   }, [stableToilets]);
 
   const handleReturnToLocation = () => {
