@@ -441,14 +441,26 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
 
     console.log('Map markers useEffect triggered, stableToilets count:', stableToilets.length);
 
-    // If markers are already initialized and the count matches, don't re-render
-    if (markersInitialized.current && markers.current.length === stableToilets.length) {
-      console.log('Markers already initialized with correct count, skipping re-render');
+    // Check if markers are still on the map
+    const markersOnMap = markers.current.filter(marker => {
+      try {
+        return map.current && map.current.hasLayer(marker);
+      } catch (e) {
+        return false;
+      }
+    });
+
+    console.log('Markers on map:', markersOnMap.length, 'Total markers in memory:', markers.current.length);
+
+    // If we have the right number of markers and they're all on the map, skip re-adding
+    if (markersOnMap.length === stableToilets.length && markersOnMap.length === markers.current.length) {
+      console.log('All markers still on map, skipping re-render');
       return;
     }
 
-    // Only clear markers if we need to update them
+    // Only clear markers that are still on the map
     if (markers.current.length > 0) {
+      console.log('Clearing existing markers, markers on map:', markersOnMap.length);
       markers.current.forEach(marker => {
         try {
           if (map.current && map.current.hasLayer(marker)) {
