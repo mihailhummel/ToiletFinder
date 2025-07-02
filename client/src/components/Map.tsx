@@ -313,8 +313,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
     });
 
     // Prevent map from losing focus when modals open
-    map.current.on('blur', (e) => {
-      e.preventDefault();
+    map.current.on('blur', () => {
       if (map.current) {
         // Force map to stay interactive
         setTimeout(() => {
@@ -334,6 +333,8 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
         map.current.remove();
         map.current = null;
       }
+      // Reset markers initialization flag when map is cleaned up
+      markersInitialized.current = false;
     };
   }, [leafletLoaded, stableUserLocation, user, onAddToiletClick]);
 
@@ -408,27 +409,19 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
     map.current.setView([stableUserLocation.lat, stableUserLocation.lng], 16);
   }, [stableUserLocation, leafletLoaded]);
 
+  // Use ref to track if markers are already initialized to prevent re-rendering
+  const markersInitialized = useRef(false);
+
   // Update toilet markers  
   useEffect(() => {
     if (!map.current || !window.L || !stableToilets.length) return;
 
     console.log('Map markers useEffect triggered, stableToilets count:', stableToilets.length);
 
-    // Don't clear markers if we already have the same number and they exist on map - prevents disappearing
-    if (markers.current.length === stableToilets.length && markers.current.length > 0) {
-      // Verify at least some markers are still on the map
-      const markersStillOnMap = markers.current.filter(marker => {
-        try {
-          return map.current && map.current.hasLayer(marker);
-        } catch (e) {
-          return false;
-        }
-      });
-      
-      if (markersStillOnMap.length === markers.current.length) {
-        console.log('Markers already match toilet count and are on map, skipping re-render');
-        return;
-      }
+    // If markers are already initialized and the count matches, don't re-render
+    if (markersInitialized.current && markers.current.length === stableToilets.length) {
+      console.log('Markers already initialized with correct count, skipping re-render');
+      return;
     }
 
     // Only clear markers if we need to update them
@@ -846,6 +839,10 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
 
       markers.current.push(marker);
     });
+
+    // Mark markers as initialized to prevent unnecessary re-renders
+    markersInitialized.current = true;
+    console.log(`Added ${stableToilets.length} toilet markers to map`);
   }, [stableToilets]);
 
   const handleReturnToLocation = () => {
