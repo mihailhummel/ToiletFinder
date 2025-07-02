@@ -117,9 +117,28 @@ function App() {
               
               <div className="flex items-center space-x-3">
                 {/* Location Status */}
-                <div className="flex items-center space-x-1 text-xs text-gray-600">
-                  <MapPin className="w-3 h-3 text-green-500" />
-                  <span>Sofia</span>
+                <div className="flex items-center space-x-2">
+                  {userLocation ? (
+                    <div className="flex items-center space-x-1 text-xs text-green-600">
+                      <MapPin className="w-3 h-3 text-green-500" />
+                      <span>Located</span>
+                    </div>
+                  ) : locationLoading ? (
+                    <div className="flex items-center space-x-1 text-xs text-blue-600">
+                      <div className="w-3 h-3 border border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                      <span>Finding...</span>
+                    </div>
+                  ) : (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={getCurrentLocation}
+                      className="text-xs text-gray-600 hover:text-blue-600 h-6 px-2"
+                    >
+                      <MapPin className="w-3 h-3 mr-1" />
+                      Find Location
+                    </Button>
+                  )}
                 </div>
                 
                 {/* User Menu */}
