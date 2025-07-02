@@ -13,6 +13,7 @@ interface AddToiletModalProps {
   isOpen: boolean;
   onClose: () => void;
   location?: MapLocation;
+  onRequestLocationSelection?: (type: ToiletType, notes: string) => void;
 }
 
 const toiletTypes: { value: ToiletType; label: string }[] = [
@@ -24,7 +25,7 @@ const toiletTypes: { value: ToiletType; label: string }[] = [
   { value: "other", label: "Other" },
 ];
 
-export const AddToiletModal = ({ isOpen, onClose, location }: AddToiletModalProps) => {
+export const AddToiletModal = ({ isOpen, onClose, location, onRequestLocationSelection }: AddToiletModalProps) => {
   const [type, setType] = useState<ToiletType>("public");
   const [notes, setNotes] = useState("");
   
@@ -47,15 +48,17 @@ export const AddToiletModal = ({ isOpen, onClose, location }: AddToiletModalProp
       return;
     }
 
+    // If no location, request location selection
     if (!location) {
-      toast({
-        title: "Location required",
-        description: "Please select a location on the map.",
-        variant: "destructive"
-      });
+      console.log("No location, requesting location selection");
+      if (onRequestLocationSelection) {
+        onRequestLocationSelection(type, notes);
+        onClose(); // Close the form modal
+      }
       return;
     }
 
+    // If location exists, submit the toilet
     try {
       await addToiletMutation.mutateAsync({
         type,
@@ -95,9 +98,12 @@ export const AddToiletModal = ({ isOpen, onClose, location }: AddToiletModalProp
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Add New Toilet</DialogTitle>
+          <DialogTitle>{location ? "Confirm Toilet Location" : "Add New Toilet"}</DialogTitle>
           <DialogDescription>
-            Add a new toilet location to help others find nearby facilities
+            {location 
+              ? "Confirm the details and submit the toilet location"
+              : "Select the toilet type and description, then choose location on map"
+            }
           </DialogDescription>
         </DialogHeader>
         
@@ -107,7 +113,7 @@ export const AddToiletModal = ({ isOpen, onClose, location }: AddToiletModalProp
             <div className="flex items-center space-x-2 p-3 bg-gray-50 rounded-lg">
               <MapPin className="w-4 h-4 text-primary" />
               <div className="flex-1 text-sm">
-                <div>Current map center</div>
+                <div>{location ? "Selected location" : "Click 'Add Toilet' to select location on map"}</div>
                 {location && (
                   <div className="text-gray-500 text-xs">
                     {location.lat.toFixed(6)}, {location.lng.toFixed(6)}
@@ -155,10 +161,15 @@ export const AddToiletModal = ({ isOpen, onClose, location }: AddToiletModalProp
             </Button>
             <Button
               type="submit"
-              disabled={addToiletMutation.isPending || !location}
+              disabled={addToiletMutation.isPending}
               className="flex-1"
             >
-              {addToiletMutation.isPending ? "Adding..." : "Add Toilet"}
+              {addToiletMutation.isPending 
+                ? "Adding..." 
+                : location 
+                ? "Confirm & Add Toilet" 
+                : "Select Location"
+              }
             </Button>
           </div>
         </form>

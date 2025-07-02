@@ -25,7 +25,7 @@ import { Input } from "./components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./components/ui/dialog";
 
 // Types
-import type { Toilet, MapLocation } from "./types/toilet";
+import type { Toilet, MapLocation, ToiletType } from "./types/toilet";
 
 function App() {
   const [selectedToilet, setSelectedToilet] = useState<Toilet | null>(null);
@@ -35,6 +35,7 @@ function App() {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [isAddingToilet, setIsAddingToilet] = useState(false); // Track if user is in add toilet mode
   const [pendingToiletLocation, setPendingToiletLocation] = useState<MapLocation | undefined>(undefined);
+  const [pendingToiletData, setPendingToiletData] = useState<{type: ToiletType; notes: string} | null>(null);
   const [mapCenter, setMapCenter] = useState<MapLocation>({ lat: 42.6977, lng: 23.3219 });
   const [filters, setFilters] = useState<FilterOptions>({
     types: ["public", "restaurant", "cafe", "gas-station", "mall", "other"],
@@ -75,26 +76,35 @@ function App() {
       setShowLogin(true);
       return;
     }
-    console.log("Starting add toilet mode");
-    // Step 1: Start add toilet mode
-    setIsAddingToilet(true);
+    console.log("Starting add toilet workflow - showing form first");
+    // Step 1: Show the form first
+    setIsAddingToilet(false);
     setPendingToiletLocation(undefined);
-    toast({
-      title: "Add Toilet Mode",
-      description: "Click on the map where you want to add a toilet"
-    });
-  }, [user, toast]);
+    setShowAddToilet(true);
+  }, [user]);
 
   const handleMapClick = useCallback((location: MapLocation) => {
     console.log("Map clicked, isAddingToilet:", isAddingToilet, "location:", location);
-    if (isAddingToilet) {
-      console.log("Processing map click for toilet addition");
-      // Step 4: User clicks on map to select location
+    if (isAddingToilet && pendingToiletData) {
+      console.log("Processing map click for toilet addition with pending data:", pendingToiletData);
+      // Step 4: User clicks on map to select location, show final confirmation
       setPendingToiletLocation(location);
       setIsAddingToilet(false); // Exit add toilet mode
-      setShowAddToilet(true); // Show the modal with the selected location
+      setShowAddToilet(true); // Show the modal with the selected location and data
     }
-  }, [isAddingToilet]);
+  }, [isAddingToilet, pendingToiletData]);
+
+  const handleLocationSelectionRequest = useCallback((type: ToiletType, notes: string) => {
+    console.log("Location selection requested for:", { type, notes });
+    // Step 3: User submitted form, now request location selection
+    setPendingToiletData({ type, notes });
+    setIsAddingToilet(true);
+    setPendingToiletLocation(undefined);
+    toast({
+      title: "Select Location",
+      description: "Tap on the map where you want to add the toilet"
+    });
+  }, [toast]);
 
   const handleLoginClick = useCallback(() => {
     setShowLogin(true);
@@ -222,9 +232,13 @@ function App() {
                 console.log("Floating button clicked!");
                 handleAddToilet();
               }}
-              className="fixed bottom-6 right-6 w-16 h-16 rounded-full bg-red-600 hover:bg-red-700 shadow-lg z-[9999] pointer-events-auto"
+              className={`fixed bottom-6 right-6 w-16 h-16 rounded-full shadow-lg z-[9999] pointer-events-auto ${
+                isAddingToilet 
+                  ? 'bg-green-600 hover:bg-green-700 animate-pulse' 
+                  : 'bg-blue-600 hover:bg-blue-700'
+              }`}
               size="icon"
-              style={{ position: 'fixed', zIndex: 9999, backgroundColor: '#dc2626' }}
+              style={{ position: 'fixed', zIndex: 9999 }}
             >
               <Plus className="w-8 h-8 text-white" />
             </Button>
@@ -243,9 +257,11 @@ function App() {
             onClose={() => {
               setShowAddToilet(false);
               setPendingToiletLocation(undefined);
+              setPendingToiletData(null);
               setIsAddingToilet(false);
             }}
             location={pendingToiletLocation}
+            onRequestLocationSelection={handleLocationSelectionRequest}
           />
 
 

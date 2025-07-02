@@ -901,15 +901,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
         )}
       </div>
 
-      <Button
-        onClick={handleAddToilet}
-        className="fixed bottom-8 right-8 w-16 h-16 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-full shadow-xl p-0 transition-all duration-200 hover:scale-105 active:scale-95 border-2 border-white"
-        style={{ zIndex: 1000 }}
-        disabled={!user}
-        title={!user ? "Sign in to add locations" : "Add toilet location"}
-      >
-        <Plus className="w-8 h-8" />
-      </Button>
+
     </div>
   );
 };
