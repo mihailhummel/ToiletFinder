@@ -524,7 +524,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
       const accessibility = getAccessibilityInfo(toilet);
 
       const popupContent = `
-        <div style="min-width: 300px; max-width: 360px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; line-height: 1.5; padding: 24px; background: white; border-radius: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.12);">
+        <div style="min-width: 280px; max-width: 320px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; line-height: 1.4; padding: 16px; background: white; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
           <!-- Header with location name and rating -->
           <div style="
             padding-bottom: 16px;
@@ -558,16 +558,16 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
                   line-height: 1.3;
                 ">${locationName}</h3>
                 ${toilet.averageRating && toilet.reviewCount > 0 ? `
-                  <div style="display: flex; align-items: center; gap: 6px;">
-                    <div style="display: flex; color: #FF385C;">
+                  <div style="display: flex; align-items: center; gap: 4px;">
+                    <div style="display: flex; color: #FF385C; font-size: 14px;">
                       ${'★'.repeat(Math.round(toilet.averageRating))}${'☆'.repeat(5 - Math.round(toilet.averageRating))}
                     </div>
-                    <span style="font-size: 14px; color: #6b7280; font-weight: 500;">
-                      ${toilet.averageRating.toFixed(1)} (${toilet.reviewCount} review${toilet.reviewCount !== 1 ? 's' : ''})
+                    <span style="font-size: 13px; color: #6b7280;">
+                      ${toilet.averageRating.toFixed(1)} (${toilet.reviewCount})
                     </span>
                   </div>
                 ` : `
-                  <div style="font-size: 14px; color: #9ca3af; font-style: italic;">
+                  <div style="font-size: 13px; color: #9ca3af; font-style: italic;">
                     No reviews yet
                   </div>
                 `}
@@ -702,14 +702,14 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
                   <button onclick="window.setRating('${toilet.id}', ${rating})" style="
                     background: none;
                     border: none;
-                    font-size: 24px;
+                    font-size: 18px;
                     cursor: pointer;
                     color: #cbd5e1;
                     transition: color 0.2s;
-                    padding: 8px;
-                    min-width: 40px;
-                    min-height: 40px;
-                    border-radius: 8px;
+                    padding: 4px;
+                    min-width: 32px;
+                    min-height: 32px;
+                    border-radius: 6px;
                   " ontouchstart="window.hoverStars('${toilet.id}', ${rating})" ontouchend="window.resetStars('${toilet.id}')">
                     ★
                   </button>
@@ -851,7 +851,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
       )}
       
       {/* Map Controls */}
-      <div className="absolute top-6 right-6 space-y-3" style={{ zIndex: 10000 }}>
+      <div className="absolute top-6 right-6 space-y-3" style={{ zIndex: 5000 }}>
         {/* Return to Location Button - always show when user location available */}
         {userLocation && (
           <Button
@@ -869,7 +869,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
       <Button
         onClick={handleAddToilet}
         className="fixed bottom-8 right-8 w-16 h-16 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-full shadow-xl p-0 transition-all duration-200 hover:scale-105 active:scale-95 border-2 border-white"
-        style={{ zIndex: 10000 }}
+        style={{ zIndex: 5001 }}
         disabled={!user}
         title={!user ? "Sign in to add locations" : "Add toilet location"}
       >
