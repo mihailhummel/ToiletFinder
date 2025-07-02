@@ -27,6 +27,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./components/u
 // Types
 import type { Toilet, MapLocation, ToiletType } from "./types/toilet";
 
+// Global state as backup to React state
+let globalAddingState = {
+  isAdding: false,
+  pendingData: null as {type: ToiletType; notes: string} | null
+};
+
 function App() {
   const [selectedToilet, setSelectedToilet] = useState<Toilet | null>(null);
   const [showAddToilet, setShowAddToilet] = useState(false);
@@ -46,6 +52,15 @@ function App() {
   const { user, loading: authLoading, isAdmin } = useAuth();
   const { location: userLocation, getCurrentLocation, loading: locationLoading } = useGeolocation();
   const { toast } = useToast();
+
+  // Debug state changes
+  useEffect(() => {
+    console.log("isAddingToilet changed to:", isAddingToilet);
+  }, [isAddingToilet]);
+  
+  useEffect(() => {
+    console.log("pendingToiletData changed to:", pendingToiletData);
+  }, [pendingToiletData]);
 
   // Get user location on mount
   useEffect(() => {
@@ -86,12 +101,25 @@ function App() {
 
   const handleMapClick = useCallback((location: MapLocation) => {
     console.log("Map clicked, isAddingToilet:", isAddingToilet, "pendingToiletData:", pendingToiletData, "location:", location);
-    if (isAddingToilet && pendingToiletData) {
-      console.log("Processing map click for toilet addition with pending data:", pendingToiletData);
-      // Step 4: User clicks on map to select location, show final confirmation
+    console.log("Global state check:", globalAddingState);
+    
+    // Check both React state and global state
+    const shouldProcessClick = (isAddingToilet && pendingToiletData) || (globalAddingState.isAdding && globalAddingState.pendingData);
+    
+    if (shouldProcessClick) {
+      console.log("Processing map click for toilet addition");
+      const dataToUse = pendingToiletData || globalAddingState.pendingData;
+      console.log("Using data:", dataToUse);
+      
+      // Clear global state
+      globalAddingState.isAdding = false;
+      globalAddingState.pendingData = null;
+      
+      // Set location and show confirmation modal
       setPendingToiletLocation(location);
-      setIsAddingToilet(false); // Exit add toilet mode
-      setShowAddToilet(true); // Show the modal with the selected location and data
+      setPendingToiletData(dataToUse);
+      setIsAddingToilet(false);
+      setShowAddToilet(true);
     } else {
       console.log("Map click ignored - not in adding mode or no pending data");
     }
@@ -100,27 +128,21 @@ function App() {
   const handleLocationSelectionRequest = useCallback((type: ToiletType, notes: string) => {
     console.log("Location selection requested for:", { type, notes });
     
-    // Set the flag first to prevent onClose from interfering
+    // Set global state immediately
+    globalAddingState.isAdding = true;
+    globalAddingState.pendingData = { type, notes };
+    console.log("Global state set:", globalAddingState);
+    
+    // Set React states
     setIsTransitioningToLocationMode(true);
-    
-    // Set states
-    console.log("Setting pendingToiletData to:", { type, notes });
     setPendingToiletData({ type, notes });
-    
-    console.log("Setting isAddingToilet to true");
     setIsAddingToilet(true);
-    
-    console.log("Clearing pendingToiletLocation");
     setPendingToiletLocation(undefined);
-    
-    // Close modal without triggering onClose reset
-    console.log("Closing modal programmatically");
     setShowAddToilet(false);
     
-    // Clear the flag after modal is closed
     setTimeout(() => {
       setIsTransitioningToLocationMode(false);
-      console.log("Transition flag cleared, ready for map clicks");
+      console.log("Transition complete. Global state:", globalAddingState);
     }, 100);
     
     toast({
