@@ -338,57 +338,27 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
       map.current.removeLayer(userMarker.current);
     }
 
-    // Create larger, more visible user location marker with pulsing effect
-    const userIcon = window.L.divIcon({
-      className: 'user-location-marker',
-      html: `
-        <div style="
-          position: relative;
-          width: 40px;
-          height: 40px;
-          z-index: 9999;
-        ">
-          <div style="
-            position: absolute;
-            width: 24px;
-            height: 24px;
-            top: 8px;
-            left: 8px;
-            background: #3b82f6;
-            border: 5px solid white;
-            border-radius: 50%;
-            box-shadow: 0 0 0 5px rgba(59, 130, 246, 0.4), 0 6px 12px rgba(0, 0, 0, 0.3);
-            animation: userLocationPulse 2s infinite;
-            z-index: 9999;
-          "></div>
-        </div>
-        <style>
-          .user-location-marker {
-            z-index: 9999 !important;
-          }
-          @keyframes userLocationPulse {
-            0% { 
-              box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.9), 0 6px 12px rgba(0, 0, 0, 0.3);
-              transform: scale(1);
-            }
-            70% { 
-              box-shadow: 0 0 0 20px rgba(59, 130, 246, 0), 0 6px 12px rgba(0, 0, 0, 0.3);
-              transform: scale(1.1);
-            }
-            100% { 
-              box-shadow: 0 0 0 0 rgba(59, 130, 246, 0), 0 6px 12px rgba(0, 0, 0, 0.3);
-              transform: scale(1);
-            }
-          }
-        </style>
-      `,
-      iconSize: [40, 40],
-      iconAnchor: [20, 20]
-    });
+    // Create a simple circle marker for user location
+    userMarker.current = window.L.circleMarker([userLocation.lat, userLocation.lng], {
+      radius: 12,
+      fillColor: '#3b82f6',
+      color: 'white',
+      weight: 4,
+      opacity: 1,
+      fillOpacity: 0.9,
+      interactive: false
+    }).addTo(map.current);
 
-    userMarker.current = window.L.marker([userLocation.lat, userLocation.lng], { 
-      icon: userIcon,
-      zIndexOffset: 10000 // Make sure it appears above other markers
+    // Add a larger pulsing circle behind it
+    const pulseMarker = window.L.circleMarker([userLocation.lat, userLocation.lng], {
+      radius: 20,
+      fillColor: '#3b82f6',
+      color: '#3b82f6',
+      weight: 0,
+      opacity: 0.3,
+      fillOpacity: 0.3,
+      interactive: false,
+      className: 'pulse-marker'
     }).addTo(map.current);
 
     console.log('User marker added to map');
@@ -847,13 +817,14 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
       )}
       
       {/* Map Controls */}
-      <div className="absolute top-4 right-4 space-y-2 z-50">
-        {/* Return to Location Button - only show when away from user */}
-        {isAwayFromUser && userLocation && (
+      <div className="absolute top-4 right-4 space-y-2" style={{ zIndex: 10000 }}>
+        {/* Return to Location Button - always show when user location available */}
+        {userLocation && (
           <Button
             onClick={handleReturnToLocation}
             className="w-12 h-12 bg-white text-blue-600 hover:bg-gray-50 shadow-lg rounded-full p-0 border border-gray-200"
             variant="ghost"
+            title="Return to my location"
           >
             <Crosshair className="w-5 h-5" />
           </Button>
@@ -863,7 +834,8 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick }: MapProp
       {/* Floating Add Button */}
       <Button
         onClick={handleAddToilet}
-        className="fixed bottom-6 right-6 w-14 h-14 bg-red-500 hover:bg-red-600 text-white rounded-full shadow-lg p-0 z-50"
+        className="fixed bottom-6 right-6 w-14 h-14 bg-red-500 hover:bg-red-600 text-white rounded-full shadow-lg p-0"
+        style={{ zIndex: 10000 }}
         disabled={!user}
         title={!user ? "Sign in to add locations" : "Add toilet location"}
       >
