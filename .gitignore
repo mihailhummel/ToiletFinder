@@ -4,3 +4,6 @@ dist
 server/public
 vite.config.ts.*
 *.tar.gz
+
+# Ignore Firebase service account key
+server/findwc-2be85-firebase-adminsdk-fbsvc-a1b97ea513.json

@@ -66,7 +66,7 @@ export const ReportModal = ({ toilet, isOpen, onClose }: ReportModalProps) => {
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md w-full max-w-full p-6 mobile:rounded-none mobile:h-screen mobile:max-h-screen mobile:p-4">
         <DialogHeader>
           <DialogTitle>Report Issue</DialogTitle>
           <DialogDescription>

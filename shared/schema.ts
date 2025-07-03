@@ -98,12 +98,12 @@ export const insertToiletSchema = z.object({
   addedByUserName: z.string().optional(),
 });
 
-export const insertReviewSchema = createInsertSchema(reviews, {
+export const insertReviewSchema = z.object({
+  toiletId: z.string().min(1),
+  userId: z.string().min(1),
+  userName: z.string().min(1),
   rating: z.number().min(1).max(5),
   text: z.string().optional().nullable(),
-}).omit({ 
-  id: true, 
-  createdAt: true 
 });
 
 export const insertReportSchema = createInsertSchema(reports, {

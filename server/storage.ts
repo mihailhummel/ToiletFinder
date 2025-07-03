@@ -50,6 +50,7 @@ export class DatabaseStorage implements IStorage {
       removedAt: null,
     };
     const docRef = await db.collection("toilets").add(toiletData);
+    await docRef.update({ id: docRef.id });
     return docRef.id;
   }
 
@@ -74,7 +75,7 @@ export class DatabaseStorage implements IStorage {
     const batch = db.batch();
     const reviewRef = db.collection("reviews").doc();
     batch.set(reviewRef, { ...review, createdAt: Timestamp.now() });
-
+    
     // Update toilet stats
     const toiletRef = db.collection("toilets").doc(review.toiletId);
     const reviewsSnap = await db.collection("reviews").where("toiletId", "==", review.toiletId).get();
@@ -158,7 +159,7 @@ export class DatabaseStorage implements IStorage {
   async removeToiletFromReports(toiletId: string): Promise<void> {
     const toiletRef = db.collection("toilets").doc(toiletId);
     await toiletRef.update({
-      isRemoved: true,
+        isRemoved: true, 
       removedAt: Timestamp.now(),
     });
   }
@@ -166,13 +167,16 @@ export class DatabaseStorage implements IStorage {
   async deleteToilet(toiletId: string): Promise<void> {
     // Delete all related data
     const batch = db.batch();
+    const toiletRef = db.collection("toilets").doc(toiletId);
+    // Remove the 'id' field before deleting the document
+    await toiletRef.update({ id: FieldValue.delete() });
     const toiletReportsSnap = await db.collection("toiletReports").where("toiletId", "==", toiletId).get();
     toiletReportsSnap.forEach(doc => batch.delete(doc.ref));
     const reviewsSnap = await db.collection("reviews").where("toiletId", "==", toiletId).get();
     reviewsSnap.forEach(doc => batch.delete(doc.ref));
     const reportsSnap = await db.collection("reports").where("toiletId", "==", toiletId).get();
     reportsSnap.forEach(doc => batch.delete(doc.ref));
-    batch.delete(db.collection("toilets").doc(toiletId));
+    batch.delete(toiletRef);
     await batch.commit();
   }
 

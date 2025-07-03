@@ -43,7 +43,8 @@ async function importToilets() {
       reviewCount: 0,
     };
     try {
-      await db.collection('toilets').add(doc);
+      const ref = await db.collection('toilets').add(doc);
+      await ref.update({ id: ref.id });
       count++;
       if (count % 100 === 0) {
         console.log(`Imported ${count} toilets...`);
