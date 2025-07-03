@@ -1,14 +1,18 @@
-import { drizzle } from "drizzle-orm/neon-http";
-import { neon } from "@neondatabase/serverless";
+import { initializeApp, cert, getApps, App } from "firebase-admin/app";
+import { getFirestore, FieldValue, Timestamp } from "firebase-admin/firestore";
+import serviceAccount from "./findwc-2be85-firebase-adminsdk-fbsvc-a1b97ea513.json";
 import { toilets, reviews, reports, toiletReports, type Toilet, type Review, type Report, type ToiletReport, type InsertToilet, type InsertReview, type InsertReport, type InsertToiletReport } from "@shared/schema";
-import { eq, and, avg, count, desc } from "drizzle-orm";
 
-if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL environment variable is required");
+// Initialize firebase-admin only once
+let app: App;
+if (!getApps().length) {
+  app = initializeApp({
+    credential: cert(serviceAccount as any),
+  });
+} else {
+  app = getApps()[0];
 }
-
-const sql = neon(process.env.DATABASE_URL);
-const db = drizzle(sql);
+const db = getFirestore(app);
 
 export interface IStorage {
   // Toilet operations
@@ -36,47 +40,30 @@ export interface IStorage {
 
 export class DatabaseStorage implements IStorage {
   async createToilet(toilet: InsertToilet): Promise<string> {
-    const [newToilet] = await db.insert(toilets).values({
-      type: toilet.type,
-      lat: toilet.coordinates.lat,
-      lng: toilet.coordinates.lng,
-      notes: toilet.notes,
-      userId: toilet.userId,
-      source: toilet.source || 'user',
-      addedByUserName: toilet.addedByUserName,
-    }).returning({ id: toilets.id });
-    
-    return newToilet.id;
+    const toiletData = {
+      ...toilet,
+      createdAt: Timestamp.now(),
+      averageRating: 0,
+      reviewCount: 0,
+      reportCount: 0,
+      isRemoved: false,
+      removedAt: null,
+    };
+    const docRef = await db.collection("toilets").add(toiletData);
+    return docRef.id;
   }
 
   async getToilets(): Promise<Toilet[]> {
-    const result = await db.select().from(toilets).orderBy(desc(toilets.createdAt));
-    
-    return result.map(toilet => ({
-      id: toilet.id,
-      type: toilet.type,
-      coordinates: { lat: toilet.lat, lng: toilet.lng },
-      lat: toilet.lat,
-      lng: toilet.lng,
-      notes: toilet.notes,
-      userId: toilet.userId,
-      source: toilet.source,
-      addedByUserName: toilet.addedByUserName,
-      osmId: toilet.osmId,
-      tags: toilet.tags as any,
-      reportCount: toilet.reportCount,
-      isRemoved: toilet.isRemoved,
-      removedAt: toilet.removedAt,
-      createdAt: toilet.createdAt,
-      averageRating: toilet.averageRating || 0,
-      reviewCount: toilet.reviewCount,
-    }));
+    const snapshot = await db.collection("toilets").orderBy("createdAt", "desc").get();
+    return snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data(),
+      createdAt: doc.data().createdAt?.toDate?.() || null,
+    })) as Toilet[];
   }
 
   async getToiletsNearby(lat: number, lng: number, radiusKm: number = 10): Promise<Toilet[]> {
-    // Simple distance calculation - in production you'd use PostGIS for better performance
     const toiletsList = await this.getToilets();
-    
     return toiletsList.filter(toilet => {
       const distance = this.calculateDistance(lat, lng, toilet.coordinates.lat, toilet.coordinates.lng);
       return distance <= radiusKm;
@@ -84,125 +71,113 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createReview(review: InsertReview): Promise<void> {
-    await db.insert(reviews).values(review);
-    
-    // Update toilet average rating and review count
-    const [stats] = await db
-      .select({
-        avgRating: avg(reviews.rating),
-        reviewCount: count(reviews.id)
-      })
-      .from(reviews)
-      .where(eq(reviews.toiletId, review.toiletId));
+    const batch = db.batch();
+    const reviewRef = db.collection("reviews").doc();
+    batch.set(reviewRef, { ...review, createdAt: Timestamp.now() });
 
-    await db
-      .update(toilets)
-      .set({
-        averageRating: Number(stats.avgRating) || 0,
-        reviewCount: Number(stats.reviewCount) || 0,
-      })
-      .where(eq(toilets.id, review.toiletId));
+    // Update toilet stats
+    const toiletRef = db.collection("toilets").doc(review.toiletId);
+    const reviewsSnap = await db.collection("reviews").where("toiletId", "==", review.toiletId).get();
+    const currentReviews = reviewsSnap.docs.map(doc => doc.data() as Review);
+    const newReviewCount = currentReviews.length + 1;
+    const totalRating = currentReviews.reduce((sum, r) => sum + r.rating, 0) + review.rating;
+    const newAverageRating = totalRating / newReviewCount;
+    batch.update(toiletRef, {
+      reviewCount: newReviewCount,
+      averageRating: Math.round(newAverageRating * 10) / 10,
+    });
+    await batch.commit();
   }
 
   async getReviewsForToilet(toiletId: string): Promise<Review[]> {
-    return await db
-      .select()
-      .from(reviews)
-      .where(eq(reviews.toiletId, toiletId))
-      .orderBy(desc(reviews.createdAt));
+    const snapshot = await db.collection("reviews")
+      .where("toiletId", "==", toiletId)
+      .orderBy("createdAt", "desc")
+      .get();
+    return snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data(),
+      createdAt: doc.data().createdAt?.toDate?.() || null,
+    })) as Review[];
   }
 
   async hasUserReviewedToilet(toiletId: string, userId: string): Promise<boolean> {
-    const [review] = await db
-      .select({ id: reviews.id })
-      .from(reviews)
-      .where(and(eq(reviews.toiletId, toiletId), eq(reviews.userId, userId)))
-      .limit(1);
-    
-    return !!review;
+    const snapshot = await db.collection("reviews")
+      .where("toiletId", "==", toiletId)
+      .where("userId", "==", userId)
+      .limit(1)
+      .get();
+    return !snapshot.empty;
   }
 
   async createReport(report: InsertReport): Promise<void> {
-    await db.insert(reports).values(report);
+    await db.collection("reports").add({ ...report, createdAt: Timestamp.now() });
   }
 
   async reportToiletNotExists(toiletReport: InsertToiletReport): Promise<void> {
     // Check if user has already reported this toilet
-    const existingReport = await db
-      .select()
-      .from(toiletReports)
-      .where(and(
-        eq(toiletReports.toiletId, toiletReport.toiletId),
-        eq(toiletReports.userId, toiletReport.userId)
-      ))
-      .limit(1);
-
-    if (existingReport.length > 0) {
-      return; // User has already reported this toilet
-    }
+    const existingReport = await db.collection("toiletReports")
+      .where("toiletId", "==", toiletReport.toiletId)
+      .where("userId", "==", toiletReport.userId)
+      .limit(1)
+      .get();
+    if (!existingReport.empty) return;
 
     // Add the report
-    await db.insert(toiletReports).values({
-      toiletId: toiletReport.toiletId,
-      userId: toiletReport.userId,
-      userName: toiletReport.userName,
+    await db.collection("toiletReports").add({
+      ...toiletReport,
+      createdAt: Timestamp.now(),
     });
 
     // Update report count
     const reportCount = await this.getToiletReportCount(toiletReport.toiletId);
-    
-    // If 10 or more reports, mark toilet as removed
+    const toiletRef = db.collection("toilets").doc(toiletReport.toiletId);
     if (reportCount >= 10) {
       await this.removeToiletFromReports(toiletReport.toiletId);
     } else {
-      // Update the report count
-      await db.update(toilets)
-        .set({ reportCount: reportCount })
-        .where(eq(toilets.id, toiletReport.toiletId));
+      await toiletRef.update({ reportCount });
     }
   }
 
   async getToiletReportCount(toiletId: string): Promise<number> {
-    const result = await db
-      .select({ count: count() })
-      .from(toiletReports)
-      .where(eq(toiletReports.toiletId, toiletId));
-    
-    return result[0]?.count || 0;
+    const snapshot = await db.collection("toiletReports")
+      .where("toiletId", "==", toiletId)
+      .get();
+    return snapshot.size;
   }
 
   async hasUserReportedToilet(toiletId: string, userId: string): Promise<boolean> {
-    const result = await db
-      .select()
-      .from(toiletReports)
-      .where(and(
-        eq(toiletReports.toiletId, toiletId),
-        eq(toiletReports.userId, userId)
-      ))
-      .limit(1);
-    
-    return result.length > 0;
+    const snapshot = await db.collection("toiletReports")
+      .where("toiletId", "==", toiletId)
+      .where("userId", "==", userId)
+      .limit(1)
+      .get();
+    return !snapshot.empty;
   }
 
   async removeToiletFromReports(toiletId: string): Promise<void> {
-    await db.update(toilets)
-      .set({ 
-        isRemoved: true, 
-        removedAt: new Date() 
-      })
-      .where(eq(toilets.id, toiletId));
+    const toiletRef = db.collection("toilets").doc(toiletId);
+    await toiletRef.update({
+      isRemoved: true,
+      removedAt: Timestamp.now(),
+    });
   }
 
   async deleteToilet(toiletId: string): Promise<void> {
-    // Hard delete the toilet and all related data
-    await db.delete(toiletReports).where(eq(toiletReports.toiletId, toiletId));
-    await db.delete(reviews).where(eq(reviews.toiletId, toiletId));
-    await db.delete(reports).where(eq(reports.toiletId, toiletId));
-    await db.delete(toilets).where(eq(toilets.id, toiletId));
+    // Delete all related data
+    const batch = db.batch();
+    const toiletReportsSnap = await db.collection("toiletReports").where("toiletId", "==", toiletId).get();
+    toiletReportsSnap.forEach(doc => batch.delete(doc.ref));
+    const reviewsSnap = await db.collection("reviews").where("toiletId", "==", toiletId).get();
+    reviewsSnap.forEach(doc => batch.delete(doc.ref));
+    const reportsSnap = await db.collection("reports").where("toiletId", "==", toiletId).get();
+    reportsSnap.forEach(doc => batch.delete(doc.ref));
+    batch.delete(db.collection("toilets").doc(toiletId));
+    await batch.commit();
   }
 
   private calculateDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
-    const R = 6371; // Earth's radius in kilometers
+    const R = 6371;
     const dLat = this.deg2rad(lat2 - lat1);
     const dLng = this.deg2rad(lng2 - lng1);
     const a =
