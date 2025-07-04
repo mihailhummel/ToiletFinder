@@ -36,22 +36,15 @@ export interface IStorage {
   
   // Admin operations
   deleteToilet(toiletId: string): Promise<void>;
+
+  queueChange(type: 'add' | 'report' | 'delete', data: any): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
   async createToilet(toilet: InsertToilet): Promise<string> {
-    const toiletData = {
-      ...toilet,
-      createdAt: Timestamp.now(),
-      averageRating: 0,
-      reviewCount: 0,
-      reportCount: 0,
-      isRemoved: false,
-      removedAt: null,
-    };
-    const docRef = await db.collection("toilets").add(toiletData);
-    await docRef.update({ id: docRef.id });
-    return docRef.id;
+    await this.queueChange('add', toilet);
+    // Return a fake ID for optimistic UI
+    return 'pending-' + Date.now();
   }
 
   async getToilets(): Promise<Toilet[]> {
@@ -112,32 +105,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createReport(report: InsertReport): Promise<void> {
-    await db.collection("reports").add({ ...report, createdAt: Timestamp.now() });
+    await this.queueChange('report', report);
   }
 
   async reportToiletNotExists(toiletReport: InsertToiletReport): Promise<void> {
-    // Check if user has already reported this toilet
-    const existingReport = await db.collection("toiletReports")
-      .where("toiletId", "==", toiletReport.toiletId)
-      .where("userId", "==", toiletReport.userId)
-      .limit(1)
-      .get();
-    if (!existingReport.empty) return;
-
-    // Add the report
-    await db.collection("toiletReports").add({
-      ...toiletReport,
-      createdAt: Timestamp.now(),
-    });
-
-    // Update report count
-    const reportCount = await this.getToiletReportCount(toiletReport.toiletId);
-    const toiletRef = db.collection("toilets").doc(toiletReport.toiletId);
-    if (reportCount >= 10) {
-      await this.removeToiletFromReports(toiletReport.toiletId);
-    } else {
-      await toiletRef.update({ reportCount });
-    }
+    await this.queueChange('report', toiletReport);
   }
 
   async getToiletReportCount(toiletId: string): Promise<number> {
@@ -165,19 +137,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteToilet(toiletId: string): Promise<void> {
-    // Delete all related data
-    const batch = db.batch();
-    const toiletRef = db.collection("toilets").doc(toiletId);
-    // Remove the 'id' field before deleting the document
-    await toiletRef.update({ id: FieldValue.delete() });
-    const toiletReportsSnap = await db.collection("toiletReports").where("toiletId", "==", toiletId).get();
-    toiletReportsSnap.forEach(doc => batch.delete(doc.ref));
-    const reviewsSnap = await db.collection("reviews").where("toiletId", "==", toiletId).get();
-    reviewsSnap.forEach(doc => batch.delete(doc.ref));
-    const reportsSnap = await db.collection("reports").where("toiletId", "==", toiletId).get();
-    reportsSnap.forEach(doc => batch.delete(doc.ref));
-    batch.delete(toiletRef);
-    await batch.commit();
+    await this.queueChange('delete', { toiletId });
   }
 
   private calculateDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
@@ -194,6 +154,14 @@ export class DatabaseStorage implements IStorage {
 
   private deg2rad(deg: number): number {
     return deg * (Math.PI / 180);
+  }
+
+  async queueChange(type: 'add' | 'report' | 'delete', data: any): Promise<void> {
+    await db.collection('pending_changes').add({
+      type,
+      data,
+      createdAt: Timestamp.now(),
+    });
   }
 }
 

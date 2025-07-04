@@ -19,7 +19,7 @@ if (!admin.apps.length) {
 const db = admin.firestore();
 
 // Read toilets data
-const toiletsPath = path.join(__dirname, 'bulgaria_toilets_complete.json');
+const toiletsPath = path.join(__dirname, 'bulgaria_pois_ready_for_import.json');
 const toiletsData = JSON.parse(fs.readFileSync(toiletsPath, 'utf8'));
 
 async function importToilets() {

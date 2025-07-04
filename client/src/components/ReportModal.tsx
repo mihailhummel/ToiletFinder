@@ -23,8 +23,8 @@ const reportReasons: { value: ReportReason; label: string }[] = [
 ];
 
 export const ReportModal = ({ toilet, isOpen, onClose }: ReportModalProps) => {
-  const [reason, setReason] = useState<ReportReason>("doesnt-exist");
-  const [comment, setComment] = useState("");
+  const [reason, setReason] = useState<ReportReason>('doesnt-exist');
+  const [comment, setComment] = useState<string>('');
   
   const { user } = useAuth();
   const { toast } = useToast();
@@ -47,8 +47,8 @@ export const ReportModal = ({ toilet, isOpen, onClose }: ReportModalProps) => {
       });
 
       onClose();
-      setReason("doesnt-exist");
-      setComment("");
+      setReason('doesnt-exist');
+      setComment('');
     } catch (error) {
       toast({
         title: "Error",
@@ -60,8 +60,8 @@ export const ReportModal = ({ toilet, isOpen, onClose }: ReportModalProps) => {
 
   const handleClose = () => {
     onClose();
-    setReason("doesnt-exist");
-    setComment("");
+    setReason('doesnt-exist');
+    setComment('');
   };
 
   return (
@@ -77,7 +77,7 @@ export const ReportModal = ({ toilet, isOpen, onClose }: ReportModalProps) => {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium mb-3">Issue Type</label>
-            <RadioGroup value={reason} onValueChange={(value: ReportReason) => setReason(value)}>
+            <RadioGroup value={(reason ?? 'doesnt-exist') as string} onValueChange={(value) => setReason(value as ReportReason)}>
               {reportReasons.map(({ value, label }) => (
                 <div key={value} className="flex items-center space-x-2">
                   <RadioGroupItem value={value} id={value} />
@@ -94,7 +94,7 @@ export const ReportModal = ({ toilet, isOpen, onClose }: ReportModalProps) => {
               Additional Comments (Optional)
             </label>
             <Textarea
-              value={comment}
+              value={comment || ''}
               onChange={(e) => setComment(e.target.value)}
               placeholder="Please provide more details..."
               rows={3}

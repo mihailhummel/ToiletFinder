@@ -5,6 +5,10 @@ import { useGeolocation } from '@/hooks/useGeolocation';
 import { useToilets, useDeleteToilet } from '@/hooks/useToilets';
 import { useAuth } from '@/hooks/useAuth';
 import type { Toilet, MapLocation } from '@/types/toilet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+// @ts-ignore
+window.L = L;
 
 interface MapProps {
   onToiletClick: (toilet: Toilet) => void;
@@ -41,6 +45,10 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
   const userRingMarker = useRef<any>(null);
   const [leafletLoaded, setLeafletLoaded] = useState(false);
   const [isAwayFromUser, setIsAwayFromUser] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  const [mapBounds, setMapBounds] = useState<any>(null);
+  const [markerClusterLoaded, setMarkerClusterLoaded] = useState(false);
+  const [markerClusterError, setMarkerClusterError] = useState<string | null>(null);
   
 
   
@@ -50,7 +58,8 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
   useEffect(() => {
     getCurrentLocation();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
-  const { data: toilets = [] } = useToilets(); // Load all toilets in Bulgaria
+  const toiletsQuery = useToilets();
+  const toilets = toiletsQuery.data || [];
   const { user } = useAuth();
   const deleteToiletMutation = useDeleteToilet();
 
@@ -74,6 +83,16 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
     script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
     script.onload = () => {
       setLeafletLoaded(true);
+      // Dynamically load markercluster after Leaflet is loaded
+      import('leaflet.markercluster/dist/leaflet.markercluster.js')
+        .then(() => {
+          import('leaflet.markercluster/dist/MarkerCluster.Default.css');
+          setMarkerClusterLoaded(true);
+        })
+        .catch((err) => {
+          setMarkerClusterError('Could not load marker clustering.');
+          setMarkerClusterLoaded(false);
+        });
     };
     document.head.appendChild(script);
 
@@ -84,267 +103,267 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
   }, []);
 
   // Set up global functions for popup buttons (always, not just in useEffect)
-  if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined') {
     window.getDirections = (lat, lng) => {
-      const userAgent = navigator.userAgent;
-      const url = userAgent.includes('iPhone') || userAgent.includes('iPad')
-        ? `maps://maps.google.com/maps?daddr=${lat},${lng}&amp;ll=`
-        : `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
-      window.open(url, '_blank');
-    };
+        const userAgent = navigator.userAgent;
+        const url = userAgent.includes('iPhone') || userAgent.includes('iPad')
+          ? `maps://maps.google.com/maps?daddr=${lat},${lng}&amp;ll=`
+          : `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+        window.open(url, '_blank');
+      };
 
     window.loadReviews = async (toiletId) => {
-      try {
-        const response = await fetch(`/api/toilets/${toiletId}/reviews`);
-        if (response.ok) {
-          const reviews = await response.json();
-          
-          // Update review summary in header
-          const reviewSummary = document.getElementById(`review-summary-${toiletId}`);
-          if (reviewSummary && reviews.length > 0) {
-            const avgRating = (reviews.reduce((sum: number, r: any) => sum + r.rating, 0) / reviews.length).toFixed(1);
-            reviewSummary.innerHTML = `
-              <span style="display: flex; align-items: center; gap: 4px;">
-                <span style="color: #facc15; font-size: 14px;">★</span>
-                <span style="font-weight: 500;">${avgRating}</span>
-                <span>(${reviews.length} review${reviews.length === 1 ? '' : 's'})</span>
-              </span>
-            `;
-          }
-          
-          const reviewsContainer = document.getElementById(`reviews-${toiletId}`);
-          if (reviewsContainer) {
-            if (reviews.length > 0) {
-              reviewsContainer.innerHTML = `
-                <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #e5e7eb;">
-                  <div style="font-size: 13px; color: #64748b; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">
-                    Recent Reviews (${reviews.length})
-                  </div>
-                  <div style="max-height: 200px; overflow-y: auto;">
-                    ${reviews.slice(0, 5).map((review: any) => `
-                      <div style="padding: 12px; background: #f9fafb; border-radius: 8px; margin-bottom: 8px;">
-                        <div style="display: flex; align-items: center; justify-content: between; margin-bottom: 6px;">
-                          <div style="display: flex; align-items: center; gap: 8px;">
-                            <div style="width: 24px; height: 24px; background: #3b82f6; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 12px; font-weight: 600;">
-                              ${review.userName.charAt(0).toUpperCase()}
-                            </div>
-                            <span style="font-size: 14px; font-weight: 500; color: #374151;">${review.userName}</span>
-                          </div>
-                          <div style="display: flex; color: #facc15; margin-left: auto;">
-                            ${'★'.repeat(review.rating)}${'☆'.repeat(5 - review.rating)}
-                          </div>
-                        </div>
-                        ${review.text ? `<div style="font-size: 14px; color: #6b7280; line-height: 1.4; margin-top: 8px;">${review.text}</div>` : ''}
-                        <div style="font-size: 12px; color: #9ca3af; margin-top: 6px;">
-                          ${new Date(review.createdAt).toLocaleDateString()}
-                        </div>
-                      </div>
-                    `).join('')}
-                  </div>
-                </div>
+        try {
+          const response = await fetch(`/api/toilets/${toiletId}/reviews`);
+          if (response.ok) {
+            const reviews = await response.json();
+            
+            // Update review summary in header
+            const reviewSummary = document.getElementById(`review-summary-${toiletId}`);
+            if (reviewSummary && reviews.length > 0) {
+              const avgRating = (reviews.reduce((sum: number, r: any) => sum + r.rating, 0) / reviews.length).toFixed(1);
+              reviewSummary.innerHTML = `
+                <span style="display: flex; align-items: center; gap: 4px;">
+                  <span style="color: #facc15; font-size: 14px;">★</span>
+                  <span style="font-weight: 500;">${avgRating}</span>
+                  <span>(${reviews.length} review${reviews.length === 1 ? '' : 's'})</span>
+                </span>
               `;
-            } else {
-              reviewsContainer.innerHTML = ``;
+            }
+            
+            const reviewsContainer = document.getElementById(`reviews-${toiletId}`);
+            if (reviewsContainer) {
+              if (reviews.length > 0) {
+                reviewsContainer.innerHTML = `
+                  <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #e5e7eb;">
+                    <div style="font-size: 13px; color: #64748b; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">
+                      Recent Reviews (${reviews.length})
+                    </div>
+                    <div style="max-height: 200px; overflow-y: auto;">
+                      ${reviews.slice(0, 5).map((review: any) => `
+                        <div style="padding: 12px; background: #f9fafb; border-radius: 8px; margin-bottom: 8px;">
+                          <div style="display: flex; align-items: center; justify-content: between; margin-bottom: 6px;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                              <div style="width: 24px; height: 24px; background: #3b82f6; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 12px; font-weight: 600;">
+                                ${review.userName.charAt(0).toUpperCase()}
+                              </div>
+                              <span style="font-size: 14px; font-weight: 500; color: #374151;">${review.userName}</span>
+                            </div>
+                            <div style="display: flex; color: #facc15; margin-left: auto;">
+                              ${'★'.repeat(review.rating)}${'☆'.repeat(5 - review.rating)}
+                            </div>
+                          </div>
+                          ${review.text ? `<div style="font-size: 14px; color: #6b7280; line-height: 1.4; margin-top: 8px;">${review.text}</div>` : ''}
+                          <div style="font-size: 12px; color: #9ca3af; margin-top: 6px;">
+                            ${new Date(review.createdAt).toLocaleDateString()}
+                          </div>
+                        </div>
+                      `).join('')}
+                    </div>
+                  </div>
+                `;
+              } else {
+                reviewsContainer.innerHTML = ``;
+              }
             }
           }
+        } catch (error) {
+          console.error('Error loading reviews:', error);
         }
-      } catch (error) {
-        console.error('Error loading reviews:', error);
-      }
-    };
+      };
 
     window.setRating = (toiletId, rating) => {
       window.currentRating = { toiletId, rating };
-      
-      // Update star display
-      for (let i = 1; i <= 5; i++) {
-        const star = document.getElementById(`star-${toiletId}-${i}`);
-        if (star) {
-          star.innerHTML = i <= rating ? '★' : '☆';
-          star.style.color = i <= rating ? '#facc15' : '#D1D5DB';
+        
+        // Update star display
+        for (let i = 1; i <= 5; i++) {
+          const star = document.getElementById(`star-${toiletId}-${i}`);
+          if (star) {
+            star.innerHTML = i <= rating ? '★' : '☆';
+            star.style.color = i <= rating ? '#facc15' : '#D1D5DB';
+          }
         }
-      }
-      
-      // Hide tap message and show review input
-      const tapMessage = document.getElementById(`tap-message-${toiletId}`);
-      const reviewInput = document.getElementById(`review-input-${toiletId}`);
-      
-      if (tapMessage) {
-        tapMessage.style.display = 'none';
-      }
-      
-      if (reviewInput) {
-        reviewInput.style.display = 'block';
-      }
-    };
+        
+        // Hide tap message and show review input
+        const tapMessage = document.getElementById(`tap-message-${toiletId}`);
+        const reviewInput = document.getElementById(`review-input-${toiletId}`);
+        
+        if (tapMessage) {
+          tapMessage.style.display = 'none';
+        }
+        
+        if (reviewInput) {
+          reviewInput.style.display = 'block';
+        }
+      };
 
     window.hoverStars = (toiletId, rating) => {
-      for (let i = 1; i <= 5; i++) {
-        const star = document.getElementById(`star-${toiletId}-${i}`);
-        if (star) {
-          star.innerHTML = i <= rating ? '★' : '☆';
-          star.style.color = i <= rating ? '#facc15' : '#D1D5DB';
+        for (let i = 1; i <= 5; i++) {
+          const star = document.getElementById(`star-${toiletId}-${i}`);
+          if (star) {
+            star.innerHTML = i <= rating ? '★' : '☆';
+            star.style.color = i <= rating ? '#facc15' : '#D1D5DB';
+          }
         }
-      }
-    };
+      };
 
     window.resetStars = (toiletId) => {
       const currentRating = window.currentRating;
-      const rating = currentRating?.toiletId === toiletId ? currentRating.rating : 0;
-      
-      for (let i = 1; i <= 5; i++) {
-        const star = document.getElementById(`star-${toiletId}-${i}`);
-        if (star) {
-          star.innerHTML = i <= rating ? '★' : '☆';
-          star.style.color = i <= rating ? '#facc15' : '#D1D5DB';
+        const rating = currentRating?.toiletId === toiletId ? currentRating.rating : 0;
+        
+        for (let i = 1; i <= 5; i++) {
+          const star = document.getElementById(`star-${toiletId}-${i}`);
+          if (star) {
+            star.innerHTML = i <= rating ? '★' : '☆';
+            star.style.color = i <= rating ? '#facc15' : '#D1D5DB';
+          }
         }
-      }
-    };
+      };
 
     window.submitReview = async (toiletId) => {
       const currentRating = window.currentRating;
-      if (!currentRating || currentRating.toiletId !== toiletId) return;
-      
-      if (!user) {
-        onLoginClick();
-        return;
-      }
+        if (!currentRating || currentRating.toiletId !== toiletId) return;
+        
+        if (!user) {
+          onLoginClick();
+          return;
+        }
 
-      // Get text review
-      const reviewTextElement = document.getElementById(`review-text-${toiletId}`) as HTMLTextAreaElement;
-      const reviewText = reviewTextElement ? reviewTextElement.value.trim() : '';
+        // Get text review
+        const reviewTextElement = document.getElementById(`review-text-${toiletId}`) as HTMLTextAreaElement;
+        const reviewText = reviewTextElement ? reviewTextElement.value.trim() : '';
 
-      try {
-        const response = await fetch(`/api/toilets/${toiletId}/reviews`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
+        try {
+          const response = await fetch(`/api/toilets/${toiletId}/reviews`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
             toiletId,
-            rating: currentRating.rating,
-            text: reviewText,
-            userName: user.displayName,
-            userId: user.uid
-          })
-        });
+              rating: currentRating.rating,
+              text: reviewText,
+              userName: user.displayName,
+              userId: user.uid
+            })
+          });
 
-        if (response.ok) {
+          if (response.ok) {
           window.currentRating = undefined;
           window.loadReviews(toiletId);
-          
-          // Reset UI
-          const tapMessage = document.getElementById(`tap-message-${toiletId}`);
-          const reviewInput = document.getElementById(`review-input-${toiletId}`);
-          
-          if (tapMessage) {
-            tapMessage.style.display = 'block';
-          }
-          
-          if (reviewInput) {
-            reviewInput.style.display = 'none';
-            if (reviewTextElement) reviewTextElement.value = '';
-          }
-          
-          for (let i = 1; i <= 5; i++) {
-            const star = document.getElementById(`star-${toiletId}-${i}`);
-            if (star) {
-              star.innerHTML = '☆';
-              star.style.color = '#D1D5DB';
+            
+            // Reset UI
+            const tapMessage = document.getElementById(`tap-message-${toiletId}`);
+            const reviewInput = document.getElementById(`review-input-${toiletId}`);
+            
+            if (tapMessage) {
+              tapMessage.style.display = 'block';
+            }
+            
+            if (reviewInput) {
+              reviewInput.style.display = 'none';
+              if (reviewTextElement) reviewTextElement.value = '';
+            }
+            
+            for (let i = 1; i <= 5; i++) {
+              const star = document.getElementById(`star-${toiletId}-${i}`);
+              if (star) {
+                star.innerHTML = '☆';
+                star.style.color = '#D1D5DB';
+              }
             }
           }
-        }
-      } catch (error) {
-        console.error('Error submitting review:', error);
+        } catch (error) {
+          console.error('Error submitting review:', error);
         alert('Failed to submit review. Please try again or contact support. ' + (typeof error === 'object' && error !== null ? JSON.stringify(error) : String(error)));
-      }
-    };
+        }
+      };
 
     window.cancelReview = (toiletId) => {
       window.currentRating = undefined;
-      
-      // Reset UI
-      const tapMessage = document.getElementById(`tap-message-${toiletId}`);
-      const reviewInput = document.getElementById(`review-input-${toiletId}`);
-      const reviewTextElement = document.getElementById(`review-text-${toiletId}`) as HTMLTextAreaElement;
-      
-      if (tapMessage) {
-        tapMessage.style.display = 'block';
-      }
-      
-      if (reviewInput) {
-        reviewInput.style.display = 'none';
-        if (reviewTextElement) reviewTextElement.value = '';
-      }
-      
-      for (let i = 1; i <= 5; i++) {
-        const star = document.getElementById(`star-${toiletId}-${i}`);
-        if (star) {
-          star.innerHTML = '☆';
-          star.style.color = '#D1D5DB';
+        
+        // Reset UI
+        const tapMessage = document.getElementById(`tap-message-${toiletId}`);
+        const reviewInput = document.getElementById(`review-input-${toiletId}`);
+        const reviewTextElement = document.getElementById(`review-text-${toiletId}`) as HTMLTextAreaElement;
+        
+        if (tapMessage) {
+          tapMessage.style.display = 'block';
         }
-      }
-    };
-
-    window.openLoginModal = () => {
-      onLoginClick();
-    };
-
-    window.reportToiletNotExists = async (toiletId) => {
-      if (!user) {
-        onLoginClick();
-        return;
-      }
-
-      try {
-        const response = await fetch(`/api/toilets/${toiletId}/report-not-exists`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            userId: user.uid,
-            userName: user.displayName || 'Anonymous User'
-          })
-        });
-
-        if (response.ok) {
-          const reportBtn = document.getElementById(`report-btn-${toiletId}`);
-          if (reportBtn) {
-            reportBtn.innerHTML = '✅ Reported - Thank you!';
-            reportBtn.style.background = '#dcfce7';
-            reportBtn.style.color = '#166534';
-            reportBtn.style.borderColor = '#bbf7d0';
-            reportBtn.style.cursor = 'default';
-            reportBtn.setAttribute('onclick', '');
+        
+        if (reviewInput) {
+          reviewInput.style.display = 'none';
+          if (reviewTextElement) reviewTextElement.value = '';
+        }
+        
+        for (let i = 1; i <= 5; i++) {
+          const star = document.getElementById(`star-${toiletId}-${i}`);
+          if (star) {
+            star.innerHTML = '☆';
+            star.style.color = '#D1D5DB';
           }
         }
-      } catch (error) {
-        console.error('Error reporting toilet:', error);
-      }
-    };
+      };
+
+    window.openLoginModal = () => {
+        onLoginClick();
+      };
+
+    window.reportToiletNotExists = async (toiletId) => {
+        if (!user) {
+          onLoginClick();
+          return;
+        }
+
+        try {
+          const response = await fetch(`/api/toilets/${toiletId}/report-not-exists`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userId: user.uid,
+              userName: user.displayName || 'Anonymous User'
+            })
+          });
+
+          if (response.ok) {
+            const reportBtn = document.getElementById(`report-btn-${toiletId}`);
+            if (reportBtn) {
+              reportBtn.innerHTML = '✅ Reported - Thank you!';
+              reportBtn.style.background = '#dcfce7';
+              reportBtn.style.color = '#166534';
+              reportBtn.style.borderColor = '#bbf7d0';
+              reportBtn.style.cursor = 'default';
+              reportBtn.setAttribute('onclick', '');
+            }
+          }
+        } catch (error) {
+          console.error('Error reporting toilet:', error);
+        }
+      };
 
     window.deleteToilet = async (toiletId) => {
-      if (!isAdmin) {
-        console.error('Only admin can delete toilets');
-        return;
-      }
-
-      if (!confirm('Are you sure you want to permanently delete this toilet? This action cannot be undone.')) {
-        return;
-      }
-
-      try {
-        await deleteToiletMutation.mutateAsync({ 
-          toiletId, 
-          adminEmail: currentUser?.email || '' 
-        });
-        // Close all popups after deletion
-        if (map.current) {
-          map.current.closePopup();
+        if (!isAdmin) {
+          console.error('Only admin can delete toilets');
+          return;
         }
-      } catch (error) {
-        console.error('Error deleting toilet:', error);
-        alert('Failed to delete toilet. Please try again.');
-      }
-    };
-  }
+
+        if (!confirm('Are you sure you want to permanently delete this toilet? This action cannot be undone.')) {
+          return;
+        }
+
+        try {
+          await deleteToiletMutation.mutateAsync({ 
+            toiletId, 
+            adminEmail: currentUser?.email || '' 
+          });
+          // Close all popups after deletion
+          if (map.current) {
+            map.current.closePopup();
+          }
+        } catch (error) {
+          console.error('Error deleting toilet:', error);
+          alert('Failed to delete toilet. Please try again.');
+        }
+      };
+    }
 
   // Initialize map
   useEffect(() => {
@@ -356,12 +375,12 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
 
     const initialCenter = stableUserLocation || { lat: 42.6977, lng: 23.3219 };
 
-    map.current = window.L.map(mapContainer.current).setView(
+    map.current = L.map(mapContainer.current).setView(
       [initialCenter.lat, initialCenter.lng], 
       stableUserLocation ? 16 : 13
     );
 
-    window.L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
       attribution: '© OpenStreetMap contributors © CARTO',
       subdomains: 'abcd',
       maxZoom: 19
@@ -427,7 +446,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
       map.current.removeLayer(userRingMarker.current);
     }
 
-    userMarker.current = window.L.circleMarker([stableUserLocation.lat, stableUserLocation.lng], {
+    userMarker.current = L.circleMarker([stableUserLocation.lat, stableUserLocation.lng], {
       radius: 10,
       fillColor: '#3b82f6',
       color: '#ffffff',
@@ -435,20 +454,18 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
       opacity: 1,
       fillOpacity: 1,
       interactive: false,
-      zIndexOffset: 1000
     }).addTo(map.current);
 
-    const pulseIcon = window.L.divIcon({
+    const pulseIcon = L.divIcon({
       className: 'pulse-ring-container',
       html: '<div style="width: 36px; height: 36px; border: 2px solid #3b82f6; border-radius: 50%; animation: pulse 1.5s infinite; opacity: 0.6;"></div>',
       iconSize: [36, 36],
       iconAnchor: [18, 18]
     });
 
-    userRingMarker.current = window.L.marker([stableUserLocation.lat, stableUserLocation.lng], {
+    userRingMarker.current = L.marker([stableUserLocation.lat, stableUserLocation.lng], {
       icon: pulseIcon,
       interactive: false,
-      zIndexOffset: 999
     }).addTo(map.current);
 
     map.current.setView([stableUserLocation.lat, stableUserLocation.lng], 16);
@@ -457,7 +474,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
 
   // Update toilet markers with persistence
   useEffect(() => {
-    if (!map.current || !window.L || !stableToilets.length) return;
+    if (!map.current || !L || !stableToilets.length) return;
 
     console.log('Toilet markers useEffect triggered, count:', stableToilets.length);
 
@@ -495,7 +512,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
       // Determine marker color based on toilet source
       const markerColor = toilet.source === 'user' ? '#7C3AED' : '#FF385C'; // Purple for user-added, red for OSM
       
-      const icon = window.L.divIcon({
+      const icon = L.divIcon({
         className: 'toilet-marker',
         html: `
           <div style="
@@ -777,60 +794,60 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
             >
               🧭 Get Directions
             </button>
-            <button 
-              id="report-btn-${toilet.id}"
-              onclick="window.reportToiletNotExists('${toilet.id}')" 
-              style="
+          <button 
+            id="report-btn-${toilet.id}"
+            onclick="window.reportToiletNotExists('${toilet.id}')" 
+            style="
                 flex: 1;
                 padding: 10px 0; 
-                background: #f7f7f7; 
-                color: #717171; 
-                border: 1px solid #E5E5E5; 
+              background: #f7f7f7; 
+              color: #717171; 
+              border: 1px solid #E5E5E5; 
                 border-radius: 6px; 
                 font-size: 13px; 
-                font-weight: 500; 
-                cursor: pointer; 
-                display: flex; 
-                align-items: center; 
-                justify-content: center; 
+              font-weight: 500; 
+              cursor: pointer; 
+              display: flex; 
+              align-items: center; 
+              justify-content: center; 
                 gap: 3px;
-                transition: all 0.2s ease;
-              "
-              onmouseover="this.style.background='#fee2e2'; this.style.color='#dc2626'; this.style.borderColor='#fca5a5'"
-              onmouseout="this.style.background='#f7f7f7'; this.style.color='#717171'; this.style.borderColor='#E5E5E5'"
-            >
+              transition: all 0.2s ease;
+            "
+            onmouseover="this.style.background='#fee2e2'; this.style.color='#dc2626'; this.style.borderColor='#fca5a5'"
+            onmouseout="this.style.background='#f7f7f7'; this.style.color='#717171'; this.style.borderColor='#E5E5E5'"
+          >
               ⚠️ Report
-            </button>
-            ${isAdmin && currentUser?.email === 'mihail.dilyanov@gmail.com' ? `
-            <button 
-              onclick="window.deleteToilet('${toilet.id}')" 
-              style="
+          </button>
+          ${isAdmin && currentUser?.email === 'mihail.dilyanov@gmail.com' ? `
+          <button 
+            onclick="window.deleteToilet('${toilet.id}')" 
+            style="
                 flex: 1;
                 padding: 10px 0; 
-                background: #dc2626; 
-                color: white; 
-                border: none; 
+              background: #dc2626; 
+              color: white; 
+              border: none; 
                 border-radius: 6px; 
                 font-size: 13px; 
-                font-weight: 500; 
-                cursor: pointer; 
-                display: flex; 
-                align-items: center; 
-                justify-content: center; 
+              font-weight: 500; 
+              cursor: pointer; 
+              display: flex; 
+              align-items: center; 
+              justify-content: center; 
                 gap: 3px;
-                transition: all 0.2s ease;
-              "
-              onmouseover="this.style.background='#b91c1c'"
-              onmouseout="this.style.background='#dc2626'"
-            >
+              transition: all 0.2s ease;
+            "
+            onmouseover="this.style.background='#b91c1c'"
+            onmouseout="this.style.background='#dc2626'"
+          >
               Admin
-            </button>
-            ` : ''}
+          </button>
+          ` : ''}
           </div>
         </div>
       `;
 
-      const marker = window.L.marker([toilet.coordinates.lat, toilet.coordinates.lng], { icon })
+      const marker = L.marker([toilet.coordinates.lat, toilet.coordinates.lng], { icon })
         .addTo(map.current)
         .bindPopup(popupContent, {
           maxWidth: 360,
@@ -875,6 +892,67 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
     }
   };
 
+  useEffect(() => {
+    if (toiletsQuery.isError) {
+      const errMsg = (toiletsQuery.error as any)?.message || '';
+      if (errMsg.includes('quota') || errMsg.includes('503')) {
+        setFetchError('Service temporarily unavailable due to database limits. Please try again later.');
+      } else {
+        setFetchError('Could not load locations. Please try again later.');
+      }
+    } else {
+      setFetchError(null);
+    }
+  }, [toiletsQuery.isError, toiletsQuery.error]);
+
+  // Update bounds and fetch toilets in view on map move/zoom
+  useEffect(() => {
+    if (!leafletLoaded || !map.current) return;
+    const leafletMap = map.current;
+    const updateBounds = () => {
+      const bounds = leafletMap.getBounds();
+      setMapBounds(bounds);
+    };
+    leafletMap.on('moveend zoomend', updateBounds);
+    updateBounds();
+    return () => {
+      leafletMap.off('moveend zoomend', updateBounds);
+    };
+  }, [leafletLoaded]);
+
+  // Filter toilets in current bounds
+  const toiletsInView = useMemo(() => {
+    if (!mapBounds) return stableToilets;
+    return stableToilets.filter(toilet => {
+      if (!toilet.coordinates) return false;
+      const { lat, lng } = toilet.coordinates;
+      return mapBounds && mapBounds.contains && mapBounds.contains([lat, lng]);
+    });
+  }, [stableToilets, mapBounds]);
+
+  // Cluster markers
+  useEffect(() => {
+    if (!leafletLoaded || !markerClusterLoaded || !map.current) return;
+    // Remove old markers
+    markers.current.forEach(m => map.current.removeLayer(m));
+    markers.current = [];
+    // Create marker cluster group
+    if (typeof (L as any).markerClusterGroup !== 'function') {
+      setMarkerClusterError('Marker clustering plugin not loaded.');
+      return;
+    }
+    const markerCluster = (L as any).markerClusterGroup();
+    toiletsInView.forEach(toilet => {
+      if (!toilet.coordinates) return;
+      const marker = L.marker([toilet.coordinates.lat, toilet.coordinates.lng]);
+      marker.bindPopup(`<b>${toilet.notes || 'Toilet'}</b>`);
+      marker.on('click', () => onToiletClick(toilet));
+      markerCluster.addLayer(marker);
+    });
+    map.current.addLayer(markerCluster);
+    markers.current.push(markerCluster);
+  }, [leafletLoaded, markerClusterLoaded, toiletsInView]);
+
   return (
     <div className="relative w-full h-full">
       <div 
@@ -907,6 +985,17 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
         )}
       </div>
 
+      {fetchError && (
+        <div className="bg-red-100 text-red-800 p-4 rounded mb-4 text-center">
+          {fetchError}
+        </div>
+      )}
+
+      {markerClusterError && (
+        <div className="bg-red-100 text-red-800 p-4 rounded mb-4 text-center">
+          {markerClusterError}
+        </div>
+      )}
 
     </div>
   );

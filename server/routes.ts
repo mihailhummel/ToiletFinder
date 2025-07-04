@@ -4,24 +4,38 @@ import { storage } from "./storage";
 import { insertToiletSchema, insertReviewSchema, insertReportSchema, insertToiletReportSchema } from "@shared/schema";
 import { z } from "zod";
 
+// In-memory cache for toilets
+let toiletsCache: { data: any[] | null; timestamp: number } = { data: null, timestamp: 0 };
+const CACHE_DURATION_MS = 60 * 60 * 1000; // 1 hour
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Toilet routes
   app.get("/api/toilets", async (req: Request, res: Response) => {
     try {
       const { lat, lng, radius } = req.query;
-      
+      const now = Date.now();
+      if (!lat && !lng && toiletsCache.data && now - toiletsCache.timestamp < CACHE_DURATION_MS) {
+        return res.json(toiletsCache.data);
+      }
+      let toilets;
       if (lat && lng) {
-        const toilets = await storage.getToiletsNearby(
+        toilets = await storage.getToiletsNearby(
           parseFloat(lat as string),
           parseFloat(lng as string),
           radius ? parseFloat(radius as string) : 10
         );
-        res.json(toilets);
       } else {
-        const toilets = await storage.getToilets();
-        res.json(toilets);
+        toilets = await storage.getToilets();
+        toiletsCache = { data: toilets, timestamp: now };
       }
+      res.json(toilets);
     } catch (error) {
+      const err = error as any;
+      if (err && err.code === 8 && err.message && err.message.includes('exceeded')) {
+        // Firestore quota exceeded
+        res.status(503).json({ error: 'Firestore quota exceeded. Please try again later.' });
+        return;
+      }
       console.error("Error fetching toilets:", error);
       res.status(500).json({ error: "Failed to fetch toilets" });
     }
