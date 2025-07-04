@@ -20,7 +20,7 @@ export const useToilets = (location?: MapLocation) => {
       if (!response.ok) throw new Error('Failed to fetch toilets');
       return response.json() as Promise<Toilet[]>;
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 60 * 60 * 1000, // 1 hour
   });
 };
 

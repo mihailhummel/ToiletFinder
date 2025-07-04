@@ -5,6 +5,10 @@ import { useGeolocation } from '@/hooks/useGeolocation';
 import { useToilets, useDeleteToilet } from '@/hooks/useToilets';
 import { useAuth } from '@/hooks/useAuth';
 import type { Toilet, MapLocation } from '@/types/toilet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+// @ts-ignore
+window.L = L;
 
 interface MapProps {
   onToiletClick: (toilet: Toilet) => void;
@@ -28,6 +32,8 @@ declare global {
     openLoginModal: () => void;
     getCurrentUser: () => any;
     currentRating?: { toiletId: string; rating: number };
+    reportToiletNotExists: (toiletId: string) => void;
+    deleteToilet: (toiletId: string) => void;
   }
 }
 
@@ -39,6 +45,10 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
   const userRingMarker = useRef<any>(null);
   const [leafletLoaded, setLeafletLoaded] = useState(false);
   const [isAwayFromUser, setIsAwayFromUser] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  const [mapBounds, setMapBounds] = useState<any>(null);
+  const [markerClusterLoaded, setMarkerClusterLoaded] = useState(false);
+  const [markerClusterError, setMarkerClusterError] = useState<string | null>(null);
   
 
   
@@ -48,7 +58,8 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
   useEffect(() => {
     getCurrentLocation();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
-  const { data: toilets = [] } = useToilets(); // Load all toilets in Bulgaria
+  const toiletsQuery = useToilets();
+  const toilets = toiletsQuery.data || [];
   const { user } = useAuth();
   const deleteToiletMutation = useDeleteToilet();
 
@@ -72,6 +83,16 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
     script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
     script.onload = () => {
       setLeafletLoaded(true);
+      // Dynamically load markercluster after Leaflet is loaded
+      import('leaflet.markercluster/dist/leaflet.markercluster.js')
+        .then(() => {
+          import('leaflet.markercluster/dist/MarkerCluster.Default.css');
+          setMarkerClusterLoaded(true);
+        })
+        .catch((err) => {
+          setMarkerClusterError('Could not load marker clustering.');
+          setMarkerClusterLoaded(false);
+        });
     };
     document.head.appendChild(script);
 
@@ -81,10 +102,9 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
     };
   }, []);
 
-  // Set up global functions for popup buttons
-  useEffect(() => {
+  // Set up global functions for popup buttons (always, not just in useEffect)
     if (typeof window !== 'undefined') {
-      (window as any).getDirections = (lat: number, lng: number) => {
+    window.getDirections = (lat, lng) => {
         const userAgent = navigator.userAgent;
         const url = userAgent.includes('iPhone') || userAgent.includes('iPad')
           ? `maps://maps.google.com/maps?daddr=${lat},${lng}&amp;ll=`
@@ -92,7 +112,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
         window.open(url, '_blank');
       };
 
-      (window as any).loadReviews = async (toiletId: string) => {
+    window.loadReviews = async (toiletId) => {
         try {
           const response = await fetch(`/api/toilets/${toiletId}/reviews`);
           if (response.ok) {
@@ -152,8 +172,8 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
         }
       };
 
-      (window as any).setRating = (toiletId: string, rating: number) => {
-        (window as any).currentRating = { toiletId, rating };
+    window.setRating = (toiletId, rating) => {
+      window.currentRating = { toiletId, rating };
         
         // Update star display
         for (let i = 1; i <= 5; i++) {
@@ -177,7 +197,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
         }
       };
 
-      (window as any).hoverStars = (toiletId: string, rating: number) => {
+    window.hoverStars = (toiletId, rating) => {
         for (let i = 1; i <= 5; i++) {
           const star = document.getElementById(`star-${toiletId}-${i}`);
           if (star) {
@@ -187,8 +207,8 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
         }
       };
 
-      (window as any).resetStars = (toiletId: string) => {
-        const currentRating = (window as any).currentRating;
+    window.resetStars = (toiletId) => {
+      const currentRating = window.currentRating;
         const rating = currentRating?.toiletId === toiletId ? currentRating.rating : 0;
         
         for (let i = 1; i <= 5; i++) {
@@ -200,8 +220,8 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
         }
       };
 
-      (window as any).submitReview = async (toiletId: string) => {
-        const currentRating = (window as any).currentRating;
+    window.submitReview = async (toiletId) => {
+      const currentRating = window.currentRating;
         if (!currentRating || currentRating.toiletId !== toiletId) return;
         
         if (!user) {
@@ -218,6 +238,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
+            toiletId,
               rating: currentRating.rating,
               text: reviewText,
               userName: user.displayName,
@@ -226,8 +247,8 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
           });
 
           if (response.ok) {
-            (window as any).currentRating = undefined;
-            (window as any).loadReviews(toiletId);
+          window.currentRating = undefined;
+          window.loadReviews(toiletId);
             
             // Reset UI
             const tapMessage = document.getElementById(`tap-message-${toiletId}`);
@@ -252,11 +273,12 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
           }
         } catch (error) {
           console.error('Error submitting review:', error);
+        alert('Failed to submit review. Please try again or contact support. ' + (typeof error === 'object' && error !== null ? JSON.stringify(error) : String(error)));
         }
       };
 
-      (window as any).cancelReview = (toiletId: string) => {
-        (window as any).currentRating = undefined;
+    window.cancelReview = (toiletId) => {
+      window.currentRating = undefined;
         
         // Reset UI
         const tapMessage = document.getElementById(`tap-message-${toiletId}`);
@@ -281,11 +303,11 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
         }
       };
 
-      (window as any).openLoginModal = () => {
+    window.openLoginModal = () => {
         onLoginClick();
       };
 
-      (window as any).reportToiletNotExists = async (toiletId: string) => {
+    window.reportToiletNotExists = async (toiletId) => {
         if (!user) {
           onLoginClick();
           return;
@@ -317,7 +339,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
         }
       };
 
-      (window as any).deleteToilet = async (toiletId: string) => {
+    window.deleteToilet = async (toiletId) => {
         if (!isAdmin) {
           console.error('Only admin can delete toilets');
           return;
@@ -342,7 +364,6 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
         }
       };
     }
-  }, [user, onLoginClick, isAdmin, deleteToiletMutation, currentUser]);
 
   // Initialize map
   useEffect(() => {
@@ -354,12 +375,12 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
 
     const initialCenter = stableUserLocation || { lat: 42.6977, lng: 23.3219 };
 
-    map.current = window.L.map(mapContainer.current).setView(
+    map.current = L.map(mapContainer.current).setView(
       [initialCenter.lat, initialCenter.lng], 
       stableUserLocation ? 16 : 13
     );
 
-    window.L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
       attribution: '© OpenStreetMap contributors © CARTO',
       subdomains: 'abcd',
       maxZoom: 19
@@ -425,7 +446,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
       map.current.removeLayer(userRingMarker.current);
     }
 
-    userMarker.current = window.L.circleMarker([stableUserLocation.lat, stableUserLocation.lng], {
+    userMarker.current = L.circleMarker([stableUserLocation.lat, stableUserLocation.lng], {
       radius: 10,
       fillColor: '#3b82f6',
       color: '#ffffff',
@@ -433,20 +454,18 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
       opacity: 1,
       fillOpacity: 1,
       interactive: false,
-      zIndexOffset: 1000
     }).addTo(map.current);
 
-    const pulseIcon = window.L.divIcon({
+    const pulseIcon = L.divIcon({
       className: 'pulse-ring-container',
       html: '<div style="width: 36px; height: 36px; border: 2px solid #3b82f6; border-radius: 50%; animation: pulse 1.5s infinite; opacity: 0.6;"></div>',
       iconSize: [36, 36],
       iconAnchor: [18, 18]
     });
 
-    userRingMarker.current = window.L.marker([stableUserLocation.lat, stableUserLocation.lng], {
+    userRingMarker.current = L.marker([stableUserLocation.lat, stableUserLocation.lng], {
       icon: pulseIcon,
       interactive: false,
-      zIndexOffset: 999
     }).addTo(map.current);
 
     map.current.setView([stableUserLocation.lat, stableUserLocation.lng], 16);
@@ -455,7 +474,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
 
   // Update toilet markers with persistence
   useEffect(() => {
-    if (!map.current || !window.L || !stableToilets.length) return;
+    if (!map.current || !L || !stableToilets.length) return;
 
     console.log('Toilet markers useEffect triggered, count:', stableToilets.length);
 
@@ -493,7 +512,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
       // Determine marker color based on toilet source
       const markerColor = toilet.source === 'user' ? '#7C3AED' : '#FF385C'; // Purple for user-added, red for OSM
       
-      const icon = window.L.divIcon({
+      const icon = L.divIcon({
         className: 'toilet-marker',
         html: `
           <div style="
@@ -543,35 +562,44 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
       const getToiletTitle = (toilet: any) => {
         const tags = toilet.tags || {};
         const notes = toilet.notes || '';
-        
-        // Check for specific location context
+        // Prefer explicit name/operator/brand for context
+        if (tags.name) {
+          if (toilet.type === 'gas_station') return `${tags.name} Gas Station Toilet`;
+          if (toilet.type === 'mall') return `${tags.name} Mall Toilet`;
+          if (toilet.type === 'restaurant') return `${tags.name} Restaurant Toilet`;
+          return tags.name;
+        }
+        if (tags.operator) {
+          if (toilet.type === 'gas_station') return `${tags.operator} Gas Station Toilet`;
+          if (toilet.type === 'mall') return `${tags.operator} Mall Toilet`;
+          if (toilet.type === 'restaurant') return `${tags.operator} Restaurant Toilet`;
+          return tags.operator;
+        }
+        if (tags.brand) {
+          if (toilet.type === 'gas_station') return `${tags.brand} Gas Station Toilet`;
+          if (toilet.type === 'mall') return `${tags.brand} Mall Toilet`;
+          if (toilet.type === 'restaurant') return `${tags.brand} Restaurant Toilet`;
+          return tags.brand;
+        }
         if (tags['addr:housename']) {
           return tags['addr:housename'];
         }
-        
-        // Check type and access patterns
         if (toilet.type === 'restaurant' || tags.access === 'customers') {
           if (tags['addr:housename']) return 'Toilet at ' + tags['addr:housename'];
           return 'Restaurant Toilet';
         }
-        
         if (toilet.type === 'gas_station') {
           return 'Gas Station Toilet';
         }
-        
         if (toilet.type === 'mall') {
           return 'Shopping Mall Toilet';
         }
-        
         if (tags.leisure === 'park' || notes.toLowerCase().includes('park')) {
           return 'Public Toilet in Park';
         }
-        
         if (tags.tourism || tags.highway) {
           return 'Public Toilet';
         }
-        
-        // Default based on access
         return 'Public Toilet';
       };
       
@@ -641,14 +669,14 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
       const accessibilityInfo = getAccessibilityInfo(toilet);
 
       const popupContent = `
-        <div style="padding: 20px; margin: 0; max-width: 340px; min-width: 300px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; box-sizing: border-box;">
+        <div style="padding: 18px; margin: 0; max-width: 100%; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 13px;">
           <!-- Header -->
           <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
-            <div style="width: 40px; height: 40px; background: ${markerColor}; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;">
+            <div style="width: 32px; height: 32px; background: ${markerColor}; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;">
               🚽
             </div>
             <div style="flex: 1;">
-              <h3 style="margin: 0; font-size: 18px; font-weight: 600; color: #222; line-height: 1.2;">
+              <h3 style="margin: 0; font-size: 16px; font-weight: 600; color: #222; line-height: 1.2;">
                 ${toiletTitle}
               </h3>
               ${toilet.source === 'user' && toilet.addedByUserName ? `
@@ -656,43 +684,41 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
                   Added by ${toilet.addedByUserName}
                 </div>
               ` : ''}
-              <div id="review-summary-${toilet.id}" style="margin: 4px 0 0 0; font-size: 14px; color: #717171;">No reviews yet</div>
+              <div id="review-summary-${toilet.id}" style="margin: 2px 0 0 0; font-size: 13px; color: #717171;">No reviews yet</div>
             </div>
           </div>
 
           <!-- Info Cards -->
-          <div style="margin-bottom: 20px;">
+          <div style="margin-bottom: 18px; display: flex; flex-direction: column; gap: 10px;">
             <!-- Availability -->
-            <div style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 16px; padding: 12px; background: ${availabilityInfo.bgColor}; border-radius: 12px; border-left: 4px solid ${availabilityInfo.color};">
-              <div style="width: 24px; height: 24px; background: ${availabilityInfo.color}; border-radius: 6px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px;">
-                <div style="width: 12px; height: 12px; background: white; border-radius: 2px;"></div>
+            <div style="display: flex; align-items: flex-start; gap: 7px; padding: 9px; background: ${availabilityInfo.bgColor}; border-radius: 7px; border-left: 3px solid ${availabilityInfo.color};">
+              <div style="width: 15px; height: 15px; background: ${availabilityInfo.color}; border-radius: 3px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px;">
+                <div style="width: 7px; height: 7px; background: white; border-radius: 2px;"></div>
               </div>
               <div>
-                <p style="margin: 0; font-size: 12px; font-weight: 600; color: #717171; text-transform: uppercase; letter-spacing: 0.5px;">AVAILABILITY</p>
-                <p style="margin: 2px 0 0 0; font-size: 14px; font-weight: 500; color: #222;">${availabilityInfo.text}</p>
+                <p style="margin: 0; font-size: 11px; font-weight: 600; color: #717171; text-transform: uppercase; letter-spacing: 0.5px;">AVAILABILITY</p>
+                <p style="margin: 2px 0 0 0; font-size: 13px; font-weight: 500; color: #222;">${availabilityInfo.text}</p>
               </div>
             </div>
 
             <!-- Accessibility -->
-            <div style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 16px; padding: 12px; background: ${accessibilityInfo.bgColor}; border-radius: 12px; border-left: 4px solid ${accessibilityInfo.color};">
-              <div style="width: 24px; height: 24px; background: ${accessibilityInfo.color}; border-radius: 6px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px;">
-                <div style="width: 12px; height: 12px; background: white; border-radius: 50%; position: relative;">
-                  <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 8px; height: 1px; background: ${accessibilityInfo.color};"></div>
+            <div style="display: flex; align-items: flex-start; gap: 7px; padding: 9px; background: ${accessibilityInfo.bgColor}; border-radius: 7px; border-left: 3px solid ${accessibilityInfo.color};">
+              <div style="width: 15px; height: 15px; background: ${accessibilityInfo.color}; border-radius: 3px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px;">
+                <div style="width: 7px; height: 7px; background: white; border-radius: 50%; position: relative;">
+                  <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 5px; height: 1px; background: ${accessibilityInfo.color};"></div>
                 </div>
               </div>
               <div>
-                <p style="margin: 0; font-size: 12px; font-weight: 600; color: #717171; text-transform: uppercase; letter-spacing: 0.5px;">ACCESSIBILITY</p>
-                <p style="margin: 2px 0 0 0; font-size: 14px; font-weight: 500; color: #222;">${accessibilityInfo.text}</p>
+                <p style="margin: 0; font-size: 11px; font-weight: 600; color: #717171; text-transform: uppercase; letter-spacing: 0.5px;">ACCESSIBILITY</p>
+                <p style="margin: 2px 0 0 0; font-size: 13px; font-weight: 500; color: #222;">${accessibilityInfo.text}</p>
               </div>
             </div>
           </div>
 
           <!-- Rating Section -->
-          <div style="margin-bottom: 20px;">
-            <p style="margin: 0 0 12px 0; font-size: 14px; font-weight: 600; color: #717171; text-transform: uppercase; letter-spacing: 0.5px;">RATE THIS TOILET</p>
-            
-            <!-- Stars Row -->
-            <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 16px;">
+          <div style="margin-bottom: 12px;">
+            <p style="margin: 0 0 8px 0; font-size: 12px; font-weight: 600; color: #717171; text-transform: uppercase; letter-spacing: 0.5px;">RATE THIS TOILET</p>
+            <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 8px;">
               <div style="display: flex; gap: 8px;">
                 ${[1,2,3,4,5].map(star => `
                   <button 
@@ -707,32 +733,27 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
                 `).join('')}
               </div>
             </div>
-            
-            <!-- Tap to rate message -->
-            <div id="tap-message-${toilet.id}" style="text-align: center; margin-bottom: 16px;">
-              <span style="font-size: 14px; color: #717171; font-style: italic;">Tap a star to rate</span>
+            <div id="tap-message-${toilet.id}" style="text-align: center; margin-bottom: 10px;">
+              <span style="font-size: 12px; color: #717171; font-style: italic;">Tap a star to rate</span>
             </div>
-            
-            <!-- Text Review Input -->
+            <hr style="border: none; border-top: 1px solid #e5e5e5; margin: 0 0 12px 0;" />
             <div id="review-input-${toilet.id}" style="display: none;">
               <textarea 
                 id="review-text-${toilet.id}"
                 placeholder="Leave a text review (optional)"
-                style="width: 100%; padding: 12px; border: 1px solid #E5E5E5; border-radius: 8px; font-size: 14px; font-family: inherit; resize: vertical; min-height: 80px; box-sizing: border-box; margin-bottom: 12px;"
+                style="width: 100%; padding: 7px; border: 1px solid #E5E5E5; border-radius: 5px; font-size: 13px; font-family: inherit; resize: vertical; min-height: 40px; box-sizing: border-box; margin-bottom: 4px;"
               ></textarea>
-              
-              <!-- Submit and Cancel buttons under textarea -->
-              <div style="display: flex; gap: 8px; justify-content: flex-end;">
+              <div style="display: flex; gap: 4px; justify-content: flex-end;">
                 <button 
                   onclick="window.cancelReview('${toilet.id}')" 
-                  style="background: #f7f7f7; color: #717171; border: none; padding: 10px 16px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; touch-action: manipulation;"
+                  style="background: #f7f7f7; color: #717171; border: none; padding: 6px 10px; border-radius: 5px; font-size: 12px; font-weight: 500; cursor: pointer; touch-action: manipulation;"
                   id="cancel-btn-${toilet.id}"
                 >
                   Cancel
                 </button>
                 <button 
                   onclick="window.submitReview('${toilet.id}')" 
-                  style="background: #FF385C; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; touch-action: manipulation;"
+                  style="background: #FF385C; color: white; border: none; padding: 6px 12px; border-radius: 5px; font-size: 12px; font-weight: 600; cursor: pointer; touch-action: manipulation;"
                   id="submit-btn-${toilet.id}"
                 >
                   Submit Review
@@ -742,30 +763,30 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
           </div>
 
           <!-- Reviews Section -->
-          <div id="reviews-${toilet.id}" style="margin-bottom: 20px;">
-            <p style="margin: 0; font-size: 14px; color: #717171; text-align: center; padding: 20px 0; font-style: italic;">
+          <div id="reviews-${toilet.id}" style="margin-bottom: 18px;">
+            <p style="margin: 0; font-size: 12px; color: #717171; text-align: center; padding: 4px 0; font-style: italic;">
               No reviews yet. Be the first to review this toilet!
             </p>
           </div>
 
-          <!-- Action Buttons -->
-          <div style="display: flex; gap: 12px; margin-bottom: 12px;">
+          <!-- Action Buttons Row -->
+          <div style="display: flex; gap: 10px; margin-bottom: 0;">
             <button 
               onclick="window.getDirections(${toilet.coordinates.lat}, ${toilet.coordinates.lng})" 
               style="
                 flex: 1;
-                padding: 16px; 
+                padding: 10px 0; 
                 background: #FF385C; 
                 color: white; 
                 border: none; 
-                border-radius: 12px; 
-                font-size: 16px; 
+                border-radius: 6px; 
+                font-size: 13px; 
                 font-weight: 600; 
                 cursor: pointer; 
                 display: flex; 
                 align-items: center; 
                 justify-content: center; 
-                gap: 8px;
+                gap: 4px;
                 transition: background-color 0.2s ease;
               "
               onmouseover="this.style.background='#E31E52'"
@@ -773,65 +794,60 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
             >
               🧭 Get Directions
             </button>
-          </div>
-          
-          <!-- Report Button -->
           <button 
             id="report-btn-${toilet.id}"
             onclick="window.reportToiletNotExists('${toilet.id}')" 
             style="
-              width: 100%; 
-              padding: 12px; 
+                flex: 1;
+                padding: 10px 0; 
               background: #f7f7f7; 
               color: #717171; 
               border: 1px solid #E5E5E5; 
-              border-radius: 8px; 
-              font-size: 14px; 
+                border-radius: 6px; 
+                font-size: 13px; 
               font-weight: 500; 
               cursor: pointer; 
               display: flex; 
               align-items: center; 
               justify-content: center; 
-              gap: 6px;
+                gap: 3px;
               transition: all 0.2s ease;
             "
             onmouseover="this.style.background='#fee2e2'; this.style.color='#dc2626'; this.style.borderColor='#fca5a5'"
             onmouseout="this.style.background='#f7f7f7'; this.style.color='#717171'; this.style.borderColor='#E5E5E5'"
           >
-            ⚠️ This toilet doesn't exist
+              ⚠️ Report
           </button>
-          
           ${isAdmin && currentUser?.email === 'mihail.dilyanov@gmail.com' ? `
-          <!-- Admin Delete Button -->
           <button 
             onclick="window.deleteToilet('${toilet.id}')" 
             style="
-              width: 100%; 
-              padding: 12px; 
+                flex: 1;
+                padding: 10px 0; 
               background: #dc2626; 
               color: white; 
               border: none; 
-              border-radius: 8px; 
-              font-size: 14px; 
+                border-radius: 6px; 
+                font-size: 13px; 
               font-weight: 500; 
               cursor: pointer; 
               display: flex; 
               align-items: center; 
               justify-content: center; 
-              gap: 6px;
+                gap: 3px;
               transition: all 0.2s ease;
-              margin-top: 8px;
             "
             onmouseover="this.style.background='#b91c1c'"
             onmouseout="this.style.background='#dc2626'"
           >
-            🗑️ Admin: Delete Toilet
+              Admin
           </button>
           ` : ''}
+          </div>
         </div>
       `;
 
-      const marker = window.L.marker([toilet.coordinates.lat, toilet.coordinates.lng], { icon })
+      const marker = L.marker([toilet.coordinates.lat, toilet.coordinates.lng], { icon })
         .addTo(map.current)
         .bindPopup(popupContent, {
           maxWidth: 360,
@@ -847,7 +863,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
           e.originalEvent?.stopPropagation();
           marker.openPopup();
           setTimeout(() => {
-            (window as any).loadReviews(toilet.id);
+            window.loadReviews(toilet.id);
           }, 100);
         });
 
@@ -875,6 +891,67 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
       onAddToiletClick({ lat: center.lat, lng: center.lng });
     }
   };
+
+  useEffect(() => {
+    if (toiletsQuery.isError) {
+      const errMsg = (toiletsQuery.error as any)?.message || '';
+      if (errMsg.includes('quota') || errMsg.includes('503')) {
+        setFetchError('Service temporarily unavailable due to database limits. Please try again later.');
+      } else {
+        setFetchError('Could not load locations. Please try again later.');
+      }
+    } else {
+      setFetchError(null);
+    }
+  }, [toiletsQuery.isError, toiletsQuery.error]);
+
+  // Update bounds and fetch toilets in view on map move/zoom
+  useEffect(() => {
+    if (!leafletLoaded || !map.current) return;
+    const leafletMap = map.current;
+    const updateBounds = () => {
+      const bounds = leafletMap.getBounds();
+      setMapBounds(bounds);
+    };
+    leafletMap.on('moveend zoomend', updateBounds);
+    updateBounds();
+    return () => {
+      leafletMap.off('moveend zoomend', updateBounds);
+    };
+  }, [leafletLoaded]);
+
+  // Filter toilets in current bounds
+  const toiletsInView = useMemo(() => {
+    if (!mapBounds) return stableToilets;
+    return stableToilets.filter(toilet => {
+      if (!toilet.coordinates) return false;
+      const { lat, lng } = toilet.coordinates;
+      return mapBounds && mapBounds.contains && mapBounds.contains([lat, lng]);
+    });
+  }, [stableToilets, mapBounds]);
+
+  // Cluster markers
+  useEffect(() => {
+    if (!leafletLoaded || !markerClusterLoaded || !map.current) return;
+    // Remove old markers
+    markers.current.forEach(m => map.current.removeLayer(m));
+    markers.current = [];
+    // Create marker cluster group
+    if (typeof (L as any).markerClusterGroup !== 'function') {
+      setMarkerClusterError('Marker clustering plugin not loaded.');
+      return;
+    }
+    const markerCluster = (L as any).markerClusterGroup();
+    toiletsInView.forEach(toilet => {
+      if (!toilet.coordinates) return;
+      const marker = L.marker([toilet.coordinates.lat, toilet.coordinates.lng]);
+      marker.bindPopup(`<b>${toilet.notes || 'Toilet'}</b>`);
+      marker.on('click', () => onToiletClick(toilet));
+      markerCluster.addLayer(marker);
+    });
+    map.current.addLayer(markerCluster);
+    markers.current.push(markerCluster);
+  }, [leafletLoaded, markerClusterLoaded, toiletsInView]);
 
   return (
     <div className="relative w-full h-full">
@@ -908,6 +985,17 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
         )}
       </div>
 
+      {fetchError && (
+        <div className="bg-red-100 text-red-800 p-4 rounded mb-4 text-center">
+          {fetchError}
+        </div>
+      )}
+
+      {markerClusterError && (
+        <div className="bg-red-100 text-red-800 p-4 rounded mb-4 text-center">
+          {markerClusterError}
+        </div>
+      )}
 
     </div>
   );
@@ -921,6 +1009,8 @@ export const Map = memo(MapComponent, (prevProps, nextProps) => {
     prevProps.onLoginClick === nextProps.onLoginClick
   );
 });
+
+export default Map;
 
 function getDistance(point1: MapLocation, point2: MapLocation): number {
   const R = 6371e3;

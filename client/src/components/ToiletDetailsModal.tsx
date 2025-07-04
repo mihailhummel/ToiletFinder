@@ -54,7 +54,7 @@ export const ToiletDetailsModal = ({ toilet, isOpen, onClose }: ToiletDetailsMod
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto z-[9999]">
+        <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto z-[9999] w-full max-w-full p-4 mobile:rounded-t-2xl mobile:rounded-b-none mobile:fixed mobile:bottom-0 mobile:left-0 mobile:right-0 mobile:max-h-[60vh] mobile:h-auto mobile:translate-y-0 mobile:shadow-2xl mobile:overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center space-x-3">
               <div className="w-8 h-8 bg-secondary rounded-lg flex items-center justify-center">

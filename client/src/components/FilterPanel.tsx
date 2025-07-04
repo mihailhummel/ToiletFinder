@@ -44,7 +44,7 @@ export const FilterPanel = ({ isOpen, onClose, onFiltersChange }: FilterPanelPro
   };
 
   return (
-    <div className={`fixed bottom-0 left-0 right-0 bg-white rounded-t-xl shadow-lg transform transition-transform duration-300 z-20 ${
+    <div className={`filter-panel fixed bottom-0 left-0 right-0 bg-white rounded-t-xl shadow-lg transform transition-transform duration-300 z-20 ${
       isOpen ? 'translate-y-0' : 'translate-y-full'
     }`}>
       <div className="p-4">

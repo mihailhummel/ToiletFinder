@@ -97,7 +97,7 @@ export const AddToiletModal = ({ isOpen, onClose, location, onRequestLocationSel
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md w-full max-w-full p-6 mobile:rounded-none mobile:h-screen mobile:max-h-screen mobile:p-4">
         <DialogHeader>
           <DialogTitle>{location ? "Confirm Toilet Location" : "Add New Toilet"}</DialogTitle>
           <DialogDescription>
