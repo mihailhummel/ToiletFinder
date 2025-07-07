@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
@@ -16,6 +16,7 @@ import { useAuth } from "./hooks/useAuth";
 import { useGeolocation } from "./hooks/useGeolocation";
 import { useToast } from "./hooks/use-toast";
 import { signOutUser } from "./lib/firebase";
+import { clearToiletCache } from "@/hooks/useToilets";
 
 // Icons
 import { User, MapPin, Filter, Plus, Search, Menu, LogOut } from "lucide-react";
@@ -31,6 +32,30 @@ let globalAddingState = {
   isAdding: false,
   pendingData: null as {type: ToiletType; notes: string} | null
 };
+
+// Enhanced QueryClient with better garbage collection
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      gcTime: 30 * 60 * 1000, // 30 minutes (was cacheTime)
+      retry: (failureCount, error) => {
+        // Don't retry on quota errors
+        if (error && typeof error === 'object' && 'message' in error) {
+          const errorMessage = String(error.message);
+          if (errorMessage.includes('quota') || errorMessage.includes('503')) {
+            return false;
+          }
+        }
+        return failureCount < 2;
+      },
+      refetchOnWindowFocus: false, // Reduce unnecessary requests
+    },
+    mutations: {
+      retry: 1,
+    },
+  },
+});
 
 function App() {
   const [selectedToilet, setSelectedToilet] = useState<Toilet | null>(null);
@@ -65,6 +90,27 @@ function App() {
   useEffect(() => {
     getCurrentLocation();
   }, []);
+
+  // Cache management for development
+  useEffect(() => {
+    // Add keyboard shortcut to clear cache (Ctrl+Shift+C)
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.ctrlKey && event.shiftKey && event.key === 'C') {
+        event.preventDefault();
+        clearToiletCache();
+        queryClient.clear();
+        toast({
+          title: "Cache cleared",
+          description: "All cached toilet data has been cleared.",
+          duration: 3000,
+        });
+        console.log("Cache manually cleared via keyboard shortcut");
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [toast]);
 
   const handleUserMenuClick = useCallback(() => {
     if (user) {
@@ -178,6 +224,67 @@ function App() {
     }
   }, [toast]);
 
+  const handleAddToiletSubmit = useCallback(async (toiletData: { type: ToiletType; notes: string }) => {
+    if (!pendingToiletLocation) {
+      toast({
+        title: "Error",
+        description: "No location selected for the toilet",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/toilets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          type: toiletData.type,
+          coordinates: pendingToiletLocation,
+          notes: toiletData.notes,
+          userId: user?.uid || 'anonymous',
+          source: 'user',
+          addedByUserName: user?.displayName || 'Anonymous User',
+        }),
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Success",
+          description: "New toilet location added successfully!",
+          duration: 5000,
+        });
+        
+        // Invalidate queries to refresh the map
+        queryClient.invalidateQueries({ queryKey: ["toilets"] });
+        
+        setShowAddToilet(false);
+        setPendingToiletLocation(undefined);
+        setPendingToiletData(null);
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to add toilet');
+      }
+    } catch (error) {
+      console.error('Error adding toilet:', error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to add toilet. Please try again.",
+        variant: "destructive",
+      });
+    }
+  }, [pendingToiletLocation, user, toast]);
+
+  const handleLoginSuccess = useCallback(() => {
+    setShowLogin(false);
+    toast({
+      title: "Welcome!",
+      description: "You are now logged in and can add toilet locations.",
+      duration: 3000,
+    });
+  }, [toast]);
+
   if (authLoading) {
     return (
       <div className="fixed inset-0 bg-white flex items-center justify-center">
@@ -191,146 +298,57 @@ function App() {
 
   return (
     <TooltipProvider>
-      <div className="h-screen flex flex-col bg-gray-50 overflow-hidden">
-        {/* PWA Banner */}
-        <PWABanner />
+      <QueryClientProvider client={queryClient}>
+        <div className="h-screen flex flex-col bg-gray-50 overflow-hidden">
+          {/* PWA Banner */}
+          <PWABanner />
 
-        {/* Header */}
-        <header className="app-header fixed top-0 left-0 right-0 bg-white shadow-lg z-40 border-b">
-          <div className="flex items-center justify-between px-4 py-3">
-            <div className="flex items-center space-x-4">
-              <div className="w-9 h-9 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center shadow-md">
-                <span className="text-white font-bold">🚽</span>
-              </div>
-              <div>
-                <h1 className="text-lg font-bold text-gray-900">ToiletMap</h1>
-                <p className="text-xs text-gray-600">Bulgaria</p>
-              </div>
-            </div>
-            
-            <div className="flex items-center space-x-3">
-              {/* Location Status */}
-              <div className="flex items-center space-x-2">
-                {userLocation ? (
-                  <div className="flex items-center space-x-1 text-xs text-green-600">
-                    <MapPin className="w-3 h-3 text-green-500" />
-                    <span>Located</span>
-                  </div>
-                ) : locationLoading ? (
-                  <div className="flex items-center space-x-1 text-xs text-blue-600">
-                    <div className="w-3 h-3 border border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                    <span>Finding...</span>
-                  </div>
-                ) : (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={getCurrentLocation}
-                    className="text-xs text-gray-600 hover:text-blue-600 h-6 px-2"
-                  >
-                    <MapPin className="w-3 h-3 mr-1" />
-                    Find Location
-                  </Button>
-                )}
+          {/* Header */}
+          <header className="app-header fixed top-0 left-0 right-0 bg-white shadow-lg z-40 border-b">
+            <div className="flex items-center justify-between px-4 py-3">
+              <div className="flex items-center space-x-4">
+                <div className="w-9 h-9 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center shadow-md">
+                  <span className="text-white font-bold">🚽</span>
+                </div>
+                <div>
+                  <h1 className="text-lg font-bold text-gray-900">ToiletMap</h1>
+                  <p className="text-xs text-gray-600">Bulgaria</p>
+                </div>
               </div>
               
-              {/* User Menu */}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleUserMenuClick}
-                className="w-8 h-8 rounded-full bg-gray-200 p-0 overflow-hidden"
-              >
-                {user?.photoURL ? (
-                  <img
-                    src={user.photoURL}
-                    alt={user.displayName || 'User'}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <User className="w-4 h-4 text-gray-600" />
-                )}
-              </Button>
-            </div>
-          </div>
-
-
-        </header>
-
-        {/* Map Container */}
-        <main className="flex-1 pt-20 relative overflow-hidden">
-          <Map
-            onToiletClick={handleToiletClick}
-            onAddToiletClick={handleMapClick}
-            onLoginClick={handleLoginClick}
-            isAdmin={isAdmin}
-            currentUser={user}
-            isAddingToilet={isAddingToilet}
-          />
-          
-          {/* Floating Action Button */}
-          <Button
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              console.log("Floating button clicked!");
-              handleAddToilet();
-            }}
-            className={`fixed bottom-6 right-6 w-16 h-16 rounded-full shadow-lg z-[9999] pointer-events-auto ${
-              isAddingToilet 
-                ? 'bg-green-600 hover:bg-green-700 animate-pulse' 
-                : 'bg-blue-600 hover:bg-blue-700'
-            }`}
-            size="icon"
-            style={{ position: 'fixed', zIndex: 9999 }}
-          >
-            <Plus className="w-8 h-8 text-white" />
-          </Button>
-
-        </main>
-
-        {/* Modals */}
-        <FilterPanel
-          isOpen={showFilter}
-          onClose={() => setShowFilter(false)}
-          onFiltersChange={setFilters}
-        />
-
-        <AddToiletModal
-          isOpen={showAddToilet}
-          onClose={() => {
-            console.log("AddToiletModal onClose called, transitioning:", isTransitioningToLocationMode);
-            if (isTransitioningToLocationMode) {
-              console.log("Ignoring onClose - in transition mode");
-              return;
-            }
-            
-            console.log("Processing normal user close");
-            setShowAddToilet(false);
-            setPendingToiletLocation(undefined);
-            setPendingToiletData(null);
-            setIsAddingToilet(false);
-          }}
-          location={pendingToiletLocation}
-          onRequestLocationSelection={handleLocationSelectionRequest}
-        />
-
-
-
-        <LoginModal
-          isOpen={showLogin}
-          onClose={() => setShowLogin(false)}
-        />
-
-        {/* User Menu Modal */}
-        <Dialog open={showUserMenu} onOpenChange={setShowUserMenu}>
-          <DialogContent className="sm:max-w-md z-[60000]">
-            <DialogHeader>
-              <DialogTitle>User Menu</DialogTitle>
-            </DialogHeader>
-            <div className="flex flex-col space-y-4">
-              <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
-                <div className="w-12 h-12 rounded-full overflow-hidden flex items-center justify-center bg-blue-600">
+              <div className="flex items-center space-x-3">
+                {/* Location Status */}
+                <div className="flex items-center space-x-2">
+                  {userLocation ? (
+                    <div className="flex items-center space-x-1 text-xs text-green-600">
+                      <MapPin className="w-3 h-3 text-green-500" />
+                      <span>Located</span>
+                    </div>
+                  ) : locationLoading ? (
+                    <div className="flex items-center space-x-1 text-xs text-blue-600">
+                      <div className="w-3 h-3 border border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                      <span>Finding...</span>
+                    </div>
+                  ) : (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={getCurrentLocation}
+                      className="text-xs text-gray-600 hover:text-blue-600 h-6 px-2"
+                    >
+                      <MapPin className="w-3 h-3 mr-1" />
+                      Find Location
+                    </Button>
+                  )}
+                </div>
+                
+                {/* User Menu */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleUserMenuClick}
+                  className="w-8 h-8 rounded-full bg-gray-200 p-0 overflow-hidden"
+                >
                   {user?.photoURL ? (
                     <img
                       src={user.photoURL}
@@ -338,31 +356,129 @@ function App() {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <User className="w-6 h-6 text-white" />
+                    <User className="w-4 h-4 text-gray-600" />
                   )}
-                </div>
-                <div>
-                  <p className="font-medium text-gray-900">
-                    {user?.displayName || 'User'}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    {user?.email}
-                  </p>
-                </div>
+                </Button>
               </div>
-              <Button
-                variant="outline"
-                onClick={handleSignOut}
-                className="w-full"
-              >
-                <LogOut className="w-4 h-4 mr-2" />
-                Sign Out
-              </Button>
             </div>
-          </DialogContent>
-        </Dialog>
-        <Toaster />
-      </div>
+          </header>
+
+          {/* Map Container */}
+          <main className="flex-1 pt-20 relative overflow-hidden">
+            <Map
+              onToiletClick={handleToiletClick}
+              onAddToiletClick={handleMapClick}
+              onLoginClick={handleLoginClick}
+              isAdmin={isAdmin}
+              currentUser={user}
+              isAddingToilet={isAddingToilet}
+            />
+            
+            {/* Floating Action Button */}
+            <Button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log("Floating button clicked!");
+                handleAddToilet();
+              }}
+              className={`fixed bottom-6 right-6 w-16 h-16 rounded-full shadow-lg z-[9999] pointer-events-auto ${
+                isAddingToilet 
+                  ? 'bg-green-600 hover:bg-green-700 animate-pulse' 
+                  : 'bg-blue-600 hover:bg-blue-700'
+              }`}
+              size="icon"
+              style={{ position: 'fixed', zIndex: 9999 }}
+            >
+              <Plus className="w-8 h-8 text-white" />
+            </Button>
+          </main>
+
+          {/* Modals */}
+          <FilterPanel
+            isOpen={showFilter}
+            onClose={() => setShowFilter(false)}
+            onFiltersChange={setFilters}
+          />
+
+          <AddToiletModal
+            isOpen={showAddToilet}
+            onClose={() => {
+              console.log("AddToiletModal onClose called, transitioning:", isTransitioningToLocationMode);
+              if (isTransitioningToLocationMode) {
+                console.log("Ignoring onClose - in transition mode");
+                return;
+              }
+              
+              console.log("Processing normal user close");
+              setShowAddToilet(false);
+              setPendingToiletLocation(undefined);
+              setPendingToiletData(null);
+              setIsAddingToilet(false);
+            }}
+            location={pendingToiletLocation}
+            onSubmit={handleAddToiletSubmit}
+          />
+
+          <LoginModal
+            isOpen={showLogin}
+            onClose={() => setShowLogin(false)}
+            onSuccess={handleLoginSuccess}
+          />
+
+          {/* User Menu Modal */}
+          <Dialog open={showUserMenu} onOpenChange={setShowUserMenu}>
+            <DialogContent className="sm:max-w-md z-[60000]">
+              <DialogHeader>
+                <DialogTitle>User Menu</DialogTitle>
+              </DialogHeader>
+              <div className="flex flex-col space-y-4">
+                <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
+                  <div className="w-12 h-12 rounded-full overflow-hidden flex items-center justify-center bg-blue-600">
+                    {user?.photoURL ? (
+                      <img
+                        src={user.photoURL}
+                        alt={user.displayName || 'User'}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <User className="w-6 h-6 text-white" />
+                    )}
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900">
+                      {user?.displayName || 'User'}
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      {user?.email}
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  onClick={handleSignOut}
+                  className="w-full"
+                >
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Sign Out
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          {/* Development Tools - only show in development */}
+          {process.env.NODE_ENV === 'development' && (
+            <div className="fixed top-20 right-4 bg-black bg-opacity-75 text-white p-2 rounded text-xs z-50">
+              <div>Ctrl+Shift+C: Clear cache</div>
+              <div>User: {user ? user.email : 'Not logged in'}</div>
+              <div>Location: {userLocation ? `${userLocation.lat.toFixed(3)}, ${userLocation.lng.toFixed(3)}` : 'Unknown'}</div>
+              <div>Adding: {isAddingToilet ? 'Yes' : 'No'}</div>
+            </div>
+          )}
+
+          <Toaster />
+        </div>
+      </QueryClientProvider>
     </TooltipProvider>
   );
 }

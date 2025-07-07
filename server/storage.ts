@@ -165,4 +165,7 @@ export class DatabaseStorage implements IStorage {
   }
 }
 
-export const storage = new DatabaseStorage();
+import { supabaseStorage } from './supabase-storage';
+
+export const storage = supabaseStorage; // Use Supabase instead of Firebase
+export const firebaseStorage = new DatabaseStorage(); // Keep Firebase as backup

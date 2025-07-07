@@ -26,7 +26,9 @@ export const useGeolocation = () => {
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        console.log("Location obtained:", position.coords.latitude, position.coords.longitude);
+        const accuracy = position.coords.accuracy;
+        console.log(`📍 Location obtained: ${position.coords.latitude.toFixed(6)}, ${position.coords.longitude.toFixed(6)} (accuracy: ${accuracy}m)`);
+        
         setState({
           location: {
             lat: position.coords.latitude,
@@ -37,7 +39,7 @@ export const useGeolocation = () => {
         });
       },
       (error) => {
-        console.error("Geolocation error:", error);
+        console.error("🚫 Geolocation error:", error);
         let errorMessage = "Unable to get your location";
         
         switch(error.code) {
@@ -45,10 +47,10 @@ export const useGeolocation = () => {
             errorMessage = "Location access denied. Please enable location permission for this site.";
             break;
           case error.POSITION_UNAVAILABLE:
-            errorMessage = "Location information is unavailable.";
+            errorMessage = "Location information is unavailable. Please check your device's location settings.";
             break;
           case error.TIMEOUT:
-            errorMessage = "Location request timed out. Please try again.";
+            errorMessage = "Location request timed out. Please check your internet connection and try again.";
             break;
         }
         
@@ -60,8 +62,8 @@ export const useGeolocation = () => {
       },
       {
         enableHighAccuracy: true,
-        timeout: 10000, // Increased timeout
-        maximumAge: 60000 // 1 minute cache
+        timeout: 15000, // Increased timeout to 15 seconds
+        maximumAge: 30000 // Reduced cache to 30 seconds for better accuracy
       }
     );
   };
