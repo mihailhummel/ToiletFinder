@@ -10,40 +10,7 @@
   "categories": ["health", "travel", "utilities"],
   "lang": "bg",
   "dir": "ltr",
-  "icons": [
-    {
-      "src": "/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/icon-512.png", 
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
-    }
-  ],
-  "screenshots": [
-    {
-      "src": "/screenshot-mobile.png",
-      "sizes": "540x720",
-      "type": "image/png",
-      "form_factor": "narrow"
-    }
-  ],
-  "shortcuts": [
-    {
-      "name": "Find nearby toilets",
-      "short_name": "Find toilets",
-      "description": "Quickly find toilets near your location",
-      "url": "/?action=find",
-      "icons": [
-        {
-          "src": "/icon-192.png",
-          "sizes": "192x192"
-        }
-      ]
-    }
-  ]
+  "icons": [],
+  "screenshots": [],
+  "shortcuts": []
 }

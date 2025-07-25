@@ -9,11 +9,11 @@ interface LoginModalProps {
 }
 
 export const LoginModal = ({ isOpen, onClose }: LoginModalProps) => {
-  const { signIn } = useAuth();
+  const { signInWithGoogle } = useAuth();
 
   const handleGoogleSignIn = async () => {
     try {
-      await signIn();
+      await signInWithGoogle();
       onClose();
     } catch (error) {
       console.error("Sign in error:", error);
@@ -22,28 +22,28 @@ export const LoginModal = ({ isOpen, onClose }: LoginModalProps) => {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-sm z-[9999]">
-        <DialogHeader>
-          <DialogTitle>Sign In</DialogTitle>
-          <DialogDescription>
+      <DialogContent className="sm:max-w-sm z-[9999] bg-white shadow-xl border-0">
+        <DialogHeader className="text-center">
+          <DialogTitle className="text-xl font-semibold text-gray-900">Sign In</DialogTitle>
+          <DialogDescription className="text-gray-600">
             Sign in with Google to add toilet locations and reviews
           </DialogDescription>
         </DialogHeader>
-        <div className="text-center space-y-4">
-          <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center mx-auto">
+        <div className="text-center space-y-6">
+          <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-blue-700 rounded-full flex items-center justify-center mx-auto shadow-lg">
             <User className="w-8 h-8 text-white" />
           </div>
           
           <div>
-            <h2 className="text-xl font-semibold mb-2">Sign In Required</h2>
-            <p className="text-gray-600 text-sm">
+            <h2 className="text-xl font-semibold mb-2 text-gray-900">Sign In Required</h2>
+            <p className="text-gray-600 text-sm leading-relaxed">
               Please sign in with Google to leave reviews and help the community.
             </p>
           </div>
           
           <Button
             onClick={handleGoogleSignIn}
-            className="w-full flex items-center justify-center space-x-3"
+            className="w-full flex items-center justify-center space-x-3 bg-white hover:bg-gray-50 text-gray-900 border-2 border-gray-300 shadow-sm h-12 font-medium"
             variant="outline"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -67,7 +67,7 @@ export const LoginModal = ({ isOpen, onClose }: LoginModalProps) => {
             <span>Continue with Google</span>
           </Button>
           
-          <Button variant="ghost" onClick={onClose} className="text-sm">
+          <Button variant="ghost" onClick={onClose} className="text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100">
             Maybe later
           </Button>
         </div>

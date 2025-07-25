@@ -15,7 +15,6 @@ import { LoginModal } from "./components/LoginModal";
 import { useAuth } from "./hooks/useAuth";
 import { useGeolocation } from "./hooks/useGeolocation";
 import { useToast } from "./hooks/use-toast";
-import { signOutUser } from "./lib/firebase";
 import { clearToiletCache } from "@/hooks/useToilets";
 
 // Icons
@@ -73,7 +72,7 @@ function App() {
     minRating: 1
   });
 
-  const { user, loading: authLoading, isAdmin } = useAuth();
+  const { user, loading: authLoading, isAdmin, signInWithGoogle, signOut } = useAuth();
   const { location: userLocation, getCurrentLocation, loading: locationLoading } = useGeolocation();
   const { toast } = useToast();
 
@@ -206,7 +205,7 @@ function App() {
 
   const handleSignOut = useCallback(async () => {
     try {
-      await signOutUser();
+      await signOut();
       setShowUserMenu(false);
       // Delay the toast to prevent it from affecting the Map re-render
       setTimeout(() => {
@@ -222,7 +221,7 @@ function App() {
         variant: "destructive"
       });
     }
-  }, [toast]);
+  }, [signOut, toast]);
 
   const handleAddToiletSubmit = useCallback(async (toiletData: { type: ToiletType; notes: string }) => {
     if (!pendingToiletLocation) {
@@ -276,14 +275,7 @@ function App() {
     }
   }, [pendingToiletLocation, user, toast]);
 
-  const handleLoginSuccess = useCallback(() => {
-    setShowLogin(false);
-    toast({
-      title: "Welcome!",
-      description: "You are now logged in and can add toilet locations.",
-      duration: 3000,
-    });
-  }, [toast]);
+
 
   if (authLoading) {
     return (
@@ -417,24 +409,23 @@ function App() {
               setIsAddingToilet(false);
             }}
             location={pendingToiletLocation}
-            onSubmit={handleAddToiletSubmit}
+            onRequestLocationSelection={handleLocationSelectionRequest}
           />
 
           <LoginModal
             isOpen={showLogin}
             onClose={() => setShowLogin(false)}
-            onSuccess={handleLoginSuccess}
           />
 
           {/* User Menu Modal */}
           <Dialog open={showUserMenu} onOpenChange={setShowUserMenu}>
-            <DialogContent className="sm:max-w-md z-[60000]">
+            <DialogContent className="sm:max-w-md z-[60000] bg-white shadow-xl border-0">
               <DialogHeader>
-                <DialogTitle>User Menu</DialogTitle>
+                <DialogTitle className="text-xl font-semibold text-gray-900">User Menu</DialogTitle>
               </DialogHeader>
-              <div className="flex flex-col space-y-4">
-                <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
-                  <div className="w-12 h-12 rounded-full overflow-hidden flex items-center justify-center bg-blue-600">
+              <div className="flex flex-col space-y-6">
+                <div className="flex items-center space-x-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100">
+                  <div className="w-14 h-14 rounded-full overflow-hidden flex items-center justify-center bg-gradient-to-br from-blue-600 to-blue-700 shadow-md">
                     {user?.photoURL ? (
                       <img
                         src={user.photoURL}
@@ -442,11 +433,11 @@ function App() {
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <User className="w-6 h-6 text-white" />
+                      <User className="w-7 h-7 text-white" />
                     )}
                   </div>
-                  <div>
-                    <p className="font-medium text-gray-900">
+                  <div className="flex-1">
+                    <p className="font-semibold text-gray-900">
                       {user?.displayName || 'User'}
                     </p>
                     <p className="text-sm text-gray-600">
@@ -457,7 +448,7 @@ function App() {
                 <Button
                   variant="outline"
                   onClick={handleSignOut}
-                  className="w-full"
+                  className="w-full border-gray-300 text-gray-700 hover:bg-gray-50 h-12"
                 >
                   <LogOut className="w-4 h-4 mr-2" />
                   Sign Out

@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Supabase Connection Test</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      line-height: 1.6;
+    }
+    h1 { color: #3b82f6; }
+    h2 { color: #2563eb; margin-top: 20px; }
+    pre {
+      background-color: #f3f4f6;
+      padding: 15px;
+      border-radius: 5px;
+      overflow-x: auto;
+      white-space: pre-wrap;
+    }
+    .success { color: #16a34a; }
+    .error { color: #dc2626; }
+    button {
+      background-color: #3b82f6;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: 500;
+      margin-top: 10px;
+    }
+    button:hover {
+      background-color: #2563eb;
+    }
+    .result {
+      margin-top: 20px;
+      border: 1px solid #e5e7eb;
+      border-radius: 5px;
+      padding: 15px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Supabase Connection Test</h1>
+  <p>This page tests the connection to Supabase and tries to fetch toilet data.</p>
+
+  <h2>Configuration</h2>
+  <pre id="config"></pre>
+
+  <button id="testConnection">Test Connection</button>
+  <button id="testBounds">Test get_toilets_in_bounds</button>
+  <button id="clearCache">Clear Cache</button>
+
+  <div class="result" id="result">
+    <p>Click the buttons above to run tests.</p>
+  </div>
+
+  <script>
+    // Supabase configuration
+    const supabaseUrl = 'https://fvohytokcumrauwplnwo.supabase.co';
+    const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2b2h5dG9rY3VtcmF1d3BsbndvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE4OTA3MzgsImV4cCI6MjA2NzQ2NjczOH0.nJZx7uUcM0U1Uj8eL8P1eR97OQLhfS3jUinT6K74utk';
+
+    // Initialize Supabase client
+    const supabase = supabase.createClient(supabaseUrl, supabaseAnonKey);
+
+    // Display configuration
+    document.getElementById('config').textContent = `Supabase URL: ${supabaseUrl}
+Supabase Anon Key: ${supabaseAnonKey.substring(0, 10)}...`;
+
+    // Test connection
+    document.getElementById('testConnection').addEventListener('click', async () => {
+      const resultDiv = document.getElementById('result');
+      resultDiv.innerHTML = '<p>Testing connection...</p>';
+
+      try {
+        // Simple query to test connection
+        const { data, error } = await supabase
+          .from('toilets')
+          .select('count')
+          .limit(1);
+
+        if (error) {
+          resultDiv.innerHTML = `<p class="error">❌ Connection failed: ${error.message}</p>`;
+        } else {
+          resultDiv.innerHTML = `<p class="success">✅ Connection successful!</p>`;
+        }
+      } catch (error) {
+        resultDiv.innerHTML = `<p class="error">❌ Unexpected error: ${error.message}</p>`;
+      }
+    });
+
+    // Test get_toilets_in_bounds function
+    document.getElementById('testBounds').addEventListener('click', async () => {
+      const resultDiv = document.getElementById('result');
+      resultDiv.innerHTML = '<p>Testing get_toilets_in_bounds function...</p>';
+
+      try {
+        // Test bounds for Sofia, Bulgaria
+        const { data, error } = await supabase
+          .rpc('get_toilets_in_bounds', {
+            west: 23.0,
+            south: 42.5,
+            east: 24.0,
+            north: 43.0
+          });
+
+        if (error) {
+          resultDiv.innerHTML = `
+            <p class="error">❌ Function call failed: ${error.message}</p>
+            <p>This likely means the function doesn't exist or has an error.</p>
+            <p>Please run the SQL to create the function in the Supabase SQL Editor.</p>
+          `;
+        } else {
+          resultDiv.innerHTML = `
+            <p class="success">✅ Function call successful! Found ${data.length} toilets.</p>
+            ${data.length > 0 ? `<h3>Sample toilet:</h3><pre>${JSON.stringify(data[0], null, 2)}</pre>` : ''}
+            ${data.length > 0 && !data[0].coordinates ? '<p class="error">⚠️ Warning: coordinates field is missing in the response!</p>' : ''}
+          `;
+        }
+      } catch (error) {
+        resultDiv.innerHTML = `<p class="error">❌ Unexpected error: ${error.message}</p>`;
+      }
+    });
+
+    // Clear cache
+    document.getElementById('clearCache').addEventListener('click', () => {
+      const resultDiv = document.getElementById('result');
+      
+      try {
+        // Clear localStorage
+        localStorage.clear();
+        resultDiv.innerHTML = '<p class="success">✅ Cache cleared successfully!</p>';
+      } catch (error) {
+        resultDiv.innerHTML = `<p class="error">❌ Error clearing cache: ${error.message}</p>`;
+      }
+    });
+  </script>
+</body>
+</html>

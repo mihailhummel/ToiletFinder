@@ -97,10 +97,12 @@ export const AddToiletModal = ({ isOpen, onClose, location, onRequestLocationSel
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md w-full max-w-full p-6 mobile:rounded-none mobile:h-screen mobile:max-h-screen mobile:p-4">
-        <DialogHeader>
-          <DialogTitle>{location ? "Confirm Toilet Location" : "Add New Toilet"}</DialogTitle>
-          <DialogDescription>
+      <DialogContent className="sm:max-w-md w-full max-w-full p-6 mobile:rounded-none mobile:h-screen mobile:max-h-screen mobile:p-4 bg-white shadow-xl border-0">
+        <DialogHeader className="text-left space-y-3">
+          <DialogTitle className="text-xl font-semibold text-gray-900">
+            {location ? "Confirm Toilet Location" : "Add New Toilet"}
+          </DialogTitle>
+          <DialogDescription className="text-gray-600 text-sm leading-relaxed">
             {location 
               ? "Confirm the details and submit the toilet location"
               : "Select the toilet type and description, then choose location on map"
@@ -110,29 +112,36 @@ export const AddToiletModal = ({ isOpen, onClose, location, onRequestLocationSel
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-2">Location</label>
-            <div className="flex items-center space-x-2 p-3 bg-gray-50 rounded-lg">
-              <MapPin className="w-4 h-4 text-primary" />
-              <div className="flex-1 text-sm">
-                <div>{location ? "Selected location" : "Click 'Add Toilet' to select location on map"}</div>
-                {location && (
-                  <div className="text-gray-500 text-xs">
-                    {location.lat.toFixed(6)}, {location.lng.toFixed(6)}
-                  </div>
-                )}
+            <label className="block text-sm font-medium mb-2 text-gray-700">Location</label>
+            <div className={`flex items-center space-x-3 p-4 rounded-lg border transition-colors ${
+              location 
+                ? 'bg-green-50 border-green-200' 
+                : 'bg-blue-50 border-blue-200'
+            }`}>
+              <MapPin className={`w-5 h-5 ${location ? 'text-green-600' : 'text-blue-600'}`} />
+              <div className="flex-1">
+                <div className={`font-medium text-sm ${location ? 'text-green-800' : 'text-blue-800'}`}>
+                  {location ? "✓ Location Selected" : "📍 Location Required"}
+                </div>
+                <div className="text-xs text-gray-600 mt-1">
+                  {location 
+                    ? `${location.lat.toFixed(6)}, ${location.lng.toFixed(6)}`
+                    : "Click 'Select Location' then tap on the map"
+                  }
+                </div>
               </div>
             </div>
           </div>
           
           <div>
-            <label className="block text-sm font-medium mb-2">Type of Place</label>
+            <label className="block text-sm font-medium mb-2 text-gray-700">Type of Place</label>
             <Select value={type} onValueChange={(value: ToiletType) => setType(value)}>
-              <SelectTrigger>
+              <SelectTrigger className="border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-white border border-gray-200 shadow-lg">
                 {toiletTypes.map(({ value, label }) => (
-                  <SelectItem key={value} value={value}>
+                  <SelectItem key={value} value={value} className="hover:bg-blue-50 focus:bg-blue-50">
                     {label}
                   </SelectItem>
                 ))}
@@ -141,13 +150,13 @@ export const AddToiletModal = ({ isOpen, onClose, location, onRequestLocationSel
           </div>
           
           <div>
-            <label className="block text-sm font-medium mb-2">Notes (Optional)</label>
+            <label className="block text-sm font-medium mb-2 text-gray-700">Notes (Optional)</label>
             <Textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Any additional information..."
               rows={3}
-              className="resize-none"
+              className="resize-none border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white"
             />
           </div>
           
@@ -156,14 +165,14 @@ export const AddToiletModal = ({ isOpen, onClose, location, onRequestLocationSel
               type="button"
               variant="outline"
               onClick={handleCancel}
-              className="flex-1"
+              className="flex-1 border-gray-300 text-gray-700 hover:bg-gray-50"
             >
               Cancel
             </Button>
             <Button
               type="submit"
               disabled={addToiletMutation.isPending}
-              className="flex-1"
+              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
             >
               {addToiletMutation.isPending 
                 ? "Adding..." 

@@ -20,6 +20,10 @@ export default defineConfig({
           leaflet: ['leaflet'],
           supabase: ['@supabase/supabase-js']
         }
+      },
+      input: {
+        main: path.resolve(__dirname, 'index.html'),
+        debug: path.resolve(__dirname, 'debug.html')
       }
     }
   },
