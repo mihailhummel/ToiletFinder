@@ -24,12 +24,12 @@ import { Input } from "./components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./components/ui/dialog";
 
 // Types
-import type { Toilet, MapLocation, ToiletType } from "./types/toilet";
+import type { Toilet, MapLocation, ToiletType, Accessibility, AccessType } from "./types/toilet";
 
 // Global state as backup to React state
 let globalAddingState = {
   isAdding: false,
-  pendingData: null as {type: ToiletType; notes: string} | null
+  pendingData: null as {type: ToiletType; title: string; notes: string; accessibility: Accessibility; accessType: AccessType} | null
 };
 
 // Enhanced QueryClient with better garbage collection
@@ -64,7 +64,7 @@ function App() {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [isAddingToilet, setIsAddingToilet] = useState(false); // Track if user is in add toilet mode
   const [pendingToiletLocation, setPendingToiletLocation] = useState<MapLocation | undefined>(undefined);
-  const [pendingToiletData, setPendingToiletData] = useState<{type: ToiletType; notes: string} | null>(null);
+  const [pendingToiletData, setPendingToiletData] = useState<{type: ToiletType; title: string; notes: string; accessibility: Accessibility; accessType: AccessType} | null>(null);
   const [isTransitioningToLocationMode, setIsTransitioningToLocationMode] = useState(false);
   const [mapCenter, setMapCenter] = useState<MapLocation>({ lat: 42.6977, lng: 23.3219 });
   const [filters, setFilters] = useState<FilterOptions>({
@@ -169,17 +169,17 @@ function App() {
     }
   }, [isAddingToilet, pendingToiletData]);
 
-  const handleLocationSelectionRequest = useCallback((type: ToiletType, notes: string) => {
-    console.log("Location selection requested for:", { type, notes });
+  const handleLocationSelectionRequest = useCallback((type: ToiletType, title: string, notes: string, accessibility: Accessibility, accessType: AccessType) => {
+    console.log("Location selection requested for:", { type, title, notes, accessibility, accessType });
     
     // Set global state immediately
     globalAddingState.isAdding = true;
-    globalAddingState.pendingData = { type, notes };
+    globalAddingState.pendingData = { type, title, notes, accessibility, accessType };
     console.log("Global state set:", globalAddingState);
     
     // Set React states
     setIsTransitioningToLocationMode(true);
-    setPendingToiletData({ type, notes });
+    setPendingToiletData({ type, title, notes, accessibility, accessType });
     setIsAddingToilet(true);
     setPendingToiletLocation(undefined);
     setShowAddToilet(false);
@@ -223,7 +223,7 @@ function App() {
     }
   }, [signOut, toast]);
 
-  const handleAddToiletSubmit = useCallback(async (toiletData: { type: ToiletType; notes: string }) => {
+  const handleAddToiletSubmit = useCallback(async (toiletData: { type: ToiletType; title: string; notes: string; accessibility: Accessibility; accessType: AccessType }) => {
     if (!pendingToiletLocation) {
       toast({
         title: "Error",
@@ -240,8 +240,11 @@ function App() {
         credentials: 'include',
         body: JSON.stringify({
           type: toiletData.type,
+          title: toiletData.title,
           coordinates: pendingToiletLocation,
           notes: toiletData.notes,
+          accessibility: toiletData.accessibility,
+          accessType: toiletData.accessType,
           userId: user?.uid || 'anonymous',
           source: 'user',
           addedByUserName: user?.displayName || 'Anonymous User',
@@ -257,6 +260,7 @@ function App() {
         
         // Invalidate queries to refresh the map
         queryClient.invalidateQueries({ queryKey: ["toilets"] });
+        queryClient.invalidateQueries({ queryKey: ["toilets-supabase"] });
         
         setShowAddToilet(false);
         setPendingToiletLocation(undefined);

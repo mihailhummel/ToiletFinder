@@ -24,10 +24,15 @@ export class SupabaseStorage implements IStorage {
       
       const toiletData = {
         id: toiletId,
-        coordinates: toilet.coordinates, // Store as JSON object
+        coordinates: toilet.coordinates,
         type: toilet.type,
+        title: toilet.title || null,
         source: toilet.source || 'user',
         notes: toilet.notes || null,
+        accessibility: toilet.accessibility || 'unknown',
+        access_type: toilet.accessType || 'unknown',
+        user_id: toilet.userId,
+        added_by_user_name: toilet.addedByUserName || null,
         is_removed: false,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -248,9 +253,6 @@ export class SupabaseStorage implements IStorage {
       const reportData = {
         toilet_id: toiletReport.toiletId,
         user_id: toiletReport.userId,
-        user_name: toiletReport.userName,
-        reason: 'doesnt-exist',
-        comment: 'Toilet reported as non-existent',
         created_at: new Date().toISOString()
       };
 
@@ -282,6 +284,7 @@ export class SupabaseStorage implements IStorage {
         throw error;
       }
 
+      console.log(`📊 Report count for toilet ${toiletId}: ${count || 0}`);
       return count || 0;
     } catch (error) {
       console.error('❌ Failed to get report count:', error);
@@ -382,14 +385,24 @@ export class SupabaseStorage implements IStorage {
   private transformToilet(data: any): Toilet {
     return {
       id: data.id,
-      coordinates: data.coordinates || { lat: 0, lng: 0 }, // Handle JSON coordinates
+      coordinates: data.coordinates,
+      lat: data.coordinates.lat,
+      lng: data.coordinates.lng,
       type: data.type,
+      title: data.title,
       source: data.source,
       tags: data.tags || {},
       notes: data.notes,
+      accessibility: data.accessibility || 'unknown',
+      accessType: data.access_type || 'unknown',
+      userId: data.user_id,
+      addedByUserName: data.added_by_user_name,
+      osmId: data.osm_id || null,
+      reportCount: data.report_count || 0,
       isRemoved: data.is_removed || false,
+      removedAt: data.removed_at ? new Date(data.removed_at) : null,
       createdAt: new Date(data.created_at),
-      averageRating: 0, // Not stored in current schema
+      averageRating: data.average_rating || 0,
       reviewCount: data.review_count || 0
     };
   }

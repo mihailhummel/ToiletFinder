@@ -190,9 +190,27 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
       document.addEventListener('keydown', handleKeyDown);
 
       window.getDirections = (lat, lng) => {
-        // Use a universal approach that works across all platforms
-        // This will trigger the native app selection on mobile devices
-        const url = `https://maps.google.com/maps?daddr=${lat},${lng}`;
+        // Use navigation URLs that automatically start routing
+        // This will trigger the native app selection on mobile devices and start navigation
+        
+        // For Google Maps - use navigation mode
+        const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`;
+        
+        // For Apple Maps (iOS) - use navigation scheme
+        const appleMapsUrl = `http://maps.apple.com/?daddr=${lat},${lng}&dirflg=d`;
+        
+        // Detect platform and use appropriate URL
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        const isAndroid = /Android/.test(navigator.userAgent);
+        
+        let url;
+        if (isIOS) {
+          // Try Apple Maps first, fallback to Google Maps
+          url = appleMapsUrl;
+        } else {
+          // Use Google Maps for Android and desktop
+          url = googleMapsUrl;
+        }
         
         // Try to open in a new tab/window
         const newWindow = window.open(url, '_blank');
@@ -253,7 +271,11 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
                   </div>
                 `;
               } else {
-                reviewsContainer.innerHTML = ``;
+                reviewsContainer.innerHTML = `
+                  <div style="text-align: center; color: #6b7280; font-size: 14px; padding: 16px 0;">
+                    No reviews yet. Be the first to review this toilet!
+                  </div>
+                `;
               }
             }
           }
@@ -405,9 +427,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
               credentials: 'include',
               body: JSON.stringify({
                 toiletId,
-                userId: user.uid,
-                reason: 'doesnt-exist',
-                comment: 'Toilet reported as non-existent'
+                userId: user.uid
               })
             });
             
@@ -474,6 +494,13 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
             console.error('Error deleting toilet:', error);
           }
         }
+      };
+
+      // Add cache clearing function for debugging
+      window.clearToiletCache = () => {
+        console.log('🧹 Clearing toilet cache...');
+        queryClient.clear();
+        window.location.reload();
       };
 
       return () => {
@@ -747,8 +774,9 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
     const toiletTitle = getToiletTitle(toilet);
     const tags = toilet.tags as any || {};
     
-    // Get proper title based on type and tags
+    // Get proper title based on type and custom title
     const getProperTitle = () => {
+      if (toilet.title) return toilet.title;
       if (tags.name) return tags.name;
       if (tags.operator && toilet.type === 'gas-station') return `Toilet at ${tags.operator} Gas Station`;
       if (tags.brand && toilet.type === 'gas-station') return `Toilet at ${tags.brand} Gas Station`;
@@ -761,14 +789,19 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
     
     const properTitle = getProperTitle();
     
-    // Determine availability and accessibility based on tags
+    // Determine availability and accessibility based on database fields or tags
     const getAvailability = () => {
+      if (toilet.accessType === 'paid') return { text: 'Paid Access', color: '#9333ea', bg: '#f3e8ff' };
+      if (toilet.accessType === 'customers-only') return { text: 'Customers Only', color: '#eab308', bg: '#fefce8' };
+      if (toilet.accessType === 'free') return { text: 'Free to use', color: '#16a34a', bg: '#f0fdf4' };
       if (tags.fee === 'yes' || tags.charge === 'yes') return { text: 'Paid', color: '#9333ea', bg: '#f3e8ff' };
       if (tags.access === 'customers' || tags.fee === 'customers') return { text: 'Only for Customers', color: '#eab308', bg: '#fefce8' };
-      return { text: 'Free to use', color: '#16a34a', bg: '#f0fdf4' };
+      return { text: 'Unknown', color: '#6b7280', bg: '#f9fafb' };
     };
     
     const getAccessibility = () => {
+      if (toilet.accessibility === 'accessible') return { text: 'Wheelchair accessible', color: '#2563eb', bg: '#eff6ff' };
+      if (toilet.accessibility === 'not-accessible') return { text: 'Not wheelchair accessible', color: '#dc2626', bg: '#fef2f2' };
       if (tags.wheelchair === 'yes') return { text: 'Wheelchair accessible', color: '#2563eb', bg: '#eff6ff' };
       if (tags.wheelchair === 'no') return { text: 'Not wheelchair accessible', color: '#dc2626', bg: '#fef2f2' };
       return { text: 'Unknown', color: '#6b7280', bg: '#f9fafb' };
@@ -778,41 +811,44 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
     const accessibility = getAccessibility();
     
     return `
-      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; min-width: 320px; max-width: 400px; padding: 20px; background: white; border-radius: 12px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);">
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; min-width: 280px; max-width: 350px; padding: 16px; background: white; border-radius: 12px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);">
         <!-- 1. Title -->
-        <h3 style="margin: 0 0 12px 0; font-size: 20px; font-weight: 700; color: #1f2937; line-height: 1.3;">
+        <h3 style="margin: 0 0 10px 0; font-size: 16px; font-weight: 700; color: #1f2937; line-height: 1.3;">
           ${properTitle}
         </h3>
         
         <!-- Added by information for user-added toilets -->
         ${toilet.source === 'user' && toilet.addedByUserName ? `
-        <div style="margin-bottom: 16px; padding: 8px 12px; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 6px;">
-          <span style="font-size: 13px; color: #0369a1; font-weight: 500;">
-            📍 Added by ${toilet.addedByUserName}
+        <div style="margin-bottom: 12px; padding: 8px 12px; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; display: flex; align-items: center; gap: 8px;">
+          <div style="width: 16px; height: 16px; background: #0369a1; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+            <span style="color: white; font-size: 10px; font-weight: bold;">G</span>
+          </div>
+          <span style="font-size: 13px; color: #0369a1; font-weight: 600;">
+            Added by ${toilet.addedByUserName}
           </span>
         </div>
         ` : ''}
         
         <!-- 2. Rating and Reviews Summary -->
-        <div id="review-summary-${toilet.id}" style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
-          <div style="display: flex; align-items: center; gap: 4px;">
-            <span style="color: #facc15; font-size: 18px;">★★★★★</span>
-            <span style="font-size: 16px; font-weight: 600; color: #374151;">0.0</span>
+        <div id="review-summary-${toilet.id}" style="display: flex; align-items: center; gap: 6px; margin-bottom: 12px;">
+          <div style="display: flex; align-items: center; gap: 3px;">
+            <span style="color: #facc15; font-size: 16px;">★★★★★</span>
+            <span style="font-size: 14px; font-weight: 600; color: #374151;">0.0</span>
           </div>
-          <span style="color: #6b7280; font-size: 14px;">(0 reviews)</span>
+          <span style="color: #6b7280; font-size: 12px;">(0 reviews)</span>
         </div>
         
         <!-- 3. Availability and Accessibility Indicators -->
-        <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px;">
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <span style="font-size: 14px; font-weight: 600; color: #374151; min-width: 80px;">Availability:</span>
-            <span style="background: ${availability.bg}; color: ${availability.color}; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 500;">
+        <div style="display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px;">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="font-size: 12px; font-weight: 600; color: #374151; min-width: 70px;">Availability:</span>
+            <span style="background: ${availability.bg}; color: ${availability.color}; padding: 3px 6px; border-radius: 4px; font-size: 11px; font-weight: 500;">
               ${availability.text}
             </span>
           </div>
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <span style="font-size: 14px; font-weight: 600; color: #374151; min-width: 80px;">Accessibility:</span>
-            <span style="background: ${accessibility.bg}; color: ${accessibility.color}; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 500;">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="font-size: 12px; font-weight: 600; color: #374151; min-width: 70px;">Accessibility:</span>
+            <span style="background: ${accessibility.bg}; color: ${accessibility.color}; padding: 3px 6px; border-radius: 4px; font-size: 11px; font-weight: 500;">
               ${accessibility.text}
             </span>
           </div>

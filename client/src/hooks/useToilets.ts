@@ -315,6 +315,7 @@ export const useAddToilet = () => {
     onSuccess: (newToilet) => {
       // Invalidate all toilet queries to refresh the map
       queryClient.invalidateQueries({ queryKey: ["toilets"] });
+      queryClient.invalidateQueries({ queryKey: ["toilets-supabase"] });
       
       // Clear local cache since we have new data
       clearToiletCache();
@@ -350,6 +351,7 @@ export const useAddReview = () => {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["toilets", variables.toiletId, "reviews"] });
       queryClient.invalidateQueries({ queryKey: ["toilets"] });
+      queryClient.invalidateQueries({ queryKey: ["toilets-supabase"] });
     },
   });
 };
@@ -408,6 +410,7 @@ export const useDeleteToilet = () => {
     onSuccess: () => {
       // Invalidate and refetch toilet queries
       queryClient.invalidateQueries({ queryKey: ["toilets"] });
+      queryClient.invalidateQueries({ queryKey: ["toilets-supabase"] });
       
       // Clear cache to ensure deleted toilet doesn't show up
       clearToiletCache();

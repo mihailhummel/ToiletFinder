@@ -476,13 +476,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/toilets/:id/report-not-exists", async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
+      console.log('🚫 Report request for toilet:', id, 'Body:', req.body);
+      
       const toiletReport = insertToiletReportSchema.parse({ ...req.body, toiletId: id });
+      console.log('✅ Parsed toilet report:', toiletReport);
       
       await storage.reportToiletNotExists(toiletReport);
       
       // Check if toilet should be removed
       const reportCount = await storage.getToiletReportCount(id);
+      console.log(`📊 Total reports for toilet ${id}: ${reportCount}`);
+      
       if (reportCount >= 10) {
+        console.log(`🚨 Toilet ${id} has ${reportCount} reports - marking as removed`);
         await storage.removeToiletFromReports(id);
         
         // Invalidate all cache entries since a toilet was removed
@@ -493,6 +499,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ message: "Toilet reported successfully", reportCount });
     } catch (error) {
       if (error instanceof z.ZodError) {
+        console.error('❌ Validation error:', error.errors);
         res.status(400).json({ error: "Invalid report data", details: error.errors });
       } else {
         console.error("Error reporting toilet:", error);

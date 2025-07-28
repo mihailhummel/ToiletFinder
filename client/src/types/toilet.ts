@@ -6,6 +6,8 @@ export type {
   InsertReview,
   InsertReport,
   ToiletType,
+  Accessibility,
+  AccessType,
   ReportReason
 } from "@shared/schema";
 

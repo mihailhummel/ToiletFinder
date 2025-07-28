@@ -11,6 +11,19 @@ export const toiletTypeSchema = z.enum([
   "other"
 ]);
 
+export const accessibilitySchema = z.enum([
+  "accessible",
+  "not-accessible",
+  "unknown"
+]);
+
+export const accessTypeSchema = z.enum([
+  "free",
+  "customers-only",
+  "paid",
+  "unknown"
+]);
+
 export const reportReasonSchema = z.enum([
   "doesnt-exist",
   "inaccessible", 
@@ -20,11 +33,13 @@ export const reportReasonSchema = z.enum([
 
 // Database Tables - Updated to match actual database structure
 export const toilets = pgTable("toilets", {
-  id: text("id").primaryKey(), // Using text to match actual DB
+  id: text("id").primaryKey(),
   type: text("type").$type<z.infer<typeof toiletTypeSchema>>().notNull(),
-  lat: real("lat").notNull(),
-  lng: real("lng").notNull(),
+  title: text("title"),
+  coordinates: jsonb("coordinates").notNull(),
   notes: text("notes"),
+  accessibility: text("accessibility").$type<z.infer<typeof accessibilitySchema>>().default('unknown'),
+  accessType: text("access_type").$type<z.infer<typeof accessTypeSchema>>().default('unknown'),
   userId: text("user_id").notNull(),
   source: text("source", { enum: ['osm', 'user'] }).notNull().default('osm'),
   addedByUserName: text("added_by_user_name"),
@@ -62,20 +77,24 @@ export const toiletReports = pgTable("toilet_reports", {
   id: uuid("id").primaryKey().defaultRandom(),
   toiletId: text("toilet_id").references(() => toilets.id).notNull(), // Using text to match actual DB
   userId: text("user_id").notNull(),
-  userName: text("user_name").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 // Zod Schemas
 export const toiletSchema = createSelectSchema(toilets, {
   type: toiletTypeSchema,
-  lat: z.number(),
-  lng: z.number(),
+  accessibility: accessibilitySchema,
+  accessType: accessTypeSchema,
+  coordinates: z.object({
+    lat: z.number(),
+    lng: z.number()
+  }),
   averageRating: z.number().min(0).max(5).optional(),
   reviewCount: z.number().min(0),
 }).transform(data => ({
   ...data,
-  coordinates: { lat: data.lat, lng: data.lng }
+  lat: data.coordinates.lat,
+  lng: data.coordinates.lng
 }));
 
 export const reviewSchema = createSelectSchema(reviews, {
@@ -90,11 +109,14 @@ export const toiletReportSchema = createSelectSchema(toiletReports);
 
 export const insertToiletSchema = z.object({
   type: toiletTypeSchema,
+  title: z.string().optional(),
   coordinates: z.object({
     lat: z.number(),
     lng: z.number()
   }),
   notes: z.string().optional(),
+  accessibility: accessibilitySchema.default('unknown'),
+  accessType: accessTypeSchema.default('unknown'),
   userId: z.string(),
   source: z.enum(['osm', 'user']).default('user'),
   addedByUserName: z.string().optional(),
@@ -119,7 +141,6 @@ export const insertReportSchema = z.object({
 export const insertToiletReportSchema = z.object({
   toiletId: z.string(),
   userId: z.string(),
-  userName: z.string(),
 });
 
 // Type exports
@@ -132,4 +153,6 @@ export type InsertReview = z.infer<typeof insertReviewSchema>;
 export type InsertReport = z.infer<typeof insertReportSchema>;
 export type InsertToiletReport = z.infer<typeof insertToiletReportSchema>;
 export type ToiletType = z.infer<typeof toiletTypeSchema>;
+export type Accessibility = z.infer<typeof accessibilitySchema>;
+export type AccessType = z.infer<typeof accessTypeSchema>;
 export type ReportReason = z.infer<typeof reportReasonSchema>;

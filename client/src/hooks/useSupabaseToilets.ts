@@ -137,6 +137,8 @@ async function fetchAllToiletsFromSupabase(): Promise<Toilet[]> {
         console.log(`📍 Toilet ${row.id} coordinates:`, row.coordinates);
       }
       
+
+      
       return {
         id: row.id,
         coordinates: row.coordinates,
@@ -146,7 +148,16 @@ async function fetchAllToiletsFromSupabase(): Promise<Toilet[]> {
         notes: row.notes,
         isRemoved: row.is_removed || false,
         createdAt: new Date(row.created_at),
-        updatedAt: new Date(row.updated_at)
+        updatedAt: new Date(row.updated_at),
+        addedByUserName: row.added_by_user_name,
+        accessibility: row.accessibility || 'unknown',
+        accessType: row.access_type || 'unknown',
+        userId: row.user_id,
+        osmId: row.osm_id,
+        reportCount: row.report_count || 0,
+        removedAt: row.removed_at ? new Date(row.removed_at) : null,
+        averageRating: row.average_rating || 0,
+        reviewCount: row.review_count || 0
       };
     });
     
@@ -220,6 +231,8 @@ async function fetchToiletsFromSupabase(bounds: ViewportBounds): Promise<Toilet[
           console.log(`📍 Toilet ${row.id} coordinates:`, row.coordinates);
         }
         
+
+        
         return {
           id: row.id,
           coordinates: row.coordinates,
@@ -229,7 +242,16 @@ async function fetchToiletsFromSupabase(bounds: ViewportBounds): Promise<Toilet[
           notes: row.notes,
           isRemoved: row.is_removed || false,
           createdAt: new Date(row.created_at),
-          updatedAt: new Date(row.updated_at)
+          updatedAt: new Date(row.updated_at),
+          addedByUserName: row.added_by_user_name,
+          accessibility: row.accessibility || 'unknown',
+          accessType: row.access_type || 'unknown',
+          userId: row.user_id,
+          osmId: row.osm_id,
+          reportCount: row.report_count || 0,
+          removedAt: row.removed_at ? new Date(row.removed_at) : null,
+          averageRating: row.average_rating || 0,
+          reviewCount: row.review_count || 0
         };
       });
       
@@ -453,7 +475,16 @@ export function useNearbyToilets(
           isRemoved: row.is_removed || false,
           createdAt: new Date(row.created_at),
           updatedAt: new Date(row.updated_at),
-          distance: row.distance_meters
+          distance: row.distance_meters,
+          addedByUserName: row.added_by_user_name,
+          accessibility: row.accessibility || 'unknown',
+          accessType: row.access_type || 'unknown',
+          userId: row.user_id,
+          osmId: row.osm_id,
+          reportCount: row.report_count || 0,
+          removedAt: row.removed_at ? new Date(row.removed_at) : null,
+          averageRating: row.average_rating || 0,
+          reviewCount: row.review_count || 0
         }));
       } catch (error) {
         // If the function doesn't exist yet, try the bounds function as fallback
@@ -492,7 +523,16 @@ export function useNearbyToilets(
             notes: row.notes,
             isRemoved: row.is_removed || false,
             createdAt: new Date(row.created_at),
-            updatedAt: new Date(row.updated_at)
+            updatedAt: new Date(row.updated_at),
+            addedByUserName: row.added_by_user_name,
+            accessibility: row.accessibility || 'unknown',
+            accessType: row.access_type || 'unknown',
+            userId: row.user_id,
+            osmId: row.osm_id,
+            reportCount: row.report_count || 0,
+            removedAt: row.removed_at ? new Date(row.removed_at) : null,
+            averageRating: row.average_rating || 0,
+            reviewCount: row.review_count || 0
           }));
         }
         
