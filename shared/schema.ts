@@ -18,9 +18,9 @@ export const reportReasonSchema = z.enum([
   "other"
 ]);
 
-// Database Tables
+// Database Tables - Updated to match actual database structure
 export const toilets = pgTable("toilets", {
-  id: uuid("id").primaryKey().defaultRandom(),
+  id: text("id").primaryKey(), // Using text to match actual DB
   type: text("type").$type<z.infer<typeof toiletTypeSchema>>().notNull(),
   lat: real("lat").notNull(),
   lng: real("lng").notNull(),
@@ -40,7 +40,7 @@ export const toilets = pgTable("toilets", {
 
 export const reviews = pgTable("reviews", {
   id: uuid("id").primaryKey().defaultRandom(),
-  toiletId: uuid("toilet_id").references(() => toilets.id).notNull(),
+  toiletId: text("toilet_id").references(() => toilets.id).notNull(), // Using text to match actual DB
   userId: text("user_id").notNull(),
   userName: text("user_name").notNull(),
   rating: integer("rating").notNull(),
@@ -50,7 +50,7 @@ export const reviews = pgTable("reviews", {
 
 export const reports = pgTable("reports", {
   id: uuid("id").primaryKey().defaultRandom(),
-  toiletId: uuid("toilet_id").references(() => toilets.id).notNull(),
+  toiletId: text("toilet_id").references(() => toilets.id).notNull(), // Using text to match actual DB
   userId: text("user_id").notNull(),
   userName: text("user_name").notNull(),
   reason: text("reason").$type<z.infer<typeof reportReasonSchema>>().notNull(),
@@ -60,7 +60,7 @@ export const reports = pgTable("reports", {
 
 export const toiletReports = pgTable("toilet_reports", {
   id: uuid("id").primaryKey().defaultRandom(),
-  toiletId: uuid("toilet_id").references(() => toilets.id).notNull(),
+  toiletId: text("toilet_id").references(() => toilets.id).notNull(), // Using text to match actual DB
   userId: text("user_id").notNull(),
   userName: text("user_name").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -86,6 +86,8 @@ export const reportSchema = createSelectSchema(reports, {
   reason: reportReasonSchema,
 });
 
+export const toiletReportSchema = createSelectSchema(toiletReports);
+
 export const insertToiletSchema = z.object({
   type: toiletTypeSchema,
   coordinates: z.object({
@@ -99,28 +101,28 @@ export const insertToiletSchema = z.object({
 });
 
 export const insertReviewSchema = z.object({
-  toiletId: z.string().min(1),
-  userId: z.string().min(1),
-  userName: z.string().min(1),
+  toiletId: z.string(),
+  userId: z.string(),
+  userName: z.string(),
   rating: z.number().min(1).max(5),
-  text: z.string().optional().nullable(),
+  text: z.string().optional(),
 });
 
-export const insertReportSchema = createInsertSchema(reports, {
+export const insertReportSchema = z.object({
+  toiletId: z.string(),
+  userId: z.string(),
+  userName: z.string(),
   reason: reportReasonSchema,
   comment: z.string().optional(),
-}).omit({ 
-  id: true, 
-  createdAt: true 
 });
 
-export const toiletReportSchema = createSelectSchema(toiletReports);
-
-export const insertToiletReportSchema = createInsertSchema(toiletReports).omit({
-  id: true,
-  createdAt: true
+export const insertToiletReportSchema = z.object({
+  toiletId: z.string(),
+  userId: z.string(),
+  userName: z.string(),
 });
 
+// Type exports
 export type Toilet = z.infer<typeof toiletSchema>;
 export type Review = z.infer<typeof reviewSchema>;
 export type Report = z.infer<typeof reportSchema>;

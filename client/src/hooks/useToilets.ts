@@ -309,11 +309,8 @@ export const useAddToilet = () => {
   
   return useMutation({
     mutationFn: async (toilet: InsertToilet): Promise<Toilet> => {
-      return await apiRequest("/api/toilets", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(toilet),
-      });
+      const response = await apiRequest("POST", "/api/toilets", toilet);
+      return await response.json();
     },
     onSuccess: (newToilet) => {
       // Invalidate all toilet queries to refresh the map
@@ -334,7 +331,8 @@ export const useToiletReviews = (toiletId: string) => {
   return useQuery({
     queryKey: ["toilets", toiletId, "reviews"],
     queryFn: async (): Promise<Review[]> => {
-      return await apiRequest(`/api/toilets/${toiletId}/reviews`);
+      const response = await apiRequest("GET", `/api/toilets/${toiletId}/reviews`);
+      return await response.json();
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
     enabled: !!toiletId,
@@ -346,11 +344,8 @@ export const useAddReview = () => {
   
   return useMutation({
     mutationFn: async ({ toiletId, review }: { toiletId: string; review: InsertReview }): Promise<Review> => {
-      return await apiRequest(`/api/toilets/${toiletId}/reviews`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(review),
-      });
+      const response = await apiRequest("POST", `/api/toilets/${toiletId}/reviews`, review);
+      return await response.json();
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["toilets", variables.toiletId, "reviews"] });
@@ -362,11 +357,7 @@ export const useAddReview = () => {
 export const useAddReport = () => {
   return useMutation({
     mutationFn: async (report: InsertReport): Promise<void> => {
-      await apiRequest("/api/reports", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(report),
-      });
+      await apiRequest("POST", "/api/reports", report);
     },
   });
 };
@@ -392,14 +383,16 @@ export const useDeleteToilet = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async (toiletId: string): Promise<void> => {
+    mutationFn: async ({ toiletId, adminEmail, userId }: { toiletId: string; adminEmail: string; userId: string }): Promise<void> => {
       const response = await fetch(`/api/toilets/${toiletId}`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ adminEmail, userId }),
       });
       
       if (!response.ok) {
-        throw new Error('Failed to delete toilet');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to delete toilet');
       }
     },
     onSuccess: () => {

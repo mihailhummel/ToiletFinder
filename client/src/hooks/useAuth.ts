@@ -14,8 +14,22 @@ export function useAuth() {
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setUser(user);
+      
+      // Check if user is admin by looking at custom claims
+      if (user) {
+        try {
+          const token = await user.getIdTokenResult();
+          setIsAdmin(token.claims?.admin === true);
+        } catch (error) {
+          console.error('Error checking admin status:', error);
+          setIsAdmin(false);
+        }
+      } else {
+        setIsAdmin(false);
+      }
+      
       setLoading(false);
     });
 
@@ -44,7 +58,7 @@ export function useAuth() {
   return {
     user,
     loading,
-    isAdmin: false, // You can implement admin logic based on user metadata
+    isAdmin,
     signInWithGoogle,
     signOut
   };

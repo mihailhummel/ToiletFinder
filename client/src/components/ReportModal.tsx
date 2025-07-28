@@ -34,12 +34,13 @@ export const ReportModal = ({ toilet, isOpen, onClose }: ReportModalProps) => {
     e.preventDefault();
     
     try {
-      await addReportMutation.mutateAsync({
-        toiletId: toilet.id,
-        userId: user?.uid,
-        reason,
-        comment: comment.trim() || undefined
-      });
+              await addReportMutation.mutateAsync({
+          toiletId: toilet.id,
+          userId: user?.uid || '',
+          userName: user?.displayName || user?.email || '',
+          reason,
+          comment: comment.trim() || undefined
+        });
 
       toast({
         title: "Report submitted",

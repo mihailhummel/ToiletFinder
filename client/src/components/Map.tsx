@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Crosshair, Plus } from 'lucide-react';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import { useSupabaseToilets } from '@/hooks/useSupabaseToilets';
-import { useDeleteToilet, preloadToiletsForRegion } from '@/hooks/useToilets';
+import { useDeleteToilet, useAddReview, preloadToiletsForRegion } from '@/hooks/useToilets';
 import { useAuth } from '@/hooks/useAuth';
 import type { Toilet, MapLocation } from '@/types/toilet';
 import L from 'leaflet';
@@ -56,6 +56,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
   const { location: userLocation, loading: locationLoading, getCurrentLocation } = useGeolocation();
   const { user } = useAuth();
   const deleteToiletMutation = useDeleteToilet();
+  const addReviewMutation = useAddReview();
 
   // Calculate viewport bounds for API calls
   const viewportBounds = useMemo(() => {
@@ -322,45 +323,45 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
         const text = textarea?.value || '';
         
         try {
-          const response = await fetch(`/api/toilets/${toiletId}/reviews`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({
-              toiletId,
-              rating: window.currentRating.rating,
-              text: text,
-              userId: user.uid,
-              userName: user.displayName || user.email
-            })
-          });
+                const reviewData = {
+        toiletId,
+        review: {
+          toiletId,
+          rating: window.currentRating.rating,
+          text: text,
+          userId: user.uid,
+          userName: user.displayName || user.email || ''
+        }
+      };
           
-          if (response.ok) {
-            // Hide comment section
-            const commentSection = document.getElementById(`review-comment-${toiletId}`);
-            if (commentSection) {
-              commentSection.style.display = 'none';
-            }
-            
-            // Clear textarea
-            if (textarea) {
-              textarea.value = '';
-            }
-            
-            // Reset stars
-            window.resetStars(toiletId);
-            window.currentRating = undefined;
-            
-            // Reload reviews
-            window.loadReviews(toiletId);
-            
-            // Show success message
-            alert('Review submitted successfully!');
-          } else {
-            alert('Failed to submit review. Please try again.');
+          console.log('📝 Client: Submitting review using React Query mutation:', reviewData);
+          
+          const result = await addReviewMutation.mutateAsync(reviewData);
+          
+          console.log('📝 Client: Review submission success:', result);
+          
+          // Hide comment section
+          const commentSection = document.getElementById(`review-comment-${toiletId}`);
+          if (commentSection) {
+            commentSection.style.display = 'none';
           }
+          
+          // Clear textarea
+          if (textarea) {
+            textarea.value = '';
+          }
+          
+          // Reset stars
+          window.resetStars(toiletId);
+          window.currentRating = undefined;
+          
+          // Reload reviews
+          window.loadReviews(toiletId);
+          
+          // Show success message
+          alert('Review submitted successfully!');
         } catch (error) {
-          console.error('Error submitting review:', error);
+          console.error('📝 Client: Error submitting review:', error);
           alert('Error submitting review. Please try again.');
         }
       };
@@ -383,70 +384,82 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
         window.resetStars(toiletId);
       };
 
-      window.reportToiletNotExists = async (toiletId) => {
-        if (!user) {
-          onLoginClick();
-          return;
-        }
-        
-        try {
-          const response = await fetch('/api/reports', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({
-              toiletId,
-              type: 'not_exists',
-              description: 'Toilet reported as non-existent',
-              userId: user.uid
-            })
-          });
+              window.reportToiletNotExists = async (toiletId) => {
+          if (!user) {
+            onLoginClick();
+            return;
+          }
           
-          if (response.ok) {
-            const result = await response.json();
+          try {
+            console.log('Reporting toilet as non-existent:', toiletId);
             
-            // Update button to show reported status
-            const reportButton = document.querySelector(`button[onclick="window.reportToiletNotExists('${toiletId}')"]`) as HTMLElement;
-            if (reportButton) {
-              reportButton.innerHTML = '✓ Reported';
-              reportButton.style.background = '#10b981';
-              reportButton.style.color = 'white';
-              (reportButton as any).disabled = true;
-            }
+            const response = await fetch(`/api/toilets/${toiletId}/report-not-exists`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              body: JSON.stringify({
+                toiletId,
+                userId: user.uid,
+                reason: 'doesnt-exist',
+                comment: 'Toilet reported as non-existent'
+              })
+            });
             
-            // Check if toilet should be removed (10+ reports)
-            if (result.reportCount >= 10) {
-              alert('This toilet has been reported by 10+ users and will be removed from the map.');
+            console.log('Report submission response:', response.status, response.statusText);
+            
+            if (response.ok) {
+              const result = await response.json();
               
-              // Remove the marker from the map
-              const markers = toiletMarkers.current;
-              const marker = markers.find(m => m.toiletId === toiletId);
-              if (marker && marker.marker) {
-                map.current?.removeLayer(marker.marker);
-                toiletMarkers.current = toiletMarkers.current.filter(m => m.toiletId !== toiletId);
+              // Update button to show reported status
+              const reportButton = document.querySelector(`button[onclick="window.reportToiletNotExists('${toiletId}')"]`) as HTMLElement;
+              if (reportButton) {
+                reportButton.innerHTML = '✓ Reported';
+                reportButton.style.background = '#10b981';
+                reportButton.style.color = 'white';
+                (reportButton as any).disabled = true;
               }
               
-              // Close popup
-              const popup = document.querySelector('.leaflet-popup');
-              if (popup) {
-                (popup as any).remove();
+              // Check if toilet should be removed (10+ reports)
+              if (result.reportCount >= 10) {
+                alert('This toilet has been reported by 10+ users and will be removed from the map.');
+                
+                // Remove the marker from the map
+                const markers = toiletMarkers.current;
+                const marker = markers.find(m => m.toiletId === toiletId);
+                if (marker && marker.marker) {
+                  map.current?.removeLayer(marker.marker);
+                  toiletMarkers.current = toiletMarkers.current.filter(m => m.toiletId !== toiletId);
+                }
+                
+                // Close popup
+                const popup = document.querySelector('.leaflet-popup');
+                if (popup) {
+                  (popup as any).remove();
+                }
+              } else {
+                alert(`Toilet reported. ${10 - result.reportCount} more reports needed for automatic removal.`);
               }
             } else {
-              alert(`Toilet reported. ${10 - result.reportCount} more reports needed for automatic removal.`);
+              const errorData = await response.json().catch(() => ({}));
+              console.error('Report submission failed:', errorData);
+              alert(`Failed to report toilet: ${errorData.error || 'Unknown error'}`);
             }
+          } catch (error) {
+            console.error('Error reporting toilet:', error);
+            alert('Error reporting toilet. Please try again.');
           }
-        } catch (error) {
-          console.error('Error reporting toilet:', error);
-          alert('Error reporting toilet. Please try again.');
-        }
-      };
+        };
 
       window.deleteToilet = async (toiletId) => {
         if (!user?.email || !isAdmin) return;
         
         if (confirm('Are you sure you want to delete this toilet?')) {
           try {
-            await deleteToiletMutation.mutateAsync(toiletId);
+            await deleteToiletMutation.mutateAsync({
+              toiletId,
+              adminEmail: user?.email || '',
+              userId: user?.uid || ''
+            });
             const popup = document.querySelector('.leaflet-popup');
             if (popup) {
               (popup as any).remove();
@@ -764,6 +777,15 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
         <h3 style="margin: 0 0 12px 0; font-size: 20px; font-weight: 700; color: #1f2937; line-height: 1.3;">
           ${properTitle}
         </h3>
+        
+        <!-- Added by information for user-added toilets -->
+        ${toilet.source === 'user' && toilet.addedByUserName ? `
+        <div style="margin-bottom: 16px; padding: 8px 12px; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 6px;">
+          <span style="font-size: 13px; color: #0369a1; font-weight: 500;">
+            📍 Added by ${toilet.addedByUserName}
+          </span>
+        </div>
+        ` : ''}
         
         <!-- 2. Rating and Reviews Summary -->
         <div id="review-summary-${toilet.id}" style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">

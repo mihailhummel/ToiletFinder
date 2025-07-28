@@ -1,13 +1,14 @@
 import { useState } from "react";
-import { X, MapPin, Navigation, Star, Flag, Info } from "lucide-react";
+import { X, MapPin, Navigation, Star, Flag, Info, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { StarRating } from "./StarRating";
 import { AddReviewModal } from "./AddReviewModal";
 import { ReportModal } from "./ReportModal";
 import { LoginModal } from "./LoginModal";
-import { useToiletReviews } from "@/hooks/useToilets";
+import { useToiletReviews, useDeleteToilet } from "@/hooks/useToilets";
 import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 import type { Toilet } from "@/types/toilet";
 import { formatDistanceToNow } from "date-fns";
 
@@ -21,9 +22,12 @@ export const ToiletDetailsModal = ({ toilet, isOpen, onClose }: ToiletDetailsMod
   const [showAddReview, setShowAddReview] = useState(false);
   const [showReport, setShowReport] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const { data: reviews = [] } = useToiletReviews(toilet?.id || "");
+  const deleteToiletMutation = useDeleteToilet();
+  const { toast } = useToast();
 
   if (!toilet) return null;
 
@@ -49,6 +53,38 @@ export const ToiletDetailsModal = ({ toilet, isOpen, onClose }: ToiletDetailsMod
   const getDirections = () => {
     const url = `https://www.google.com/maps/dir/?api=1&destination=${toilet.coordinates.lat},${toilet.coordinates.lng}`;
     window.open(url, '_blank');
+  };
+
+  const handleDeleteToilet = async () => {
+    if (!user || !isAdmin) {
+      toast({
+        title: "Access denied",
+        description: "Only admins can delete toilet locations.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      await deleteToiletMutation.mutateAsync({
+        toiletId: toilet.id,
+        adminEmail: user.email || '',
+        userId: user.uid
+      });
+
+      toast({
+        title: "Success!",
+        description: "Toilet location deleted successfully."
+      });
+
+      onClose();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to delete toilet location.",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
@@ -100,7 +136,7 @@ export const ToiletDetailsModal = ({ toilet, isOpen, onClose }: ToiletDetailsMod
             )}
             
             {/* Action Buttons */}
-            <div className="grid grid-cols-3 gap-3">
+            <div className={`grid gap-3 ${isAdmin ? 'grid-cols-4' : 'grid-cols-3'}`}>
               <Button
                 variant="outline"
                 className="flex flex-col items-center space-y-1 h-auto py-3"
@@ -127,6 +163,17 @@ export const ToiletDetailsModal = ({ toilet, isOpen, onClose }: ToiletDetailsMod
                 <Flag className="w-4 h-4 text-red-500" />
                 <span className="text-xs">Report</span>
               </Button>
+
+              {isAdmin && (
+                <Button
+                  variant="outline"
+                  className="flex flex-col items-center space-y-1 h-auto py-3 border-red-200 hover:bg-red-50"
+                  onClick={() => setShowDeleteConfirm(true)}
+                >
+                  <Trash2 className="w-4 h-4 text-red-600" />
+                  <span className="text-xs text-red-600">Delete</span>
+                </Button>
+              )}
             </div>
             
             {/* Reviews Section */}
@@ -178,6 +225,37 @@ export const ToiletDetailsModal = ({ toilet, isOpen, onClose }: ToiletDetailsMod
         isOpen={showLogin}
         onClose={() => setShowLogin(false)}
       />
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete Toilet Location</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-gray-600">
+              Are you sure you want to delete this toilet location? This action cannot be undone.
+            </p>
+            <div className="flex space-x-3">
+              <Button
+                variant="outline"
+                onClick={() => setShowDeleteConfirm(false)}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleDeleteToilet}
+                disabled={deleteToiletMutation.isPending}
+                className="flex-1"
+              >
+                {deleteToiletMutation.isPending ? "Deleting..." : "Delete"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };

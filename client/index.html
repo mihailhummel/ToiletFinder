@@ -22,5 +22,9 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    <script>
+      // Ensure API calls work from static files
+      window.API_BASE_URL = '';
+    </script>
   </body>
 </html>

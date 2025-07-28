@@ -353,8 +353,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/toilets", async (req: Request, res: Response) => {
     try {
+      console.log("🚽 POST /api/toilets - Request body:", JSON.stringify(req.body, null, 2));
+      
       const toilet = insertToiletSchema.parse(req.body);
+      console.log("✅ Schema validation passed:", toilet);
+      
       const id = await storage.createToilet(toilet);
+      console.log("✅ Toilet created with ID:", id);
       
       // Invalidate relevant cache entries
       const toiletLat = toilet.coordinates.lat;
@@ -367,13 +372,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      res.json({ id, ...toilet });
+      const response = { id, ...toilet };
+      console.log("📤 Sending response:", response);
+      res.json(response);
     } catch (error) {
+      console.error("❌ Error in POST /api/toilets:", error);
+      
       if (error instanceof z.ZodError) {
+        console.error("❌ Zod validation error:", error.errors);
         res.status(400).json({ error: "Invalid toilet data", details: error.errors });
       } else {
-        console.error("Error creating toilet:", error);
-        res.status(500).json({ error: "Failed to create toilet" });
+        console.error("❌ Unexpected error:", error);
+        res.status(500).json({ error: "Failed to create toilet", message: error instanceof Error ? error.message : "Unknown error" });
       }
     }
   });
@@ -392,8 +402,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/toilets/:id/reviews", async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
+      console.log("📝 POST /api/toilets/:id/reviews - Toilet ID:", id);
+      console.log("📝 Request body:", JSON.stringify(req.body, null, 2));
+      
       const review = insertReviewSchema.parse({ ...req.body, toiletId: id });
+      console.log("✅ Review schema validation passed:", review);
+      
       await storage.createReview(review);
+      console.log("✅ Review created successfully");
       
       // Invalidate cache entries that might contain this toilet's rating
       const cacheKeysToInvalidate: string[] = [];
@@ -408,18 +424,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`Invalidated cache entry ${key} due to new review`);
       });
       
-      res.json({ message: "Review created successfully" });
+      const response = { message: "Review created successfully" };
+      console.log("📤 Sending review response:", response);
+      res.json(response);
     } catch (error) {
+      console.error("❌ Error in POST /api/toilets/:id/reviews:", error);
+      
       if (error instanceof z.ZodError) {
+        console.error("❌ Zod validation error:", error.errors);
         res.status(400).json({ error: "Invalid review data", details: error.errors });
       } else {
-        console.error("Error creating review:", error);
-        res.status(500).json({ error: "Failed to create review" });
+        console.error("❌ Unexpected error:", error);
+        res.status(500).json({ error: "Failed to create review", message: error instanceof Error ? error.message : "Unknown error" });
       }
     }
   });
 
-  app.get("/api/toilets/:id/user-review-status", async (req: Request, res: Response) => {
+  app.get("/api/toilets/:id/user-review", async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
       const { userId } = req.query;
@@ -482,10 +503,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/toilets/:id", async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
-      const { adminEmail } = req.body;
+      const { adminEmail, userId } = req.body;
       
-      // Basic admin check (you might want to implement proper auth)
-      if (!adminEmail || !adminEmail.includes('@')) {
+      // Check if user is admin by verifying with Firebase
+      if (!adminEmail || !userId) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+      
+      // For now, we'll use a simple email-based admin check
+      // In production, you should verify the Firebase token
+      const adminEmails = [
+        'mihail@gmail.com', // Replace with your actual admin email
+        // Add more admin emails here as needed
+      ];
+      
+      if (!adminEmails.includes(adminEmail)) {
         return res.status(403).json({ error: "Admin access required" });
       }
       

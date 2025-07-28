@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useAddToilet } from "@/hooks/useToilets";
 import { useAuth } from "@/hooks/useAuth";
+import { queryClient } from "@/lib/queryClient";
 import type { ToiletType, MapLocation } from "@/types/toilet";
 
 interface AddToiletModalProps {
@@ -59,17 +60,24 @@ export const AddToiletModal = ({ isOpen, onClose, location, onRequestLocationSel
       return;
     }
 
-    // If location exists, submit the toilet
+    // If location exists, submit the toilet using React Query mutation
     try {
-      await addToiletMutation.mutateAsync({
+      const toiletData = {
         type,
         coordinates: location,
         notes: notes.trim() || undefined,
         userId: user.uid,
-        source: 'user',
+        source: 'user' as const,
         addedByUserName: user.displayName || 'Anonymous User'
-      });
-
+      };
+      
+      console.log("🚽 Client: Using React Query mutation to add toilet");
+      console.log("🚽 Client: Request body:", JSON.stringify(toiletData, null, 2));
+      
+      const result = await addToiletMutation.mutateAsync(toiletData);
+      
+      console.log("🚽 Client: Mutation successful:", result);
+      
       toast({
         title: "Success!",
         description: "Toilet location added successfully."
@@ -78,11 +86,14 @@ export const AddToiletModal = ({ isOpen, onClose, location, onRequestLocationSel
       onClose();
       setType("public");
       setNotes("");
+      
+      // Invalidate queries to refresh the map data
+      queryClient.invalidateQueries({ queryKey: ["toilets"] });
     } catch (error) {
-      console.error("Error adding toilet:", error);
+      console.error("🚽 Client: Error adding toilet:", error);
       toast({
         title: "Error",
-        description: "Failed to add toilet location. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to add toilet location. Please try again.",
         variant: "destructive"
       });
     }
@@ -134,9 +145,9 @@ export const AddToiletModal = ({ isOpen, onClose, location, onRequestLocationSel
           </div>
           
           <div>
-            <label className="block text-sm font-medium mb-2 text-gray-700">Type of Place</label>
+            <label htmlFor="toilet-type" className="block text-sm font-medium mb-2 text-gray-700">Type of Place</label>
             <Select value={type} onValueChange={(value: ToiletType) => setType(value)}>
-              <SelectTrigger className="border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+              <SelectTrigger id="toilet-type" className="border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="bg-white border border-gray-200 shadow-lg">
@@ -150,8 +161,10 @@ export const AddToiletModal = ({ isOpen, onClose, location, onRequestLocationSel
           </div>
           
           <div>
-            <label className="block text-sm font-medium mb-2 text-gray-700">Notes (Optional)</label>
+            <label htmlFor="toilet-notes" className="block text-sm font-medium mb-2 text-gray-700">Notes (Optional)</label>
             <Textarea
+              id="toilet-notes"
+              name="toilet-notes"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Any additional information..."

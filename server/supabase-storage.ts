@@ -19,15 +19,19 @@ export class SupabaseStorage implements IStorage {
     try {
       console.log('🚽 Creating toilet in Supabase:', toilet);
       
+      // Generate a unique ID for the toilet
+      const toiletId = `toilet_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
       const toiletData = {
-        coordinates: toilet.coordinates,
+        id: toiletId,
+        coordinates: toilet.coordinates, // Store as JSON object
         type: toilet.type,
         source: toilet.source || 'user',
-        tags: toilet.tags || {},
         notes: toilet.notes || null,
         is_removed: false,
         created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
+        review_count: 0
       };
 
       const { data, error } = await supabase
@@ -38,6 +42,12 @@ export class SupabaseStorage implements IStorage {
 
       if (error) {
         console.error('❌ Error creating toilet:', error);
+        
+        // If the error is about missing columns, provide helpful message
+        if (error.message.includes('column') && error.message.includes('does not exist')) {
+          throw new Error('Database setup required. Please run the SQL script in Supabase dashboard first.');
+        }
+        
         throw error;
       }
 
@@ -74,24 +84,18 @@ export class SupabaseStorage implements IStorage {
     try {
       console.log(`🔍 Fetching toilets near ${lat}, ${lng} within ${radiusKm}km`);
       
-      // Expand bounds slightly for spatial query
-      const latOffset = radiusKm / 111; // 1 degree lat ≈ 111km
-      const lngOffset = radiusKm / (111 * Math.cos(lat * Math.PI / 180));
-      
+      // Get all toilets and filter by distance since we can't query JSON coordinates directly
       const { data, error } = await supabase
-        .rpc('get_toilets_in_bounds', {
-          west: lng - lngOffset,
-          south: lat - latOffset,
-          east: lng + lngOffset,
-          north: lat + latOffset
-        });
+        .from('toilets')
+        .select('*')
+        .eq('is_removed', false);
 
       if (error) {
-        console.error('❌ Error fetching nearby toilets:', error);
+        console.error('❌ Error fetching toilets:', error);
         throw error;
       }
 
-      // Filter by exact distance and transform
+      // Filter by distance and transform
       const toilets = data
         .map(this.transformToilet)
         .filter((toilet: Toilet) => {
@@ -110,6 +114,19 @@ export class SupabaseStorage implements IStorage {
 
   async createReview(review: InsertReview): Promise<void> {
     try {
+      console.log('📝 Creating review:', review);
+      
+      // First, check if reviews table exists and has the right structure
+      const { data: existingReviews, error: checkError } = await supabase
+        .from('reviews')
+        .select('*')
+        .limit(1);
+
+      if (checkError) {
+        console.error('❌ Reviews table error:', checkError);
+        throw new Error('Reviews table not found or not accessible. Please run the SQL script in Supabase dashboard first.');
+      }
+
       const { error } = await supabase
         .from('reviews')
         .insert([{
@@ -124,6 +141,19 @@ export class SupabaseStorage implements IStorage {
       if (error) {
         console.error('❌ Error creating review:', error);
         throw error;
+      }
+
+      // Update toilet review count
+      const { error: updateError } = await supabase
+        .from('toilets')
+        .update({ 
+          review_count: (existingReviews.length || 0) + 1,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', review.toiletId);
+
+      if (updateError) {
+        console.error('❌ Error updating toilet review count:', updateError);
       }
 
       console.log('✅ Review created successfully');
@@ -184,15 +214,20 @@ export class SupabaseStorage implements IStorage {
 
   async createReport(report: InsertReport): Promise<void> {
     try {
+      console.log('📝 Creating report in Supabase:', report);
+      
+      const reportData = {
+        toilet_id: report.toiletId,
+        user_id: report.userId,
+        user_name: report.userName,
+        reason: report.reason,
+        comment: report.comment || null,
+        created_at: new Date().toISOString()
+      };
+
       const { error } = await supabase
         .from('reports')
-        .insert([{
-          user_id: report.userId,
-          type: report.type,
-          description: report.description,
-          location: report.location,
-          created_at: new Date().toISOString()
-        }]);
+        .insert([reportData]);
 
       if (error) {
         console.error('❌ Error creating report:', error);
@@ -208,21 +243,27 @@ export class SupabaseStorage implements IStorage {
 
   async reportToiletNotExists(toiletReport: InsertToiletReport): Promise<void> {
     try {
+      console.log('🚫 Reporting toilet as non-existent:', toiletReport);
+      
+      const reportData = {
+        toilet_id: toiletReport.toiletId,
+        user_id: toiletReport.userId,
+        user_name: toiletReport.userName,
+        reason: 'doesnt-exist',
+        comment: 'Toilet reported as non-existent',
+        created_at: new Date().toISOString()
+      };
+
       const { error } = await supabase
         .from('toilet_reports')
-        .insert([{
-          toilet_id: toiletReport.toiletId,
-          user_id: toiletReport.userId,
-          reason: toiletReport.reason,
-          created_at: new Date().toISOString()
-        }]);
+        .insert([reportData]);
 
       if (error) {
         console.error('❌ Error reporting toilet:', error);
         throw error;
       }
 
-      console.log('✅ Toilet report created successfully');
+      console.log('✅ Toilet reported as non-existent');
     } catch (error) {
       console.error('❌ Failed to report toilet:', error);
       throw error;
@@ -341,14 +382,15 @@ export class SupabaseStorage implements IStorage {
   private transformToilet(data: any): Toilet {
     return {
       id: data.id,
-      coordinates: data.coordinates,
+      coordinates: data.coordinates || { lat: 0, lng: 0 }, // Handle JSON coordinates
       type: data.type,
       source: data.source,
       tags: data.tags || {},
       notes: data.notes,
       isRemoved: data.is_removed || false,
       createdAt: new Date(data.created_at),
-      updatedAt: new Date(data.updated_at || data.created_at)
+      averageRating: 0, // Not stored in current schema
+      reviewCount: data.review_count || 0
     };
   }
 

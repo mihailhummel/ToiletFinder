@@ -56,10 +56,13 @@ export const AddReviewModal = ({ toilet, isOpen, onClose }: AddReviewModalProps)
     try {
       await addReviewMutation.mutateAsync({
         toiletId: toilet.id,
-        userId: user.uid,
-        userName: user.displayName || "Anonymous",
-        rating,
-        text: text.trim() || undefined
+        review: {
+          toiletId: toilet.id,
+          userId: user.uid,
+          userName: user.displayName || "Anonymous",
+          rating,
+          text: text.trim() || undefined
+        }
       });
 
       toast({
@@ -118,17 +121,21 @@ export const AddReviewModal = ({ toilet, isOpen, onClose }: AddReviewModalProps)
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-2">Your Rating</label>
-            <StarRating
-              rating={rating}
-              onRatingChange={setRating}
-              size="lg"
-            />
+            <label htmlFor="review-rating" className="block text-sm font-medium mb-2">Your Rating</label>
+            <div id="review-rating">
+              <StarRating
+                rating={rating}
+                onRatingChange={setRating}
+                size="lg"
+              />
+            </div>
           </div>
           
           <div>
-            <label className="block text-sm font-medium mb-2">Your Review</label>
+            <label htmlFor="review-text" className="block text-sm font-medium mb-2">Your Review</label>
             <Textarea
+              id="review-text"
+              name="review-text"
               value={text}
               onChange={(e) => setText(e.target.value)}
               placeholder="Share your experience..."
