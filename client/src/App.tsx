@@ -443,6 +443,11 @@ function App() {
                     <p className="text-sm text-gray-600">
                       {user?.email}
                     </p>
+                    {isAdmin && (
+                      <p className="text-xs text-blue-600 font-medium mt-1">
+                        Admin
+                      </p>
+                    )}
                   </div>
                 </div>
                 <Button

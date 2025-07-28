@@ -51,8 +51,19 @@ export const ToiletDetailsModal = ({ toilet, isOpen, onClose }: ToiletDetailsMod
   };
 
   const getDirections = () => {
-    const url = `https://www.google.com/maps/dir/?api=1&destination=${toilet.coordinates.lat},${toilet.coordinates.lng}`;
-    window.open(url, '_blank');
+    const { lat, lng } = toilet.coordinates;
+    
+    // Use a universal approach that works across all platforms
+    // This will trigger the native app selection on mobile devices
+    const url = `https://maps.google.com/maps?daddr=${lat},${lng}`;
+    
+    // Try to open in a new tab/window
+    const newWindow = window.open(url, '_blank');
+    
+    // If popup is blocked, fall back to current window
+    if (!newWindow) {
+      window.location.href = url;
+    }
   };
 
   const handleDeleteToilet = async () => {

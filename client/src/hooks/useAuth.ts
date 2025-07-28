@@ -21,9 +21,16 @@ export function useAuth() {
       if (user) {
         try {
           const token = await user.getIdTokenResult();
-          setIsAdmin(token.claims?.admin === true);
+          const isUserAdmin = token.claims?.admin === true;
+          console.log("🔍 Admin check:", { 
+            email: user.email, 
+            uid: user.uid,
+            claims: token.claims, 
+            isAdmin: isUserAdmin 
+          });
+          setIsAdmin(isUserAdmin);
         } catch (error) {
-          console.error('Error checking admin status:', error);
+          console.error('❌ Error checking admin status:', error);
           setIsAdmin(false);
         }
       } else {

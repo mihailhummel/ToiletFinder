@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertToiletSchema, insertReviewSchema, insertReportSchema, insertToiletReportSchema } from "@shared/schema";
 import { z } from "zod";
+import { auth } from "../firebase-admin-config.js";
 
 // Enhanced in-memory cache with spatial chunking
 interface CachedToiletChunk {
@@ -505,31 +506,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { id } = req.params;
       const { adminEmail, userId } = req.body;
       
+      console.log("🗑️ Delete toilet request:", { id, adminEmail, userId });
+      
       // Check if user is admin by verifying with Firebase
       if (!adminEmail || !userId) {
+        console.log("❌ Missing adminEmail or userId");
         return res.status(403).json({ error: "Admin access required" });
       }
       
-      // For now, we'll use a simple email-based admin check
-      // In production, you should verify the Firebase token
-      const adminEmails = [
-        'mihail@gmail.com', // Replace with your actual admin email
-        // Add more admin emails here as needed
-      ];
-      
-      if (!adminEmails.includes(adminEmail)) {
-        return res.status(403).json({ error: "Admin access required" });
+      // Verify Firebase token and check custom claims
+      try {
+        console.log("🔍 Verifying Firebase user:", userId);
+        console.log("🔍 Firebase auth object:", typeof auth, auth ? "exists" : "null");
+        
+        // Get the user from Firebase Admin SDK
+        const userRecord = await auth.getUser(userId);
+        console.log("✅ Firebase user found:", { 
+          email: userRecord.email, 
+          customClaims: userRecord.customClaims,
+          uid: userRecord.uid
+        });
+        
+        // Check if user has admin custom claim
+        if (!userRecord.customClaims?.admin) {
+          console.log("❌ User does not have admin custom claim");
+          console.log("❌ Custom claims:", userRecord.customClaims);
+          return res.status(403).json({ error: "Admin access required" });
+        }
+        
+        // Verify the email matches the user record
+        if (userRecord.email !== adminEmail) {
+          console.log("❌ Email mismatch:", { 
+            provided: adminEmail, 
+            actual: userRecord.email 
+          });
+          return res.status(403).json({ error: "Email mismatch" });
+        }
+        
+        console.log("✅ Admin verification successful");
+        
+      } catch (firebaseError) {
+        console.error("❌ Firebase verification error:", firebaseError);
+        console.error("❌ Error details:", {
+          code: firebaseError.code,
+          message: firebaseError.message,
+          stack: firebaseError.stack
+        });
+        return res.status(403).json({ error: "Invalid user credentials" });
       }
       
+      console.log("🗑️ Deleting toilet from database:", id);
       await storage.deleteToilet(id);
       
       // Invalidate all cache entries since a toilet was deleted
       toiletsCache.clear();
-      console.log("Cleared all cache due to toilet deletion");
+      console.log("✅ Cleared all cache due to toilet deletion");
       
       res.json({ message: "Toilet deleted successfully" });
     } catch (error) {
-      console.error("Error deleting toilet:", error);
+      console.error("❌ Error deleting toilet:", error);
       res.status(500).json({ error: "Failed to delete toilet" });
     }
   });

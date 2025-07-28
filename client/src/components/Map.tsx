@@ -190,11 +190,17 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
       document.addEventListener('keydown', handleKeyDown);
 
       window.getDirections = (lat, lng) => {
-        const userAgent = navigator.userAgent;
-        const url = userAgent.includes('iPhone') || userAgent.includes('iPad')
-          ? `maps://maps.google.com/maps?daddr=${lat},${lng}&amp;ll=`
-          : `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
-        window.open(url, '_blank');
+        // Use a universal approach that works across all platforms
+        // This will trigger the native app selection on mobile devices
+        const url = `https://maps.google.com/maps?daddr=${lat},${lng}`;
+        
+        // Try to open in a new tab/window
+        const newWindow = window.open(url, '_blank');
+        
+        // If popup is blocked, fall back to current window
+        if (!newWindow) {
+          window.location.href = url;
+        }
       };
 
       window.loadReviews = async (toiletId) => {

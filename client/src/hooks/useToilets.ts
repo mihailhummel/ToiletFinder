@@ -384,16 +384,26 @@ export const useDeleteToilet = () => {
   
   return useMutation({
     mutationFn: async ({ toiletId, adminEmail, userId }: { toiletId: string; adminEmail: string; userId: string }): Promise<void> => {
+      console.log("🗑️ Attempting to delete toilet:", { toiletId, adminEmail, userId });
+      
+      const requestBody = { adminEmail, userId };
+      console.log("📤 Request body:", requestBody);
+      
       const response = await fetch(`/api/toilets/${toiletId}`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ adminEmail, userId }),
+        body: JSON.stringify(requestBody),
       });
+      
+      console.log("📡 Delete response status:", response.status);
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
+        console.error("❌ Delete failed:", errorData);
         throw new Error(errorData.error || 'Failed to delete toilet');
       }
+      
+      console.log("✅ Delete request successful");
     },
     onSuccess: () => {
       // Invalidate and refetch toilet queries
@@ -402,10 +412,10 @@ export const useDeleteToilet = () => {
       // Clear cache to ensure deleted toilet doesn't show up
       clearToiletCache();
       
-      console.log("Toilet deleted successfully");
+      console.log("✅ Toilet deleted successfully");
     },
     onError: (error) => {
-      console.error("Failed to delete toilet:", error);
+      console.error("❌ Failed to delete toilet:", error);
     },
   });
 };
