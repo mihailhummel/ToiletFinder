@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Manager - Toilet Finder</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(45deg, #2c3e50, #34495e);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .search-container {
+            margin-bottom: 30px;
+            position: relative;
+        }
+        
+        .search-input {
+            width: 100%;
+            padding: 15px 50px 15px 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        .search-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .search-icon {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #666;
+            font-size: 20px;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: linear-gradient(45deg, #f093fb, #f5576c);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .stat-card h3 {
+            font-size: 2rem;
+            margin-bottom: 5px;
+        }
+        
+        .users-table {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        }
+        
+        .table-header {
+            background: #f8f9fa;
+            padding: 15px;
+            border-bottom: 1px solid #e0e0e0;
+            font-weight: bold;
+            display: grid;
+            grid-template-columns: 1fr 1fr 150px 200px;
+            gap: 15px;
+        }
+        
+        .user-row {
+            padding: 15px;
+            border-bottom: 1px solid #f0f0f0;
+            display: grid;
+            grid-template-columns: 1fr 1fr 150px 200px;
+            gap: 15px;
+            align-items: center;
+            transition: background-color 0.2s;
+        }
+        
+        .user-row:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .user-row.admin {
+            background: linear-gradient(45deg, #ffeaa7, #fab1a0);
+            border-left: 4px solid #e17055;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #667eea;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+        
+        .user-details h4 {
+            margin-bottom: 3px;
+            color: #2c3e50;
+        }
+        
+        .user-details p {
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        .admin-badge {
+            background: #e74c3c;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        
+        .user-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        
+        .btn-admin {
+            background: #27ae60;
+            color: white;
+        }
+        
+        .btn-admin:hover {
+            background: #229954;
+        }
+        
+        .btn-remove {
+            background: #f39c12;
+            color: white;
+        }
+        
+        .btn-remove:hover {
+            background: #e67e22;
+        }
+        
+        .btn-delete {
+            background: #e74c3c;
+            color: white;
+        }
+        
+        .btn-delete:hover {
+            background: #c0392b;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        .logs-section {
+            margin-top: 40px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+        }
+        
+        .logs-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .log-entry {
+            background: white;
+            padding: 10px;
+            margin-bottom: 8px;
+            border-radius: 5px;
+            border-left: 4px solid #3498db;
+            font-family: monospace;
+            font-size: 0.9rem;
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #27ae60;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            z-index: 1000;
+            transform: translateX(400px);
+            transition: transform 0.3s;
+        }
+        
+        .notification.show {
+            transform: translateX(0);
+        }
+        
+        .notification.error {
+            background: #e74c3c;
+        }
+        
+        @media (max-width: 768px) {
+            .table-header, .user-row {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .user-actions {
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚽 Admin Manager</h1>
+            <p>Manage users and admin permissions for Toilet Finder</p>
+        </div>
+        
+        <div class="content">
+            <div class="search-container">
+                <input type="text" id="searchInput" class="search-input" placeholder="Search users by name or email...">
+                <div class="search-icon">🔍</div>
+            </div>
+            
+            <div class="stats" id="stats">
+                <div class="stat-card">
+                    <h3 id="totalUsers">-</h3>
+                    <p>Total Users</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="totalAdmins">-</h3>
+                    <p>Admins</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="totalRegular">-</h3>
+                    <p>Regular Users</p>
+                </div>
+            </div>
+            
+            <div class="users-table">
+                <div class="table-header">
+                    <div>User Information</div>
+                    <div>Status</div>
+                    <div>Created</div>
+                    <div>Actions</div>
+                </div>
+                <div id="usersContainer">
+                    <div class="loading">Loading users...</div>
+                </div>
+            </div>
+            
+            <div class="logs-section">
+                <div class="logs-header">
+                    <h3>Recent Admin Actions</h3>
+                    <button class="btn btn-admin" onclick="loadLogs()">Refresh Logs</button>
+                </div>
+                <div id="logsContainer">
+                    <div class="loading">Loading logs...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="notification" class="notification"></div>
+    
+    <script>
+        let users = [];
+        let filteredUsers = [];
+        
+        async function loadUsers() {
+            try {
+                const response = await fetch('/api/users');
+                if (!response.ok) throw new Error('Failed to fetch users');
+                
+                users = await response.json();
+                filteredUsers = [...users];
+                renderUsers();
+                updateStats();
+            } catch (error) {
+                showNotification('Error loading users: ' + error.message, 'error');
+            }
+        }
+        
+        function updateStats() {
+            const totalUsers = users.length;
+            const totalAdmins = users.filter(u => u.isAdmin).length;
+            const totalRegular = totalUsers - totalAdmins;
+            
+            document.getElementById('totalUsers').textContent = totalUsers;
+            document.getElementById('totalAdmins').textContent = totalAdmins;
+            document.getElementById('totalRegular').textContent = totalRegular;
+        }
+        
+        function renderUsers() {
+            const container = document.getElementById('usersContainer');
+            
+            if (filteredUsers.length === 0) {
+                container.innerHTML = '<div class="loading">No users found</div>';
+                return;
+            }
+            
+            container.innerHTML = filteredUsers.map(user => {
+                return '<div class="user-row ' + (user.isAdmin ? 'admin' : '') + '">' +
+                    '<div class="user-info">' +
+                        (user.photoURL ? 
+                            '<img src="' + user.photoURL + '" alt="Avatar" class="user-avatar" style="object-fit: cover;">' :
+                            '<div class="user-avatar">' + (user.displayName || user.email || 'U')[0].toUpperCase() + '</div>'
+                        ) +
+                        '<div class="user-details">' +
+                            '<h4>' + (user.displayName || 'No Name') + '</h4>' +
+                            '<p>' + user.email + '</p>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div>' +
+                        (user.isAdmin ? '<span class="admin-badge">ADMIN</span>' : 'Regular User') +
+                        (user.disabled ? '<span class="admin-badge" style="background: #95a5a6;">DISABLED</span>' : '') +
+                    '</div>' +
+                    '<div>' + new Date(user.createdAt).toLocaleDateString() + '</div>' +
+                    '<div class="user-actions">' +
+                        (user.isAdmin ? 
+                            '<button class="btn btn-remove" onclick="removeAdmin(\'' + user.uid + '\', \'' + user.email + '\')">Remove Admin</button>' :
+                            '<button class="btn btn-admin" onclick="makeAdmin(\'' + user.uid + '\', \'' + user.email + '\')">Make Admin</button>'
+                        ) +
+                        '<button class="btn btn-delete" onclick="deleteUser(\'' + user.uid + '\', \'' + user.email + '\')">Delete User</button>' +
+                    '</div>' +
+                '</div>';
+            }).join('');
+        }
+        
+        async function makeAdmin(uid, email) {
+            if (!confirm("Make " + email + " an admin?")) return;
+            
+            try {
+                const response = await fetch("/api/users/" + uid + "/make-admin", {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email })
+                });
+                
+                if (!response.ok) throw new Error('Failed to make user admin');
+                
+                showNotification(email + " is now an admin!");
+                loadUsers();
+            } catch (error) {
+                showNotification('Error: ' + error.message, 'error');
+            }
+        }
+        
+        async function removeAdmin(uid, email) {
+            if (!confirm("Remove admin status from " + email + "?")) return;
+            
+            try {
+                const response = await fetch("/api/users/" + uid + "/remove-admin", {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email })
+                });
+                
+                if (!response.ok) throw new Error('Failed to remove admin status');
+                
+                showNotification(email + " is no longer an admin");
+                loadUsers();
+            } catch (error) {
+                showNotification('Error: ' + error.message, 'error');
+            }
+        }
+        
+        async function deleteUser(uid, email) {
+            if (!confirm("PERMANENTLY DELETE user " + email + "? This action cannot be undone!")) return;
+            
+            try {
+                const response = await fetch("/api/users/" + uid, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email })
+                });
+                
+                if (!response.ok) throw new Error('Failed to delete user');
+                
+                showNotification("User " + email + " has been deleted");
+                loadUsers();
+            } catch (error) {
+                showNotification('Error: ' + error.message, 'error');
+            }
+        }
+        
+        async function loadLogs() {
+            try {
+                const response = await fetch('/api/logs');
+                if (!response.ok) throw new Error('Failed to fetch logs');
+                
+                const logs = await response.json();
+                const logsContainer = document.getElementById('logsContainer');
+                
+                if (logs.length === 0) {
+                    logsContainer.innerHTML = '<div class="loading">No admin actions recorded yet</div>';
+                    return;
+                }
+                
+                logsContainer.innerHTML = logs.slice(0, 10).map(log => 
+                    '<div class="log-entry">' + log + '</div>'
+                ).join('');
+            } catch (error) {
+                showNotification('Error loading logs: ' + error.message, 'error');
+            }
+        }
+        
+        function showNotification(message, type = 'success') {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = 'notification ' + type + ' show';
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+        
+        // Search functionality
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            filteredUsers = users.filter(user => 
+                (user.displayName && user.displayName.toLowerCase().includes(searchTerm)) ||
+                (user.email && user.email.toLowerCase().includes(searchTerm))
+            );
+            renderUsers();
+        });
+        
+        // Load data on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            loadUsers();
+            loadLogs();
+            
+            // Refresh users every 30 seconds
+            setInterval(loadUsers, 30000);
+        });
+    </script>
+</body>
+</html> 
