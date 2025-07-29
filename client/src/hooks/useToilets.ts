@@ -310,7 +310,9 @@ export const useAddToilet = () => {
   return useMutation({
     mutationFn: async (toilet: InsertToilet): Promise<Toilet> => {
       const response = await apiRequest("POST", "/api/toilets", toilet);
-      return await response.json();
+      const result = await response.json();
+      console.log("🚽 Add toilet mutation result:", result);
+      return result;
     },
     onSuccess: (newToilet) => {
       // Invalidate all toilet queries to refresh the map
@@ -319,6 +321,14 @@ export const useAddToilet = () => {
       
       // Clear local cache since we have new data
       clearToiletCache();
+      
+      // Clear Supabase cache if available
+      if (typeof window !== 'undefined' && window.clearSupabaseToiletCache) {
+        window.clearSupabaseToiletCache();
+      }
+      
+      // Force refetch all toilet data
+      queryClient.refetchQueries({ queryKey: ["toilets-supabase"] });
       
       console.log("New toilet added successfully");
     },

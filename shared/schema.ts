@@ -109,7 +109,7 @@ export const toiletReportSchema = createSelectSchema(toiletReports);
 
 export const insertToiletSchema = z.object({
   type: toiletTypeSchema,
-  title: z.string().optional(),
+  title: z.string().nullable().optional(),
   coordinates: z.object({
     lat: z.number(),
     lng: z.number()

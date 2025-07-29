@@ -66,6 +66,26 @@ function calculateDistance(lat1: number, lng1: number, lat2: number, lng2: numbe
 let dbRequestCount = 0;
 let lastResetTime = Date.now();
 
+// Function to generate default title based on toilet type
+function getDefaultTitle(type: string): string {
+  switch (type) {
+    case 'public':
+      return 'Public Toilet';
+    case 'restaurant':
+      return 'Restaurant Toilet';
+    case 'cafe':
+      return 'Cafe Toilet';
+    case 'gas-station':
+      return 'Gas Station Toilet';
+    case 'mall':
+      return 'Mall Toilet';
+    case 'other':
+      return 'Toilet';
+    default:
+      return 'Toilet';
+  }
+}
+
 function logDatabaseRequest(endpoint: string, details: string = '') {
   dbRequestCount++;
   const elapsed = Date.now() - lastResetTime;
@@ -358,6 +378,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const toilet = insertToiletSchema.parse(req.body);
       console.log("✅ Schema validation passed:", toilet);
+      
+      // Set default title if title is null, undefined, or empty
+      if (!toilet.title || toilet.title.trim() === '') {
+        toilet.title = getDefaultTitle(toilet.type);
+        console.log("🔄 Set default title:", toilet.title);
+      }
       
       const id = await storage.createToilet(toilet);
       console.log("✅ Toilet created with ID:", id);

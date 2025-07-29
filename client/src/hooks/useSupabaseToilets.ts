@@ -101,19 +101,15 @@ function findCachedToilets(bounds: ViewportBounds): Toilet[] | null {
  * Fetch ALL toilets from Supabase (no bounds filtering)
  */
 async function fetchAllToiletsFromSupabase(): Promise<Toilet[]> {
-  if (DEBUG) console.log('🌍 Fetching ALL toilets from Supabase...');
+  if (DEBUG) console.log('🌍 Fetching ALL toilets from server API...');
   
   try {
-    const { data, error } = await supabase
-      .from('toilets')
-      .select('*')
-      .eq('is_removed', false)
-      .limit(10000); // Limit to prevent overwhelming the client
-    
-    if (error) {
-      console.error('❌ Supabase query error:', error);
-      throw error;
+    const response = await fetch('/api/toilets');
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
+    
+    const data = await response.json();
     
     if (DEBUG) {
       console.log(`📊 Raw Supabase response:`, data ? `${data.length} items` : 'No data');
@@ -123,49 +119,24 @@ async function fetchAllToiletsFromSupabase(): Promise<Toilet[]> {
       }
     }
     
-    // Transform Supabase data to Toilet format
+    // Server API already returns data in the correct format
     const toilets: Toilet[] = data.map((row: any) => {
-      // Check if coordinates exist and have correct format
-      if (!row.coordinates) {
-        console.error('❌ Missing coordinates in toilet data:', row);
-        // Create a fallback coordinates object to prevent app crashes
-        row.coordinates = { lat: 0, lng: 0 };
-      }
-      
-      // Debug log for coordinates
+      // Debug log for coordinates and title
       if (DEBUG && row.coordinates) {
         console.log(`📍 Toilet ${row.id} coordinates:`, row.coordinates);
       }
+      if (DEBUG && row.title) {
+        console.log(`📝 Toilet ${row.id} has custom title:`, row.title);
+      }
       
-
-      
-      return {
-        id: row.id,
-        coordinates: row.coordinates,
-        type: row.type,
-        tags: row.tags || {},
-        source: row.source,
-        notes: row.notes,
-        isRemoved: row.is_removed || false,
-        createdAt: new Date(row.created_at),
-        updatedAt: new Date(row.updated_at),
-        addedByUserName: row.added_by_user_name,
-        accessibility: row.accessibility || 'unknown',
-        accessType: row.access_type || 'unknown',
-        userId: row.user_id,
-        osmId: row.osm_id,
-        reportCount: row.report_count || 0,
-        removedAt: row.removed_at ? new Date(row.removed_at) : null,
-        averageRating: row.average_rating || 0,
-        reviewCount: row.review_count || 0
-      };
+      return row; // Server already returns data in the correct format
     });
     
-    if (DEBUG) console.log(`✅ Fetched ${toilets.length} toilets from Supabase (ALL)`);
+    if (DEBUG) console.log(`✅ Fetched ${toilets.length} toilets from server API (ALL)`);
     return toilets;
     
   } catch (error) {
-    console.error('❌ Error fetching all toilets from Supabase:', error);
+    console.error('❌ Error fetching all toilets from server API:', error);
     throw error;
   }
 }
@@ -182,7 +153,7 @@ async function fetchToiletsFromSupabase(bounds: ViewportBounds): Promise<Toilet[
     return pendingRequests.get(cacheKey)!;
   }
   
-  if (DEBUG) console.log(`🔍 Fetching toilets from Supabase for bounds:`, bounds);
+  if (DEBUG) console.log(`🔍 Fetching toilets from server API for bounds:`, bounds);
   
   const fetchPromise = (async () => {
     try {
@@ -194,20 +165,23 @@ async function fetchToiletsFromSupabase(bounds: ViewportBounds): Promise<Toilet[
         west: bounds.west - 0.01
       };
       
-      if (DEBUG) console.log('📊 Calling Supabase RPC with bounds:', expandedBounds);
+      if (DEBUG) console.log('📊 Calling server API with bounds:', expandedBounds);
       
-      const { data, error } = await supabase
-        .rpc('get_toilets_in_bounds', {
-          west: expandedBounds.west,
-          south: expandedBounds.south,
-          east: expandedBounds.east,
-          north: expandedBounds.north
-        });
+      // Use the server API instead of direct Supabase query
+      const params = new URLSearchParams({
+        lat: ((expandedBounds.north + expandedBounds.south) / 2).toString(),
+        lng: ((expandedBounds.east + expandedBounds.west) / 2).toString(),
+        radius: '20' // Use a larger radius to cover the bounds
+      });
       
-      if (error) {
-        console.error('❌ Supabase query error:', error);
-        throw error;
+      const response = await fetch(`/api/toilets?${params}`);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
+      
+      const data = await response.json();
+      
+      // No error handling needed since we're using the server API
       
       if (DEBUG) {
         console.log(`📊 Raw Supabase response:`, data ? `${data.length} items` : 'No data');
@@ -217,42 +191,17 @@ async function fetchToiletsFromSupabase(bounds: ViewportBounds): Promise<Toilet[
         }
       }
       
-      // Transform Supabase data to Toilet format
+      // Server API already returns data in the correct format
       const toilets: Toilet[] = data.map((row: any) => {
-        // Check if coordinates exist and have correct format
-        if (!row.coordinates) {
-          console.error('❌ Missing coordinates in toilet data:', row);
-          // Create a fallback coordinates object to prevent app crashes
-          row.coordinates = { lat: 0, lng: 0 };
-        }
-        
-        // Debug log for coordinates
+        // Debug log for coordinates and title
         if (DEBUG && row.coordinates) {
           console.log(`📍 Toilet ${row.id} coordinates:`, row.coordinates);
         }
+        if (DEBUG && row.title) {
+          console.log(`📝 Toilet ${row.id} has custom title:`, row.title);
+        }
         
-
-        
-        return {
-          id: row.id,
-          coordinates: row.coordinates,
-          type: row.type,
-          tags: row.tags || {},
-          source: row.source,
-          notes: row.notes,
-          isRemoved: row.is_removed || false,
-          createdAt: new Date(row.created_at),
-          updatedAt: new Date(row.updated_at),
-          addedByUserName: row.added_by_user_name,
-          accessibility: row.accessibility || 'unknown',
-          accessType: row.access_type || 'unknown',
-          userId: row.user_id,
-          osmId: row.osm_id,
-          reportCount: row.report_count || 0,
-          removedAt: row.removed_at ? new Date(row.removed_at) : null,
-          averageRating: row.average_rating || 0,
-          reviewCount: row.review_count || 0
-        };
+        return row; // Server already returns data in the correct format
       });
       
       // Cache the result
@@ -262,11 +211,11 @@ async function fetchToiletsFromSupabase(bounds: ViewportBounds): Promise<Toilet[
         bounds: expandedBounds
       });
       
-      if (DEBUG) console.log(`✅ Fetched ${toilets.length} toilets from Supabase`);
+      if (DEBUG) console.log(`✅ Fetched ${toilets.length} toilets from server API`);
       return toilets;
       
     } catch (error) {
-      console.error('❌ Error fetching from Supabase:', error);
+      console.error('❌ Error fetching from server API:', error);
       throw error;
     } finally {
       pendingRequests.delete(cacheKey);
@@ -357,18 +306,26 @@ export function useSupabaseToilets({ bounds, enabled = true }: UseSupabaseToilet
 
   // Debug logging for results
   useEffect(() => {
-    if (DEBUG) {
-      if (toilets.length > 0) {
-        console.log(`🚽 useSupabaseToilets returned ${toilets.length} toilets`);
-        console.log('🚽 Sample toilet:', toilets[0]);
-      } else if (!isLoading && enabled && bounds) {
-        console.log('⚠️ useSupabaseToilets returned 0 toilets');
+          if (DEBUG) {
+        if (toilets.length > 0) {
+          console.log(`🚽 useSupabaseToilets returned ${toilets.length} toilets`);
+          console.log('🚽 Sample toilet:', toilets[0]);
+          
+          // Check for toilets with custom titles
+          const toiletsWithTitles = toilets.filter(t => t.title && t.title.trim() !== '');
+          if (toiletsWithTitles.length > 0) {
+            console.log('🚽 useSupabaseToilets - Toilets with custom titles:', toiletsWithTitles.map(t => ({ id: t.id, title: t.title, type: t.type })));
+          } else {
+            console.log('⚠️ useSupabaseToilets - No toilets with custom titles found');
+          }
+        } else if (!isLoading && enabled && bounds) {
+          console.log('⚠️ useSupabaseToilets returned 0 toilets');
+        }
+        
+        if (finalError) {
+          console.error('❌ useSupabaseToilets error:', finalError);
+        }
       }
-      
-      if (finalError) {
-        console.error('❌ useSupabaseToilets error:', finalError);
-      }
-    }
   }, [toilets, finalError, isLoading, enabled, bounds]);
   
   // Don't clear cache on mount - let it persist
@@ -469,6 +426,7 @@ export function useNearbyToilets(
           id: row.id,
           coordinates: row.coordinates,
           type: row.type,
+          title: row.title,
           tags: row.tags || {},
           source: row.source,
           notes: row.notes,
@@ -518,6 +476,7 @@ export function useNearbyToilets(
             id: row.id,
             coordinates: row.coordinates,
             type: row.type,
+            title: row.title,
             tags: row.tags || {},
             source: row.source,
             notes: row.notes,

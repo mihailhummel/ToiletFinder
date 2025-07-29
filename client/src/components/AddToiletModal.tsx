@@ -3,7 +3,7 @@ import { X, MapPin, Check, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
+
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
@@ -11,12 +11,13 @@ import { useAddToilet } from "@/hooks/useToilets";
 import { useAuth } from "@/hooks/useAuth";
 import { queryClient } from "@/lib/queryClient";
 import type { ToiletType, Accessibility, AccessType, MapLocation } from "@/types/toilet";
+import { haptics } from "@/lib/haptics";
 
 interface AddToiletModalProps {
   isOpen: boolean;
   onClose: () => void;
   location?: MapLocation;
-  onRequestLocationSelection?: (type: ToiletType, title: string, notes: string, accessibility: Accessibility, accessType: AccessType) => void;
+  onRequestLocationSelection?: (type: ToiletType, title: string, accessibility: Accessibility, accessType: AccessType) => void;
   onCloseForLocationSelection?: () => void;
 }
 
@@ -45,7 +46,6 @@ const accessTypeOptions: { value: AccessType; label: string }[] = [
 export const AddToiletModal = ({ isOpen, onClose, location, onRequestLocationSelection, onCloseForLocationSelection }: AddToiletModalProps) => {
   const [type, setType] = useState<ToiletType>("public");
   const [title, setTitle] = useState("");
-  const [notes, setNotes] = useState("");
   const [accessibility, setAccessibility] = useState<Accessibility>("unknown");
   const [accessType, setAccessType] = useState<AccessType>("unknown");
   const [showConfirmation, setShowConfirmation] = useState(false);
@@ -66,7 +66,7 @@ export const AddToiletModal = ({ isOpen, onClose, location, onRequestLocationSel
     e.preventDefault();
     e.stopPropagation();
     
-    console.log("Add toilet form submitted", { user: !!user, location, type, title, notes, accessibility, accessType });
+    console.log("Add toilet form submitted", { user: !!user, location, type, title, accessibility, accessType });
     
     if (!user) {
       toast({
@@ -84,7 +84,7 @@ export const AddToiletModal = ({ isOpen, onClose, location, onRequestLocationSel
         // Close the modal first, then request location selection
         onClose();
         setTimeout(() => {
-          onRequestLocationSelection(type, title, notes, accessibility, accessType);
+          onRequestLocationSelection(type, title, accessibility, accessType);
         }, 100);
       }
       return;
@@ -94,15 +94,16 @@ export const AddToiletModal = ({ isOpen, onClose, location, onRequestLocationSel
     try {
       const toiletData = {
         type,
-        title: title.trim() || undefined,
+        title: title.trim() || null,
         coordinates: location,
-        notes: notes.trim() || undefined,
         accessibility,
         accessType,
         userId: user.uid,
         source: 'user' as const,
         addedByUserName: user.displayName || 'Anonymous User'
       };
+      
+      console.log("🚽 Toilet data being sent:", toiletData);
       
       console.log("🚽 Client: Using React Query mutation to add toilet");
       console.log("🚽 Client: Request body:", JSON.stringify(toiletData, null, 2));
@@ -147,7 +148,6 @@ export const AddToiletModal = ({ isOpen, onClose, location, onRequestLocationSel
   const handleClose = () => {
     setType("public");
     setTitle("");
-    setNotes("");
     setAccessibility("unknown");
     setAccessType("unknown");
     setShowConfirmation(false);
@@ -168,8 +168,23 @@ export const AddToiletModal = ({ isOpen, onClose, location, onRequestLocationSel
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md w-full max-w-full p-4 mobile:rounded-t-2xl mobile:rounded-b-none mobile:max-h-[80vh] mobile:h-auto mobile:bottom-0 mobile:fixed mobile:left-0 mobile:right-0 mobile:translate-y-0 mobile:shadow-2xl bg-white shadow-xl border-0">
+    <Dialog open={isOpen} onOpenChange={handleClose} className="add-toilet-modal">
+      <DialogContent 
+        className="sm:max-w-md w-full max-w-full p-4 mobile:max-h-[75vh] mobile:h-auto bg-white shadow-xl border-0"
+        style={{
+          borderRadius: '24px',
+          margin: '0',
+          maxWidth: '500px',
+          width: 'calc(100vw - 40px)',
+          maxHeight: 'calc(100vh - 112px)',
+          left: '50%',
+          top: 'calc(50% + 16px)',
+          transform: 'translate(-50%, -50%)',
+          boxShadow: '0 10px 40px rgba(0,0,0,0.2)',
+          overflowY: 'auto',
+          padding: '1rem'
+        }}
+      >
         <DialogHeader className="text-left space-y-2">
           <DialogTitle className="text-lg font-semibold text-gray-900">
             {showConfirmation ? "Confirm Details" : "Add Toilet"}
@@ -231,12 +246,7 @@ export const AddToiletModal = ({ isOpen, onClose, location, onRequestLocationSel
                 </span>
               </div>
               
-              {notes && (
-                <div className="flex justify-between items-start">
-                  <span className="text-xs font-medium text-gray-700">Notes:</span>
-                  <span className="text-xs text-gray-900 text-right max-w-xs bg-gray-50 px-2 py-1 rounded">{notes}</span>
-                </div>
-              )}
+
             </div>
 
             <form onSubmit={handleSubmit}>
@@ -244,7 +254,10 @@ export const AddToiletModal = ({ isOpen, onClose, location, onRequestLocationSel
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={handleEdit}
+                  onClick={() => {
+                    haptics.light();
+                    handleEdit();
+                  }}
                   className="flex-1 border-gray-300 text-gray-700 hover:bg-gray-50 text-sm py-2"
                 >
                   <Edit className="w-3 h-3 mr-1" />
@@ -253,6 +266,7 @@ export const AddToiletModal = ({ isOpen, onClose, location, onRequestLocationSel
                 <Button
                   type="submit"
                   disabled={addToiletMutation.isPending}
+                  onClick={() => haptics.medium()}
                   className="flex-1 bg-green-600 hover:bg-green-700 text-white shadow-sm text-sm py-2"
                 >
                   {addToiletMutation.isPending ? "Adding..." : "Confirm & Add"}
@@ -324,18 +338,7 @@ export const AddToiletModal = ({ isOpen, onClose, location, onRequestLocationSel
               </Select>
             </div>
             
-            <div>
-              <Label htmlFor="toilet-notes" className="text-xs font-medium text-gray-700">Notes (Optional)</Label>
-              <Textarea
-                id="toilet-notes"
-                name="toilet-notes"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Any additional information..."
-                rows={2}
-                className="resize-none border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white text-sm"
-              />
-            </div>
+
             
             <div className="flex space-x-2 pt-2">
               <Button

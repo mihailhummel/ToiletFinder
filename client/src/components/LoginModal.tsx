@@ -22,7 +22,22 @@ export const LoginModal = ({ isOpen, onClose }: LoginModalProps) => {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-sm z-[9999] bg-white shadow-xl border-0">
+      <DialogContent 
+        className="z-[9999] bg-white shadow-xl border-0"
+        style={{
+          borderRadius: '24px',
+          margin: '0',
+          maxWidth: '500px',
+          width: 'calc(100vw - 40px)',
+          maxHeight: 'calc(100vh - 112px)',
+          left: '50%',
+          top: 'calc(50% + 16px)',
+          transform: 'translate(-50%, -50%)',
+          boxShadow: '0 10px 40px rgba(0,0,0,0.2)',
+          overflowY: 'auto',
+          padding: '1rem'
+        }}
+      >
         <DialogHeader className="text-center">
           <DialogTitle className="text-xl font-semibold text-gray-900">Sign In</DialogTitle>
           <DialogDescription className="text-gray-600">

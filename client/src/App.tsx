@@ -25,11 +25,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./components/u
 
 // Types
 import type { Toilet, MapLocation, ToiletType, Accessibility, AccessType } from "./types/toilet";
+import { haptics } from "@/lib/haptics";
 
 // Global state as backup to React state
 let globalAddingState = {
   isAdding: false,
-  pendingData: null as {type: ToiletType; title: string; notes: string; accessibility: Accessibility; accessType: AccessType} | null
+  pendingData: null as {type: ToiletType; title: string; accessibility: Accessibility; accessType: AccessType} | null
 };
 
 // Enhanced QueryClient with better garbage collection
@@ -64,7 +65,7 @@ function App() {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [isAddingToilet, setIsAddingToilet] = useState(false); // Track if user is in add toilet mode
   const [pendingToiletLocation, setPendingToiletLocation] = useState<MapLocation | undefined>(undefined);
-  const [pendingToiletData, setPendingToiletData] = useState<{type: ToiletType; title: string; notes: string; accessibility: Accessibility; accessType: AccessType} | null>(null);
+  const [pendingToiletData, setPendingToiletData] = useState<{type: ToiletType; title: string; accessibility: Accessibility; accessType: AccessType} | null>(null);
   const [isTransitioningToLocationMode, setIsTransitioningToLocationMode] = useState(false);
   const [mapCenter, setMapCenter] = useState<MapLocation>({ lat: 42.6977, lng: 23.3219 });
   const [filters, setFilters] = useState<FilterOptions>({
@@ -84,6 +85,20 @@ function App() {
   useEffect(() => {
     console.log("pendingToiletData changed to:", pendingToiletData);
   }, [pendingToiletData]);
+
+  // Add/remove modal-open class to body when modals are open
+  useEffect(() => {
+    const isAnyModalOpen = showAddToilet || showFilter || showLogin || showUserMenu;
+    if (isAnyModalOpen) {
+      document.body.classList.add('modal-open');
+    } else {
+      document.body.classList.remove('modal-open');
+    }
+    
+    return () => {
+      document.body.classList.remove('modal-open');
+    };
+  }, [showAddToilet, showFilter, showLogin, showUserMenu]);
 
   // Get user location on mount
   useEffect(() => {
@@ -130,6 +145,7 @@ function App() {
   };
 
   const handleAddToilet = useCallback(() => {
+    haptics.light();
     console.log("Add toilet button clicked, user:", !!user);
     if (!user) {
       console.log("No user found, showing login modal");
@@ -169,17 +185,17 @@ function App() {
     }
   }, [isAddingToilet, pendingToiletData]);
 
-  const handleLocationSelectionRequest = useCallback((type: ToiletType, title: string, notes: string, accessibility: Accessibility, accessType: AccessType) => {
-    console.log("Location selection requested for:", { type, title, notes, accessibility, accessType });
+  const handleLocationSelectionRequest = useCallback((type: ToiletType, title: string, accessibility: Accessibility, accessType: AccessType) => {
+    console.log("Location selection requested for:", { type, title, accessibility, accessType });
     
     // Set global state immediately
     globalAddingState.isAdding = true;
-    globalAddingState.pendingData = { type, title, notes, accessibility, accessType };
+    globalAddingState.pendingData = { type, title, accessibility, accessType };
     console.log("Global state set:", globalAddingState);
     
     // Set React states
     setIsTransitioningToLocationMode(true);
-    setPendingToiletData({ type, title, notes, accessibility, accessType });
+    setPendingToiletData({ type, title, accessibility, accessType });
     setIsAddingToilet(true);
     setPendingToiletLocation(undefined);
     setShowAddToilet(false);
@@ -223,7 +239,7 @@ function App() {
     }
   }, [signOut, toast]);
 
-  const handleAddToiletSubmit = useCallback(async (toiletData: { type: ToiletType; title: string; notes: string; accessibility: Accessibility; accessType: AccessType }) => {
+  const handleAddToiletSubmit = useCallback(async (toiletData: { type: ToiletType; title: string; accessibility: Accessibility; accessType: AccessType }) => {
     if (!pendingToiletLocation) {
       toast({
         title: "Error",
@@ -242,7 +258,7 @@ function App() {
           type: toiletData.type,
           title: toiletData.title,
           coordinates: pendingToiletLocation,
-          notes: toiletData.notes,
+
           accessibility: toiletData.accessibility,
           accessType: toiletData.accessType,
           userId: user?.uid || 'anonymous',
@@ -360,7 +376,7 @@ function App() {
           </header>
 
           {/* Map Container */}
-          <main className="flex-1 pt-20 relative overflow-hidden">
+          <main className="flex-1 pt-12 md:pt-16 relative overflow-hidden">
             <Map
               onToiletClick={handleToiletClick}
               onAddToiletClick={handleMapClick}
@@ -378,15 +394,15 @@ function App() {
                 console.log("Floating button clicked!");
                 handleAddToilet();
               }}
-              className={`fixed bottom-6 right-6 w-16 h-16 rounded-full shadow-lg z-[9999] pointer-events-auto ${
+              className={`rounded-full shadow-lg pointer-events-auto floating-button ${
                 isAddingToilet 
                   ? 'bg-green-600 hover:bg-green-700 animate-pulse' 
                   : 'bg-blue-600 hover:bg-blue-700'
               }`}
               size="icon"
-              style={{ position: 'fixed', zIndex: 9999 }}
+              style={{ position: 'fixed', bottom: '36px', right: '24px', zIndex: 1000, width: '55px', height: '55px' }}
             >
-              <Plus className="w-8 h-8 text-white" />
+              <Plus className="w-6 h-6 text-white" />
             </Button>
           </main>
 
@@ -423,7 +439,22 @@ function App() {
 
           {/* User Menu Modal */}
           <Dialog open={showUserMenu} onOpenChange={setShowUserMenu}>
-            <DialogContent className="sm:max-w-md z-[60000] bg-white shadow-xl border-0">
+            <DialogContent 
+              className="sm:max-w-md z-[60000] bg-white shadow-xl border-0"
+              style={{
+                borderRadius: '24px',
+                margin: '0',
+                maxWidth: '500px',
+                width: 'calc(100vw - 40px)',
+                maxHeight: 'calc(100vh - 112px)',
+                left: '50%',
+                top: 'calc(50% + 40px)',
+                transform: 'translate(-50%, -50%)',
+                boxShadow: '0 10px 40px rgba(0,0,0,0.2)',
+                overflowY: 'auto',
+                padding: '1rem'
+              }}
+            >
               <DialogHeader>
                 <DialogTitle className="text-xl font-semibold text-gray-900">User Menu</DialogTitle>
               </DialogHeader>

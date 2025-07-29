@@ -11,6 +11,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import type { Toilet } from "@/types/toilet";
 import { formatDistanceToNow } from "date-fns";
+import { haptics } from "@/lib/haptics";
 
 interface ToiletDetailsModalProps {
   toilet: Toilet | null;
@@ -45,6 +46,7 @@ export const ToiletDetailsModal = ({ toilet, isOpen, onClose }: ToiletDetailsMod
   if (!toilet) return null;
 
   const handleAddReview = () => {
+    haptics.light();
     if (!user) {
       setShowLogin(true);
       return;
@@ -64,6 +66,7 @@ export const ToiletDetailsModal = ({ toilet, isOpen, onClose }: ToiletDetailsMod
   };
 
   const getDirections = () => {
+    haptics.medium();
     const { lat, lng } = toilet.coordinates;
     
     // Use navigation URLs that automatically start routing
@@ -98,6 +101,7 @@ export const ToiletDetailsModal = ({ toilet, isOpen, onClose }: ToiletDetailsMod
   };
 
   const handleDeleteToilet = async () => {
+    haptics.strong();
     if (!user || !isAdmin) {
       toast({
         title: "Access denied",
@@ -114,6 +118,7 @@ export const ToiletDetailsModal = ({ toilet, isOpen, onClose }: ToiletDetailsMod
         userId: user.uid
       });
 
+      haptics.success();
       toast({
         title: "Success!",
         description: "Toilet location deleted successfully."
@@ -121,6 +126,7 @@ export const ToiletDetailsModal = ({ toilet, isOpen, onClose }: ToiletDetailsMod
 
       onClose();
     } catch (error) {
+      haptics.error();
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Failed to delete toilet location.",
@@ -132,7 +138,22 @@ export const ToiletDetailsModal = ({ toilet, isOpen, onClose }: ToiletDetailsMod
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto z-[9999] w-full max-w-full p-4 mobile:rounded-t-2xl mobile:rounded-b-none mobile:fixed mobile:bottom-0 mobile:left-0 mobile:right-0 mobile:max-h-[70vh] mobile:h-auto mobile:translate-y-0 mobile:shadow-2xl mobile:overflow-y-auto">
+        <DialogContent 
+          className="sm:max-w-lg max-h-[85vh] overflow-y-auto z-[9999] w-full max-w-full p-4 mobile:max-h-[75vh] mobile:h-auto mobile:overflow-y-auto"
+          style={{
+            borderRadius: '24px',
+            margin: '0',
+            maxWidth: '500px',
+            width: 'calc(100vw - 40px)',
+            maxHeight: 'calc(100vh - 120px)',
+            left: '50%',
+            top: 'calc(50% + 20px)',
+            transform: 'translate(-50%, -50%)',
+            boxShadow: '0 10px 40px rgba(0,0,0,0.2)',
+            overflowY: 'auto',
+            padding: '1rem'
+          }}
+        >
           <DialogHeader className="pb-3">
             <DialogTitle className="flex items-center space-x-2">
               <div className="w-6 h-6 bg-secondary rounded-lg flex items-center justify-center">
@@ -221,41 +242,47 @@ export const ToiletDetailsModal = ({ toilet, isOpen, onClose }: ToiletDetailsMod
             )}
             
             {/* Action Buttons */}
-            <div className={`grid gap-3 ${isAdmin ? 'grid-cols-4' : 'grid-cols-3'}`}>
+            <div className={`grid gap-2 ${isAdmin ? 'grid-cols-4' : 'grid-cols-3'}`}>
               <Button
                 variant="outline"
-                className="flex flex-col items-center space-y-1 h-auto py-3"
+                className="flex flex-col items-center space-y-1 h-auto py-2.5 text-xs"
                 onClick={getDirections}
               >
-                <Navigation className="w-4 h-4 text-primary" />
+                <Navigation className="w-3.5 h-3.5 text-primary" />
                 <span className="text-xs">Directions</span>
               </Button>
               
               <Button
                 variant="outline"
-                className="flex flex-col items-center space-y-1 h-auto py-3"
+                className="flex flex-col items-center space-y-1 h-auto py-2.5 text-xs"
                 onClick={handleAddReview}
               >
-                <Star className="w-4 h-4 text-yellow-500" />
+                <Star className="w-3.5 h-3.5 text-yellow-500" />
                 <span className="text-xs">Review</span>
               </Button>
               
               <Button
                 variant="outline"
-                className="flex flex-col items-center space-y-1 h-auto py-3"
-                onClick={() => setShowReport(true)}
+                className="flex flex-col items-center space-y-1 h-auto py-2.5 text-xs"
+                onClick={() => {
+                  haptics.light();
+                  setShowReport(true);
+                }}
               >
-                <Flag className="w-4 h-4 text-red-500" />
+                <Flag className="w-3.5 h-3.5 text-red-500" />
                 <span className="text-xs">Report</span>
               </Button>
 
               {isAdmin && (
                 <Button
                   variant="outline"
-                  className="flex flex-col items-center space-y-1 h-auto py-3 border-red-200 hover:bg-red-50"
-                  onClick={() => setShowDeleteConfirm(true)}
+                  className="flex flex-col items-center space-y-1 h-auto py-2.5 border-red-200 hover:bg-red-50 text-xs"
+                  onClick={() => {
+                    haptics.warning();
+                    setShowDeleteConfirm(true);
+                  }}
                 >
-                  <Trash2 className="w-4 h-4 text-red-600" />
+                  <Trash2 className="w-3.5 h-3.5 text-red-600" />
                   <span className="text-xs text-red-600">Delete</span>
                 </Button>
               )}
@@ -263,14 +290,14 @@ export const ToiletDetailsModal = ({ toilet, isOpen, onClose }: ToiletDetailsMod
             
             {/* Reviews Section */}
             {reviews.length > 0 && (
-              <div className="border-t pt-3">
-                <h3 className="font-medium mb-2 text-sm">Recent Reviews</h3>
-                <div className="space-y-2">
-                  {reviews.slice(0, 3).map((review) => (
+              <div className="border-t pt-2">
+                <h3 className="font-medium mb-2 text-xs">Recent Reviews</h3>
+                <div className="space-y-1.5">
+                  {reviews.slice(0, 2).map((review) => (
                     <div key={review.id} className="p-2 bg-gray-50 rounded-lg">
                       <div className="flex items-center justify-between mb-1">
                         <div className="flex items-center space-x-2">
-                          <div className="w-5 h-5 bg-primary rounded-full flex items-center justify-center">
+                          <div className="w-4 h-4 bg-primary rounded-full flex items-center justify-center">
                             <span className="text-white text-xs font-medium">
                               {review.userName.charAt(0).toUpperCase()}
                             </span>
@@ -280,7 +307,7 @@ export const ToiletDetailsModal = ({ toilet, isOpen, onClose }: ToiletDetailsMod
                         <StarRating rating={review.rating} readonly size="sm" />
                       </div>
                       {review.text && (
-                        <p className="text-xs text-gray-600 mb-1">{review.text}</p>
+                        <p className="text-xs text-gray-600 mb-1 line-clamp-2">{review.text}</p>
                       )}
                       <div className="text-xs text-gray-500">
                         {formatDistanceToNow(review.createdAt, { addSuffix: true })}

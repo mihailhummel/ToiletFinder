@@ -8,6 +8,7 @@ import { useAuth } from '@/hooks/useAuth';
 import type { Toilet, MapLocation } from '@/types/toilet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { haptics } from '@/lib/haptics';
 // @ts-ignore
 window.L = L;
 
@@ -37,6 +38,7 @@ declare global {
     deleteToilet: (toiletId: string) => void;
     debugToiletCache: () => any;
     clearToiletCache: () => void;
+    clearSupabaseToiletCache: () => void;
   }
 }
 
@@ -51,6 +53,9 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
   const [isAwayFromUser, setIsAwayFromUser] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [mapBounds, setMapBounds] = useState<any>(null);
+  const openPopupToiletIdRef = useRef<string | null>(null);
+  const manuallyClosedPopupRef = useRef<boolean>(false);
+  const isReopeningPopupRef = useRef<boolean>(false);
 
   
   const { location: userLocation, loading: locationLoading, getCurrentLocation } = useGeolocation();
@@ -91,21 +96,40 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
   });
   const toilets = toiletsQuery.data || [];
   
-  // Debug the query state
-  console.log('🔍 Toilets query state:', {
-    data: toiletsQuery.data,
-    isLoading: toiletsQuery.isLoading,
-    error: toiletsQuery.error,
-    toiletsLength: toilets.length,
-    boundParams,
-    viewportBounds
-  });
+  // Debug the query state (only in development)
+  if (process.env.NODE_ENV === 'development') {
+    console.log('🔍 Toilets query state:', {
+      data: toiletsQuery.data,
+      isLoading: toiletsQuery.isLoading,
+      error: toiletsQuery.error,
+      toiletsLength: toilets.length,
+      boundParams,
+      viewportBounds
+    });
+  }
 
-  // Debug toilet loading
+  // Debug toilet loading (only in development)
   useEffect(() => {
-    console.log(`🚽 Toilets loaded: ${toilets.length} toilets`);
-    if (toilets.length > 0) {
-      console.log('Sample toilet:', toilets[0]);
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`🚽 Toilets loaded: ${toilets.length} toilets`);
+      if (toilets.length > 0) {
+        console.log('Sample toilet:', toilets[0]);
+        // Check for toilets with custom titles
+        const toiletsWithTitles = toilets.filter(t => t.title && t.title.trim() !== '');
+        if (toiletsWithTitles.length > 0) {
+          console.log('🚽 Toilets with custom titles:', toiletsWithTitles.map(t => ({ id: t.id, title: t.title, type: t.type })));
+        } else {
+          console.log('⚠️ No toilets with custom titles found');
+        }
+        
+        // Check all toilets for title field
+        const toiletsWithTitleField = toilets.filter(t => t.title !== undefined);
+        console.log(`🚽 Toilets with title field: ${toiletsWithTitleField.length}/${toilets.length}`);
+        if (toiletsWithTitleField.length < toilets.length) {
+          const toiletsWithoutTitle = toilets.filter(t => t.title === undefined);
+          console.log('⚠️ Some toilets missing title field:', toiletsWithoutTitle.map(t => ({ id: t.id, type: t.type })));
+        }
+      }
     }
   }, [toilets]);
   
@@ -190,6 +214,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
       document.addEventListener('keydown', handleKeyDown);
 
       window.getDirections = (lat, lng) => {
+        haptics.medium();
         // Use navigation URLs that automatically start routing
         // This will trigger the native app selection on mobile devices and start navigation
         
@@ -243,14 +268,14 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
             if (reviewsContainer) {
               if (reviews.length > 0) {
                 reviewsContainer.innerHTML = `
-                  <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #e5e7eb;">
+                  <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #f3f4f6;">
                     <div style="font-size: 13px; color: #64748b; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">
                       Recent Reviews (${reviews.length})
                     </div>
-                    <div style="max-height: 200px; overflow-y: auto;">
+                    <div class="reviews-scrollable" style="max-height: 120px; overflow-y: auto; padding-right: 4px;">
                       ${reviews.slice(0, 5).map((review: any) => `
                         <div style="padding: 12px; background: #f9fafb; border-radius: 8px; margin-bottom: 8px;">
-                          <div style="display: flex; align-items: center; justify-content: between; margin-bottom: 6px;">
+                          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
                             <div style="display: flex; align-items: center; gap: 8px;">
                               <div style="width: 24px; height: 24px; background: #3b82f6; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 12px; font-weight: 600;">
                                 ${review.userName.charAt(0).toUpperCase()}
@@ -272,7 +297,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
                 `;
               } else {
                 reviewsContainer.innerHTML = `
-                  <div style="text-align: center; color: #6b7280; font-size: 14px; padding: 16px 0;">
+                  <div style="text-align: center; color: #6b7280; font-size: 14px; padding: 8px 0;">
                     No reviews yet. Be the first to review this toilet!
                   </div>
                 `;
@@ -285,6 +310,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
       };
 
       window.setRating = (toiletId, rating) => {
+        haptics.light();
         // Check if user is logged in
         if (!user) {
           onLoginClick();
@@ -341,6 +367,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
       };
 
       window.submitReview = async (toiletId) => {
+        haptics.success();
         if (!window.currentRating || window.currentRating.toiletId !== toiletId) return;
         if (!user) {
           onLoginClick();
@@ -395,6 +422,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
       };
 
       window.cancelReview = (toiletId) => {
+        haptics.light();
         // Hide comment section
         const commentSection = document.getElementById(`review-comment-${toiletId}`);
         if (commentSection) {
@@ -413,6 +441,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
       };
 
               window.reportToiletNotExists = async (toiletId) => {
+          haptics.light();
           if (!user) {
             onLoginClick();
             return;
@@ -477,6 +506,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
         };
 
       window.deleteToilet = async (toiletId) => {
+        haptics.warning();
         if (!user?.email || !isAdmin) return;
         
         if (confirm('Are you sure you want to delete this toilet?')) {
@@ -543,17 +573,56 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
       setIsAwayFromUser(distance > 50);
     });
 
+    // Debounce function for map events
+    let mapMoveTimeout: NodeJS.Timeout;
+    
     // Handle map events for bounds tracking
-    map.current.on('moveend zoomend', () => {
-      const bounds = map.current.getBounds();
-      setMapBounds(bounds);
-    });
+    const handleMapMove = () => {
+      // Debounce bounds update
+      clearTimeout(mapMoveTimeout);
+      mapMoveTimeout = setTimeout(() => {
+        const bounds = map.current.getBounds();
+        setMapBounds(bounds);
+      }, 100); // Debounce to 100ms
+      
+      // Reopen popup if one was open before the view change and wasn't manually closed
+      if (openPopupToiletIdRef.current && !manuallyClosedPopupRef.current && !isReopeningPopupRef.current) {
+        const marker = toiletMarkers.current.find(m => m.toiletId === openPopupToiletIdRef.current)?.marker;
+        if (marker) {
+          // Check if marker is in viewport before reopening
+          const markerLatLng = marker.getLatLng();
+          const mapBounds = map.current.getBounds();
+          if (mapBounds.contains(markerLatLng)) {
+            isReopeningPopupRef.current = true;
+            setTimeout(() => {
+              marker.openPopup();
+              // Reload reviews when popup reopens
+              if (openPopupToiletIdRef.current) {
+                setTimeout(() => {
+                  window.loadReviews(openPopupToiletIdRef.current!);
+                }, 200);
+              }
+              // Reset the flag after reopening
+              setTimeout(() => {
+                isReopeningPopupRef.current = false;
+              }, 500);
+            }, 500);
+          } else {
+            // Marker is not in viewport, don't reopen
+            openPopupToiletIdRef.current = null;
+            manuallyClosedPopupRef.current = false;
+          }
+        }
+      }
+    };
 
-    // Add click handler for adding new toilets
-    map.current.on('click', (e: any) => {
+    const handleMapClick = (e: any) => {
       const { lat, lng } = e.latlng;
       onAddToiletClick({ lat, lng });
-    });
+    };
+
+    map.current.on('moveend zoomend', handleMapMove);
+    map.current.on('click', handleMapClick);
 
     // Initialize bounds
     const initialBounds = map.current.getBounds();
@@ -570,7 +639,15 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
     }, 100);
 
     return () => {
+      // Clear any pending timeouts
+      if (mapMoveTimeout) {
+        clearTimeout(mapMoveTimeout);
+      }
+      
       if (map.current) {
+        // Remove event listeners to prevent memory leaks
+        map.current.off('moveend zoomend', handleMapMove);
+        map.current.off('click', handleMapClick);
         map.current.remove();
         map.current = null;
       }
@@ -638,8 +715,15 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
       hasMap: !!map.current,
       leafletLoaded,
       toiletsLength: toilets.length,
-      toilets: toilets.slice(0, 3) // Show first 3 toilets for debugging
+      toilets: toilets.slice(0, 3), // Show first 3 toilets for debugging
+      openPopup: openPopupToiletIdRef.current
     });
+    
+    // Skip toilet re-rendering if a popup is currently open
+    if (openPopupToiletIdRef.current) {
+      console.log('⏸️ Skipping toilet re-rendering - popup is open');
+      return;
+    }
     
     if (!map.current || !leafletLoaded || !toilets.length) {
       console.log('❌ Skipping toilet rendering:', {
@@ -652,6 +736,9 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
 
     console.log(`📍 Rendering ${toilets.length} toilet markers`);
 
+    // Store current open popup info before removing markers
+    const currentOpenPopup = openPopupToiletIdRef.current;
+    
     // Remove existing markers layer
     if (markersLayer.current) {
       map.current.removeLayer(markersLayer.current);
@@ -674,7 +761,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
         return;
       }
       
-      const markerColor = toilet.source === 'user' ? '#7C3AED' : '#FF385C';
+      const markerColor = toilet.source === 'user' ? '#3B82F6' : '#FF385C';
       
       const icon = L.divIcon({
         className: 'toilet-marker',
@@ -693,10 +780,48 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
           offset: [0, -40],
           autoPan: true,
           keepInView: true,
-          autoPanPadding: [20, 20]
+          autoPanPadding: [40, 40]
+        })
+        .on('popupopen', () => {
+          openPopupToiletIdRef.current = toilet.id;
+          manuallyClosedPopupRef.current = false;
+          isReopeningPopupRef.current = false;
+          
+          // Custom panning to ensure popup is visible without closing it
+          setTimeout(() => {
+            const markerLatLng = marker.getLatLng();
+            const mapBounds = map.current.getBounds();
+            const popup = marker.getPopup();
+            
+            if (popup && !mapBounds.contains(markerLatLng)) {
+              // Pan to marker with padding to ensure popup is visible
+              map.current.panTo(markerLatLng, { 
+                animate: true,
+                duration: 0.5,
+                easeLinearity: 0.25
+              });
+            }
+          }, 100);
+        })
+        .on('popupclose', () => {
+          openPopupToiletIdRef.current = null;
+          manuallyClosedPopupRef.current = true;
+          
+          // Trigger toilet re-rendering after popup closes to catch up on any missed updates
+          setTimeout(() => {
+            if (map.current && leafletLoaded && toilets.length) {
+              console.log('🔄 Triggering delayed toilet re-rendering after popup close');
+              // Force a re-render by updating the dependency
+              setMapBounds(map.current.getBounds());
+            }
+          }, 500);
         })
         .on('click', (e: any) => {
+          haptics.light();
           e.originalEvent?.stopPropagation();
+          openPopupToiletIdRef.current = toilet.id;
+          manuallyClosedPopupRef.current = false;
+          isReopeningPopupRef.current = false;
           marker.openPopup();
           setTimeout(() => {
             window.loadReviews(toilet.id);
@@ -710,23 +835,26 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
     if (markersLayer.current && map.current) {
       map.current.addLayer(markersLayer.current);
       console.log(`✅ Rendered ${toilets.length} toilet markers successfully`);
+      
+      // Reopen popup if one was open before toilet re-rendering
+      if (currentOpenPopup && !manuallyClosedPopupRef.current) {
+        setTimeout(() => {
+          const marker = toiletMarkers.current.find(m => m.toiletId === currentOpenPopup)?.marker;
+          if (marker) {
+            marker.openPopup();
+            // Reload reviews for the reopened popup
+            setTimeout(() => {
+              window.loadReviews(currentOpenPopup);
+            }, 200);
+          }
+        }, 100);
+      }
     } else {
       console.error('❌ Cannot add markers layer - map or layer not available');
     }
   }, [toilets, leafletLoaded]);
 
   // Helper functions for marker and popup creation
-  const getToiletTitle = (toilet: Toilet) => {
-    const tags = toilet.tags as any || {};
-    if (tags.name) return tags.name;
-    if (tags.operator) return tags.operator;
-    if (tags.brand) return tags.brand;
-    if (toilet.type === 'restaurant') return 'Restaurant Toilet';
-    if (toilet.type === 'gas-station') return 'Gas Station Toilet';
-    if (toilet.type === 'mall') return 'Shopping Mall Toilet';
-    return 'Public Toilet';
-  };
-
   const createToiletMarkerHTML = (toilet: Toilet, markerColor: string) => {
     return `
       <div style="
@@ -771,12 +899,23 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
   };
 
   const createToiletPopupHTML = (toilet: Toilet) => {
-    const toiletTitle = getToiletTitle(toilet);
     const tags = toilet.tags as any || {};
+    
+    // Debug logging for toilet data
+    console.log('🔍 Creating popup for toilet:', {
+      id: toilet.id,
+      title: toilet.title,
+      type: toilet.type,
+      source: toilet.source
+    });
     
     // Get proper title based on type and custom title
     const getProperTitle = () => {
-      if (toilet.title) return toilet.title;
+      // Debug logging for custom titles
+      if (toilet.title && toilet.title.trim() !== '') {
+        console.log('🔍 Using custom title:', toilet.title, 'for toilet:', toilet.id);
+        return toilet.title;
+      }
       if (tags.name) return tags.name;
       if (tags.operator && toilet.type === 'gas-station') return `Toilet at ${tags.operator} Gas Station`;
       if (tags.brand && toilet.type === 'gas-station') return `Toilet at ${tags.brand} Gas Station`;
@@ -813,7 +952,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
     return `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; min-width: 280px; max-width: 350px; padding: 16px; background: white; border-radius: 12px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);">
         <!-- 1. Title -->
-        <h3 style="margin: 0 0 10px 0; font-size: 16px; font-weight: 700; color: #1f2937; line-height: 1.3;">
+        <h3 style="margin: 0 0 10px 0; font-size: 18px; font-weight: 700; color: #1f2937; line-height: 1.3;">
           ${properTitle}
         </h3>
         
@@ -899,12 +1038,9 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
           </div>
         </div>
         
-        <!-- 5. Separating Line -->
-        <div style="border-top: 2px solid #e5e7eb; margin: 20px 0;"></div>
-        
         <!-- 6. Preview of Previous Reviews -->
         <div id="reviews-${toilet.id}" style="margin-bottom: 20px;">
-          <div style="text-align: center; color: #6b7280; font-size: 14px; padding: 16px 0;">
+          <div style="text-align: center; color: #6b7280; font-size: 14px; padding: 8px 0;">
             No reviews yet. Be the first to review this toilet!
           </div>
         </div>
@@ -999,15 +1135,16 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
       
 
       
-      <div className="fixed bottom-8 left-8 space-y-3" style={{ zIndex: 1000 }}>
+      <div className="fixed bottom-6 left-6" style={{ zIndex: 1000 }}>
         {stableUserLocation && (
           <Button
             onClick={handleReturnToLocation}
-            className="w-16 h-16 bg-white text-blue-600 shadow-xl rounded-full p-0 border border-gray-200 transition-transform duration-200 hover:scale-105 active:scale-95"
+            className="bg-white text-blue-600 shadow-xl rounded-full p-0 border border-gray-200 transition-transform duration-200 hover:scale-105 active:scale-95 floating-button"
             variant="ghost"
             title="Return to my location"
+            style={{ position: 'fixed', bottom: '36px', left: '24px', zIndex: 1000, width: '55px', height: '55px' }}
           >
-            <Crosshair className="w-8 h-8" />
+            <Crosshair className="w-6 h-6" />
           </Button>
         )}
       </div>

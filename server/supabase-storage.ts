@@ -38,6 +38,12 @@ export class SupabaseStorage implements IStorage {
         updated_at: new Date().toISOString(),
         review_count: 0
       };
+      
+      console.log('🚽 Server: Toilet data being stored:', {
+        title: toiletData.title,
+        originalTitle: toilet.title,
+        type: toiletData.type
+      });
 
       const { data, error } = await supabase
         .from('toilets')
@@ -57,6 +63,7 @@ export class SupabaseStorage implements IStorage {
       }
 
       console.log('✅ Toilet created successfully:', data.id);
+      console.log('🚽 Created toilet data:', data);
       return data.id;
       
     } catch (error) {
@@ -78,7 +85,12 @@ export class SupabaseStorage implements IStorage {
         throw error;
       }
 
-      return data.map(this.transformToilet);
+      const transformedToilets = data.map(this.transformToilet);
+      console.log('🚽 Retrieved toilets from database:', transformedToilets.length);
+      if (transformedToilets.length > 0) {
+        console.log('🚽 Sample toilet:', transformedToilets[0]);
+      }
+      return transformedToilets;
     } catch (error) {
       console.error('❌ Failed to fetch toilets:', error);
       throw error;
@@ -383,7 +395,7 @@ export class SupabaseStorage implements IStorage {
   }
 
   private transformToilet(data: any): Toilet {
-    return {
+    const transformed = {
       id: data.id,
       coordinates: data.coordinates,
       lat: data.coordinates.lat,
@@ -405,6 +417,17 @@ export class SupabaseStorage implements IStorage {
       averageRating: data.average_rating || 0,
       reviewCount: data.review_count || 0
     };
+    
+    // Debug logging for user-added toilets with titles
+    if (data.source === 'user' && data.title) {
+      console.log('🚽 Server: Transformed toilet with custom title:', {
+        id: data.id,
+        title: data.title,
+        transformedTitle: transformed.title
+      });
+    }
+    
+    return transformed;
   }
 
   private calculateDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
