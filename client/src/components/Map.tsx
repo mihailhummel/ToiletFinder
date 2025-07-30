@@ -9,6 +9,7 @@ import type { Toilet, MapLocation } from '@/types/toilet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { haptics } from '@/lib/haptics';
+import { queryClient } from '@/lib/queryClient';
 // @ts-ignore
 window.L = L;
 
@@ -958,10 +959,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
         
         <!-- Added by information for user-added toilets -->
         ${toilet.source === 'user' && toilet.addedByUserName ? `
-        <div style="margin-bottom: 12px; padding: 8px 12px; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; display: flex; align-items: center; gap: 8px;">
-          <div style="width: 16px; height: 16px; background: #0369a1; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-            <span style="color: white; font-size: 10px; font-weight: bold;">G</span>
-          </div>
+        <div style="margin-bottom: 12px; padding: 8px 12px; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px;">
           <span style="font-size: 13px; color: #0369a1; font-weight: 600;">
             Added by ${toilet.addedByUserName}
           </span>
