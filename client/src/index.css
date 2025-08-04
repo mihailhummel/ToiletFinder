@@ -610,9 +610,81 @@ button:active,
     box-sizing: border-box !important;
     margin: 0 !important;
   }
+  
+  /* Pulse ring animation for add toilet button - smooth fade */
+  @keyframes pulse-ring {
+    0% {
+      box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7);
+    }
+    70% {
+      box-shadow: 0 0 0 20px rgba(59, 130, 246, 0.1);
+    }
+    100% {
+      box-shadow: 0 0 0 25px rgba(59, 130, 246, 0);
+    }
+  }
+  
+  /* Enhanced bounce animation */
+  @keyframes enhanced-bounce {
+    0%, 20%, 53%, 80%, 100% {
+      transform: translate3d(0, 0, 0);
+    }
+    40%, 43% {
+      transform: translate3d(0, -8px, 0);
+    }
+    70% {
+      transform: translate3d(0, -4px, 0);
+    }
+    90% {
+      transform: translate3d(0, -2px, 0);
+    }
+  }
   .toilet-marker {
     width: 2.5rem;
     height: 2.5rem;
+  }
+  
+  /* Add attention-grabbing animation class */
+  .add-toilet-attention {
+    animation: pulse-ring 2s infinite;
+  }
+  
+  /* Slower pulse animation for location selection */
+  .slow-pulse {
+    animation: slow-pulse-animation 3s ease-in-out infinite;
+  }
+  
+  /* Combined slow pulse with green ring effect */
+  .slow-pulse-with-ring {
+    animation: slow-pulse-animation 3s ease-in-out infinite, green-pulse-ring 3s ease-in-out infinite;
+  }
+  
+  @keyframes slow-pulse-animation {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.6;
+    }
+  }
+  
+  /* Green pulse ring animation - only outward pulse */
+  @keyframes green-pulse-ring {
+    0% {
+      box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+    }
+    70% {
+      box-shadow: 0 0 0 18px rgba(34, 197, 94, 0.1);
+    }
+    100% {
+      box-shadow: 0 0 0 25px rgba(34, 197, 94, 0);
+    }
+  }
+  
+  /* Hover effects for better UX */
+  .floating-button:hover {
+    transform: scale(1.1) !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
   }
 
 

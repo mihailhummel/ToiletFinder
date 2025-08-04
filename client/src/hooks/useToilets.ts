@@ -3,11 +3,8 @@ import { apiRequest } from "@/lib/queryClient";
 import type { Toilet, InsertToilet, InsertReview, InsertReport, Review, MapLocation } from "@/types/toilet";
 import { useCallback, useRef, useState, useMemo, useEffect } from 'react';
 
-// EXTREMELY AGGRESSIVE CACHING SYSTEM
-const CACHE_KEY = 'toilet-cache-v2';
-const CACHE_EXPIRY_HOURS = 72; // 3 days cache expiry - very long to minimize DB reads
-const CHUNK_SIZE_KM = 50; // Larger chunks to cover more area
-const STALE_SERVE_DAYS = 7; // Serve stale data for up to a week if needed
+// SIMPLIFIED CACHING - Let React Query handle it
+// Removed complex localStorage caching that was causing conflicts
 
 interface CachedToiletData {
   chunks: Record<string, { 
@@ -311,26 +308,17 @@ export const useAddToilet = () => {
     mutationFn: async (toilet: InsertToilet): Promise<Toilet> => {
       const response = await apiRequest("POST", "/api/toilets", toilet);
       const result = await response.json();
-      console.log("🚽 Add toilet mutation result:", result);
       return result;
     },
     onSuccess: (newToilet) => {
-      // Invalidate all toilet queries to refresh the map
-      queryClient.invalidateQueries({ queryKey: ["toilets"] });
-      queryClient.invalidateQueries({ queryKey: ["toilets-supabase"] });
-      
-      // Clear local cache since we have new data
-      clearToiletCache();
-      
-      // Clear Supabase cache if available
-      if (typeof window !== 'undefined' && window.clearSupabaseToiletCache) {
-        window.clearSupabaseToiletCache();
-      }
-      
-      // Force refetch all toilet data
-      queryClient.refetchQueries({ queryKey: ["toilets-supabase"] });
-      
-      console.log("New toilet added successfully");
+      // Force a complete refresh of all toilet data - minimal logging
+      setTimeout(() => {
+        // Remove all queries from cache
+        queryClient.removeQueries();
+        
+        // Force refetch all toilet data
+        queryClient.refetchQueries({ queryKey: ["toilets-supabase"] });
+      }, 500);
     },
     onError: (error) => {
       console.error("Failed to add toilet:", error);

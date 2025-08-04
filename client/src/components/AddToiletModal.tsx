@@ -3,13 +3,14 @@ import { X, MapPin, Check, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { EditToiletModal } from "./EditToiletModal";
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { useAddToilet } from "@/hooks/useToilets";
+import { useAddToiletOptimized } from "@/hooks/useToiletCache";
 import { useAuth } from "@/hooks/useAuth";
-import { queryClient } from "@/lib/queryClient";
+// import { queryClient } from "@/lib/queryClient"; // No longer needed with optimized caching
 import type { ToiletType, Accessibility, AccessType, MapLocation } from "@/types/toilet";
 import { haptics } from "@/lib/haptics";
 
@@ -19,6 +20,7 @@ interface AddToiletModalProps {
   location?: MapLocation;
   onRequestLocationSelection?: (type: ToiletType, title: string, accessibility: Accessibility, accessType: AccessType) => void;
   onCloseForLocationSelection?: () => void;
+  onToiletAdded?: (toilet: any) => void;
 }
 
 const toiletTypes: { value: ToiletType; label: string }[] = [
@@ -43,17 +45,18 @@ const accessTypeOptions: { value: AccessType; label: string }[] = [
   { value: "unknown", label: "Unknown" },
 ];
 
-export const AddToiletModal = ({ isOpen, onClose, location, onRequestLocationSelection, onCloseForLocationSelection }: AddToiletModalProps) => {
+export const AddToiletModal = ({ isOpen, onClose, location, onRequestLocationSelection, onCloseForLocationSelection, onToiletAdded }: AddToiletModalProps) => {
   const [type, setType] = useState<ToiletType>("public");
   const [title, setTitle] = useState("");
   const [accessibility, setAccessibility] = useState<Accessibility>("unknown");
   const [accessType, setAccessType] = useState<AccessType>("unknown");
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   
   const { user } = useAuth();
   const { toast } = useToast();
-  const addToiletMutation = useAddToilet();
+  const addToiletMutation = useAddToiletOptimized(); // Uses optimized caching
 
   // Auto-show confirmation when location is provided (but not when editing)
   useEffect(() => {
@@ -66,7 +69,7 @@ export const AddToiletModal = ({ isOpen, onClose, location, onRequestLocationSel
     e.preventDefault();
     e.stopPropagation();
     
-    console.log("Add toilet form submitted", { user: !!user, location, type, title, accessibility, accessType });
+    // Form submission initiated
     
     if (!user) {
       toast({
@@ -79,7 +82,7 @@ export const AddToiletModal = ({ isOpen, onClose, location, onRequestLocationSel
 
     // If no location, request location selection
     if (!location) {
-      console.log("No location, requesting location selection");
+      // Request location selection
       if (onRequestLocationSelection) {
         // Close the modal first, then request location selection
         onClose();
@@ -93,9 +96,10 @@ export const AddToiletModal = ({ isOpen, onClose, location, onRequestLocationSel
     // If we have a location, we're in confirmation mode - submit the toilet
     try {
       const toiletData = {
+        lat: location.lat,
+        lng: location.lng,
         type,
-        title: title.trim() || null,
-        coordinates: location,
+        title: title.trim() || '',
         accessibility,
         accessType,
         userId: user.uid,
@@ -103,31 +107,34 @@ export const AddToiletModal = ({ isOpen, onClose, location, onRequestLocationSel
         addedByUserName: user.displayName || 'Anonymous User'
       };
       
-      console.log("🚽 Toilet data being sent:", toiletData);
+      // Sending toilet data to server
       
-      console.log("🚽 Client: Using React Query mutation to add toilet");
-      console.log("🚽 Client: Request body:", JSON.stringify(toiletData, null, 2));
-      
-      const result = await addToiletMutation.mutateAsync(toiletData);
-      
-      console.log("🚽 Client: Mutation successful:", result);
-      
-      toast({
-        title: "Success!",
-        description: "Toilet location added successfully."
+      // Use optimized mutation with automatic cache updates
+      addToiletMutation.mutate(toiletData, {
+        onSuccess: (result) => {
+          // Toilet added successfully
+          
+          handleClose();
+          setIsEditing(false);
+          
+          // Call the callback if provided
+          if (onToiletAdded) {
+            onToiletAdded(result);
+          }
+        },
+        onError: (error) => {
+          console.error("🚽 Client: Error adding toilet:", error);
+          // Error toast is handled by the mutation hook
+        }
       });
-
-      handleClose();
-      setIsEditing(false);
       
-      // Invalidate queries to refresh the map data
-      queryClient.invalidateQueries({ queryKey: ["toilets"] });
-      queryClient.invalidateQueries({ queryKey: ["toilets-supabase"] });
+      // Note: Cache updates and toasts are handled by the optimized mutation hook
+      
     } catch (error) {
-      console.error("🚽 Client: Error adding toilet:", error);
+      console.error("🚽 Client: Unexpected error:", error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to add toilet location. Please try again.",
+        description: "An unexpected error occurred. Please try again.",
         variant: "destructive"
       });
     }
@@ -136,13 +143,29 @@ export const AddToiletModal = ({ isOpen, onClose, location, onRequestLocationSel
   const handleCancel = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    console.log("Cancel button clicked");
+    // Modal cancelled by user
     handleClose();
   };
 
   const handleEdit = () => {
-    setShowConfirmation(false);
-    setIsEditing(false); // Reset editing state when going back to form
+    // Instead of going back to the form, show the edit modal
+    setShowEditModal(true);
+  };
+  
+  const handleEditConfirm = (data: {
+    type: ToiletType;
+    title: string;
+    accessibility: Accessibility;
+    accessType: AccessType;
+  }) => {
+    // Update the form data with the edited values
+    setType(data.type);
+    setTitle(data.title);
+    setAccessibility(data.accessibility);
+    setAccessType(data.accessType);
+    
+    // Close the edit modal
+    setShowEditModal(false);
   };
 
   const handleClose = () => {
@@ -168,23 +191,39 @@ export const AddToiletModal = ({ isOpen, onClose, location, onRequestLocationSel
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose} className="add-toilet-modal">
-      <DialogContent 
-        className="sm:max-w-md w-full max-w-full p-4 mobile:max-h-[75vh] mobile:h-auto bg-white shadow-xl border-0"
-        style={{
-          borderRadius: '24px',
-          margin: '0',
-          maxWidth: '500px',
-          width: 'calc(100vw - 40px)',
-          maxHeight: 'calc(100vh - 112px)',
-          left: '50%',
-          top: 'calc(50% + 16px)',
-          transform: 'translate(-50%, -50%)',
-          boxShadow: '0 10px 40px rgba(0,0,0,0.2)',
-          overflowY: 'auto',
-          padding: '1rem'
+    <>
+      {/* Edit Toilet Modal */}
+      <EditToiletModal
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        location={location}
+        initialData={{
+          type,
+          title,
+          accessibility,
+          accessType
         }}
-      >
+        onConfirm={handleEditConfirm}
+      />
+      
+      {/* Main Add Toilet Modal */}
+      <Dialog open={isOpen} onOpenChange={handleClose}>
+        <DialogContent 
+          className="sm:max-w-md w-full max-w-full p-4 mobile:max-h-[75vh] mobile:h-auto bg-white shadow-xl border-0"
+          style={{
+            borderRadius: '24px',
+            margin: '0',
+            maxWidth: '500px',
+            width: 'calc(100vw - 40px)',
+            maxHeight: 'calc(100vh - 112px)',
+            left: '50%',
+            top: 'calc(50% + 16px)',
+            transform: 'translate(-50%, -50%)',
+            boxShadow: '0 10px 40px rgba(0,0,0,0.2)',
+            overflowY: 'auto',
+            padding: '1rem'
+          }}
+        >
         <DialogHeader className="text-left space-y-2">
           <DialogTitle className="text-lg font-semibold text-gray-900">
             {showConfirmation ? "Confirm Details" : "Add Toilet"}
@@ -361,5 +400,6 @@ export const AddToiletModal = ({ isOpen, onClose, location, onRequestLocationSel
         )}
       </DialogContent>
     </Dialog>
+    </>
   );
 };

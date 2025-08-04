@@ -2,14 +2,14 @@ import { useEffect, useRef, useState, useCallback, useMemo, memo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Crosshair, Plus } from 'lucide-react';
 import { useGeolocation } from '@/hooks/useGeolocation';
-import { useSupabaseToilets } from '@/hooks/useSupabaseToilets';
+import { useToiletCache } from '@/hooks/useToiletCache';
 import { useDeleteToilet, useAddReview, preloadToiletsForRegion } from '@/hooks/useToilets';
 import { useAuth } from '@/hooks/useAuth';
 import type { Toilet, MapLocation } from '@/types/toilet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { haptics } from '@/lib/haptics';
-import { queryClient } from '@/lib/queryClient';
+import { LoadingScreen } from './LoadingScreen';
 // @ts-ignore
 window.L = L;
 
@@ -32,14 +32,17 @@ declare global {
     submitReview: (toiletId: string) => void;
     cancelReview: (toiletId: string) => void;
     loadReviews: (toiletId: string) => void;
+    toggleReviews: (toiletId: string) => void;
+    restoreReviewState: (toiletId: string) => void;
     openLoginModal: () => void;
     getCurrentUser: () => any;
     currentRating?: { toiletId: string; rating: number };
     reportToiletNotExists: (toiletId: string) => void;
     deleteToilet: (toiletId: string) => void;
-    debugToiletCache: () => any;
-    clearToiletCache: () => void;
-    clearSupabaseToiletCache: () => void;
+    refreshMapData: () => void;
+    testAPI: () => Promise<any>;
+    forceRefreshToilets: () => void;
+    refreshToilets: () => void;
   }
 }
 
@@ -57,6 +60,14 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
   const openPopupToiletIdRef = useRef<string | null>(null);
   const manuallyClosedPopupRef = useRef<boolean>(false);
   const isReopeningPopupRef = useRef<boolean>(false);
+
+  // Add state for review visibility and review input state
+  const [reviewVisibility, setReviewVisibility] = useState<{ [key: string]: boolean }>({});
+  const [reviewInputState, setReviewInputState] = useState<{ [key: string]: { rating: number; text: string; visible: boolean } }>({});
+  
+  // Add state for viewport optimization
+  const [viewportToilets, setViewportToilets] = useState<Toilet[]>([]);
+  const [isMapMoving, setIsMapMoving] = useState(false);
 
   
   const { location: userLocation, loading: locationLoading, getCurrentLocation } = useGeolocation();
@@ -76,63 +87,48 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
     };
   }, [mapBounds]);
 
-  // Fetch toilets in current viewport
-  const boundParams = viewportBounds ? {
-    north: viewportBounds.maxLat,
-    south: viewportBounds.minLat,
-    east: viewportBounds.maxLng,
-    west: viewportBounds.minLng
-  } : undefined;
+  // Fetch toilets in current viewport - memoized to prevent infinite loops
+  const boundParams = useMemo(() => {
+    return viewportBounds ? {
+      north: viewportBounds.maxLat,
+      south: viewportBounds.minLat,
+      east: viewportBounds.maxLng,
+      west: viewportBounds.minLng
+    } : undefined;
+  }, [viewportBounds?.maxLat, viewportBounds?.minLat, viewportBounds?.maxLng, viewportBounds?.minLng]);
 
-  // Debug logging
-  useEffect(() => {
-    if (boundParams) {
-      console.log('🗺️ Map bounds updated:', boundParams);
-    }
-  }, [boundParams?.north, boundParams?.south, boundParams?.east, boundParams?.west]);
+  // Map bounds updates - no logging for performance
 
-  const toiletsQuery = useSupabaseToilets({ 
-    bounds: boundParams,
-    enabled: !!viewportBounds 
-  });
-  const toilets = toiletsQuery.data || [];
+  // NEW: Use cached toilet system with clustering
+  const [mapZoom, setMapZoom] = useState(14);
+  const { toilets, allToiletsCount, isLoading: toiletsLoading, error: toiletsError } = useToiletCache(boundParams, mapZoom);
   
-  // Debug the query state (only in development)
-  if (process.env.NODE_ENV === 'development') {
-    console.log('🔍 Toilets query state:', {
-      data: toiletsQuery.data,
-      isLoading: toiletsQuery.isLoading,
-      error: toiletsQuery.error,
-      toiletsLength: toilets.length,
-      boundParams,
-      viewportBounds
-    });
-  }
-
-  // Debug toilet loading (only in development)
+  // Cache system status available for debugging if needed
+  
+  // Track map zoom level for clustering
   useEffect(() => {
-    if (process.env.NODE_ENV === 'development') {
-      console.log(`🚽 Toilets loaded: ${toilets.length} toilets`);
-      if (toilets.length > 0) {
-        console.log('Sample toilet:', toilets[0]);
-        // Check for toilets with custom titles
-        const toiletsWithTitles = toilets.filter(t => t.title && t.title.trim() !== '');
-        if (toiletsWithTitles.length > 0) {
-          console.log('🚽 Toilets with custom titles:', toiletsWithTitles.map(t => ({ id: t.id, title: t.title, type: t.type })));
-        } else {
-          console.log('⚠️ No toilets with custom titles found');
+    if (map.current) {
+      const handleZoomEnd = () => {
+        const zoom = map.current.getZoom();
+        setMapZoom(zoom);
+        // Zoom level updated for clustering
+      };
+      
+      map.current.on('zoomend', handleZoomEnd);
+      
+      return () => {
+        if (map.current) {
+          map.current.off('zoomend', handleZoomEnd);
         }
-        
-        // Check all toilets for title field
-        const toiletsWithTitleField = toilets.filter(t => t.title !== undefined);
-        console.log(`🚽 Toilets with title field: ${toiletsWithTitleField.length}/${toilets.length}`);
-        if (toiletsWithTitleField.length < toilets.length) {
-          const toiletsWithoutTitle = toilets.filter(t => t.title === undefined);
-          console.log('⚠️ Some toilets missing title field:', toiletsWithoutTitle.map(t => ({ id: t.id, type: t.type })));
-        }
-      }
+      };
     }
-  }, [toilets]);
+  }, [leafletLoaded]);
+  
+  // Silent for performance
+  
+  // No query state logging for performance
+
+  // No toilet loading logging for performance
   
   // Stable references to prevent unnecessary re-renders
   const stableUserLocation = useMemo(() => {
@@ -151,7 +147,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
     }
   }, [stableUserLocation]);
 
-  // Load Leaflet CSS and JS (clustering disabled)
+  // Load Leaflet CSS and JS (simplified without external clustering)
   useEffect(() => {
     const cssLink = document.createElement('link');
     cssLink.rel = 'stylesheet';
@@ -162,7 +158,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
     script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
     script.onload = () => {
       setLeafletLoaded(true);
-      console.log('✅ Leaflet loaded successfully');
+      // Silent for performance
     };
     document.head.appendChild(script);
 
@@ -175,44 +171,9 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
   // Set up global functions for popup buttons
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      // Add cache debugging tools for development
-      if (process.env.NODE_ENV === 'development') {
-        window.debugToiletCache = () => {
-          const cached = localStorage.getItem('toilet-cache-v2');
-          if (cached) {
-            const data = JSON.parse(cached);
-            console.log('🔍 Cache debug info:', {
-              chunks: Object.keys(data.chunks).length,
-              totalToilets: Object.values(data.chunks).reduce((sum: number, chunk: any) => sum + chunk.toilets.length, 0),
-              oldestChunk: Math.min(...Object.values(data.chunks).map((chunk: any) => chunk.timestamp)),
-              newestChunk: Math.max(...Object.values(data.chunks).map((chunk: any) => chunk.timestamp)),
-              cacheSize: (new Blob([cached]).size / 1024).toFixed(1) + 'KB'
-            });
-            return data;
-          }
-          console.log('❌ No cache found');
-          return null;
-        };
-        
-        window.clearToiletCache = () => {
-          localStorage.removeItem('toilet-cache-v2');
-          console.log('🗑️ Cache cleared manually');
-        };
-        
-        console.log('🛠️ Developer cache tools available: window.debugToiletCache(), window.clearToiletCache()');
-        console.log('💡 Also try Ctrl+Shift+C to clear cache');
-      }
+      // No development logging for performance
       
-      // Cache clearing shortcut
-      const handleKeyDown = (e: KeyboardEvent) => {
-        if (e.ctrlKey && e.shiftKey && e.code === 'KeyC') {
-          localStorage.removeItem('toilet-cache-v2');
-          window.location.reload();
-          console.log('🔄 Cache cleared and page reloaded');
-        }
-      };
-      
-      document.addEventListener('keydown', handleKeyDown);
+      // No cache clearing shortcut - caching removed
 
       window.getDirections = (lat, lng) => {
         haptics.medium();
@@ -256,54 +217,74 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
             const reviewSummary = document.getElementById(`review-summary-${toiletId}`);
             if (reviewSummary && reviews.length > 0) {
               const avgRating = (reviews.reduce((sum: number, r: any) => sum + r.rating, 0) / reviews.length).toFixed(1);
+              const ratingNum = parseFloat(avgRating);
+              const fullStars = Math.round(ratingNum);
+              const starsHTML = '★'.repeat(fullStars) + '☆'.repeat(5 - fullStars);
+              
               reviewSummary.innerHTML = `
                 <span style="display: flex; align-items: center; gap: 4px;">
-                  <span style="color: #facc15; font-size: 14px;">★</span>
+                  <span style="color: #facc15; font-size: 14px;">${starsHTML}</span>
                   <span style="font-weight: 500;">${avgRating}</span>
                   <span>(${reviews.length} review${reviews.length === 1 ? '' : 's'})</span>
                 </span>
               `;
             }
             
-            const reviewsContainer = document.getElementById(`reviews-${toiletId}`);
-            if (reviewsContainer) {
+            const reviewsSection = document.getElementById(`reviews-section-${toiletId}`);
+            if (reviewsSection) {
               if (reviews.length > 0) {
-                reviewsContainer.innerHTML = `
-                  <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #f3f4f6;">
-                    <div style="font-size: 13px; color: #64748b; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">
-                      Recent Reviews (${reviews.length})
-                    </div>
-                    <div class="reviews-scrollable" style="max-height: 120px; overflow-y: auto; padding-right: 4px;">
-                      ${reviews.slice(0, 5).map((review: any) => `
-                        <div style="padding: 12px; background: #f9fafb; border-radius: 8px; margin-bottom: 8px;">
-                          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
-                            <div style="display: flex; align-items: center; gap: 8px;">
-                              <div style="width: 24px; height: 24px; background: #3b82f6; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 12px; font-weight: 600;">
-                                ${review.userName.charAt(0).toUpperCase()}
+                reviewsSection.innerHTML = `
+                  <button 
+                    onclick="window.toggleReviews('${toiletId}')"
+                    style="width: 100%; padding: 6px 10px; background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 6px; font-size: 13px; font-weight: 500; color: #374151; cursor: pointer; transition: background-color 0.2s; display: flex; align-items: center; justify-content: space-between;"
+                    onmouseover="this.style.background='#e5e7eb'"
+                    onmouseout="this.style.background='#f3f4f6'"
+                  >
+                    <span>Reviews (${reviews.length})</span>
+                    <span style="font-size: 12px; color: #6b7280;">▼</span>
+                  </button>
+                  <div id="reviews-${toiletId}" style="display: none; margin-top: 12px;">
+                    <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #f3f4f6;">
+                      <div style="font-size: 13px; color: #64748b; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">
+                        Recent Reviews (${reviews.length})
+                      </div>
+                      <div class="reviews-scrollable" style="max-height: 120px; overflow-y: auto; padding-right: 4px;">
+                        ${reviews.slice(0, 5).map((review: any) => `
+                          <div style="padding: 12px; background: #f9fafb; border-radius: 8px; margin-bottom: 8px;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                              <div style="display: flex; align-items: center; gap: 8px;">
+                                <div style="width: 24px; height: 24px; background: #3b82f6; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 12px; font-weight: 600;">
+                                  ${review.userName.charAt(0).toUpperCase()}
+                                </div>
+                                <span style="font-size: 14px; font-weight: 500; color: #374151;">${review.userName}</span>
                               </div>
-                              <span style="font-size: 14px; font-weight: 500; color: #374151;">${review.userName}</span>
+                              <div style="display: flex; color: #facc15; margin-left: auto;">
+                                ${'★'.repeat(review.rating)}${'☆'.repeat(5 - review.rating)}
+                              </div>
                             </div>
-                            <div style="display: flex; color: #facc15; margin-left: auto;">
-                              ${'★'.repeat(review.rating)}${'☆'.repeat(5 - review.rating)}
+                            ${review.text ? `<div style="font-size: 14px; color: #6b7280; line-height: 1.4; margin-top: 8px;">${review.text}</div>` : ''}
+                            <div style="font-size: 12px; color: #9ca3af; margin-top: 6px;">
+                              ${new Date(review.createdAt).toLocaleDateString()}
                             </div>
                           </div>
-                          ${review.text ? `<div style="font-size: 14px; color: #6b7280; line-height: 1.4; margin-top: 8px;">${review.text}</div>` : ''}
-                          <div style="font-size: 12px; color: #9ca3af; margin-top: 6px;">
-                            ${new Date(review.createdAt).toLocaleDateString()}
-                          </div>
-                        </div>
-                      `).join('')}
+                        `).join('')}
+                      </div>
                     </div>
                   </div>
                 `;
               } else {
-                reviewsContainer.innerHTML = `
+                reviewsSection.innerHTML = `
                   <div style="text-align: center; color: #6b7280; font-size: 14px; padding: 8px 0;">
                     No reviews yet. Be the first to review this toilet!
                   </div>
                 `;
               }
             }
+            
+            // Restore state after reviews are loaded and DOM is updated
+            setTimeout(() => {
+              window.restoreReviewState(toiletId);
+            }, 50);
           }
         } catch (error) {
           console.error('Error loading reviews:', error);
@@ -336,6 +317,16 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
         if (commentSection) {
           commentSection.style.display = 'block';
         }
+        
+        // Update state to show review input
+        setReviewInputState(prev => ({
+          ...prev,
+          [toiletId]: { 
+            rating, 
+            text: prev[toiletId]?.text || '', 
+            visible: true 
+          }
+        }));
       };
 
       window.hoverStars = (toiletId, rating) => {
@@ -390,11 +381,11 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
         }
       };
           
-          console.log('📝 Client: Submitting review using React Query mutation:', reviewData);
+          // Silent for performance
           
           const result = await addReviewMutation.mutateAsync(reviewData);
           
-          console.log('📝 Client: Review submission success:', result);
+                      // Silent for performance
           
           // Hide comment section
           const commentSection = document.getElementById(`review-comment-${toiletId}`);
@@ -410,6 +401,12 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
           // Reset stars
           window.resetStars(toiletId);
           window.currentRating = undefined;
+          
+          // Update state to hide review input
+          setReviewInputState(prev => ({
+            ...prev,
+            [toiletId]: { rating: 0, text: '', visible: false }
+          }));
           
           // Reload reviews
           window.loadReviews(toiletId);
@@ -439,7 +436,88 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
         // Reset stars and current rating
         window.currentRating = undefined;
         window.resetStars(toiletId);
+        
+        // Update state to hide review input
+        setReviewInputState(prev => ({
+          ...prev,
+          [toiletId]: { rating: 0, text: '', visible: false }
+        }));
       };
+
+      window.toggleReviews = (toiletId) => {
+        haptics.light();
+        setReviewVisibility(prev => ({
+          ...prev,
+          [toiletId]: !prev[toiletId]
+        }));
+      };
+
+      window.restoreReviewState = (toiletId) => {
+        // Wait a bit to ensure DOM elements are ready
+        setTimeout(() => {
+          // Restore review visibility state
+          const isReviewsVisible = reviewVisibility[toiletId];
+          if (isReviewsVisible) {
+            const reviewsContainer = document.getElementById(`reviews-${toiletId}`);
+            if (reviewsContainer) {
+              reviewsContainer.style.display = 'block';
+            }
+            
+            // Update toggle button arrow
+            const toggleButton = document.querySelector(`button[onclick="window.toggleReviews('${toiletId}')"]`);
+            if (toggleButton) {
+              const arrow = toggleButton.querySelector('span:last-child');
+              if (arrow) {
+                arrow.textContent = '▲';
+              }
+            }
+          }
+          
+          // Restore review input state
+          const inputState = reviewInputState[toiletId];
+          if (inputState && inputState.visible) {
+            // Restore rating stars
+            for (let i = 1; i <= 5; i++) {
+              const star = document.getElementById(`star-${toiletId}-${i}`);
+              if (star) {
+                star.innerHTML = '★';
+                star.style.color = i <= inputState.rating ? '#facc15' : '#d1d5db';
+                star.style.background = i <= inputState.rating ? '#fef3c7' : '#f3f4f6';
+                star.style.borderColor = i <= inputState.rating ? '#f59e0b' : '#e5e7eb';
+              }
+            }
+            
+            // Show comment section and restore text
+            const commentSection = document.getElementById(`review-comment-${toiletId}`);
+            if (commentSection) {
+              commentSection.style.display = 'block';
+            }
+            
+            const textarea = document.getElementById(`comment-${toiletId}`) as HTMLTextAreaElement;
+            if (textarea && inputState.text) {
+              textarea.value = inputState.text;
+            }
+            
+            // Restore current rating
+            window.currentRating = { toiletId, rating: inputState.rating };
+          }
+        }, 10);
+      };
+
+      // Add event listener for textarea changes to persist text
+      const handleTextareaChange = (toiletId: string, text: string) => {
+        setReviewInputState(prev => ({
+          ...prev,
+          [toiletId]: {
+            ...prev[toiletId],
+            text,
+            visible: true
+          }
+        }));
+      };
+
+      // Add global function for textarea changes
+      (window as any).handleTextareaChange = handleTextareaChange;
 
               window.reportToiletNotExists = async (toiletId) => {
           haptics.light();
@@ -449,7 +527,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
           }
           
           try {
-            console.log('Reporting toilet as non-existent:', toiletId);
+            // Silent for performance
             
             const response = await fetch(`/api/toilets/${toiletId}/report-not-exists`, {
               method: 'POST',
@@ -461,7 +539,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
               })
             });
             
-            console.log('Report submission response:', response.status, response.statusText);
+            // Silent for performance
             
             if (response.ok) {
               const result = await response.json();
@@ -529,13 +607,13 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
 
       // Add cache clearing function for debugging
       window.clearToiletCache = () => {
-        console.log('🧹 Clearing toilet cache...');
+        // Silent for performance
         queryClient.clear();
         window.location.reload();
       };
 
       return () => {
-        document.removeEventListener('keydown', handleKeyDown);
+        // No cleanup needed - caching removed
       };
     }
   }, [user, isAdmin, deleteToiletMutation, leafletLoaded]);
@@ -575,16 +653,24 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
     });
 
     // Debounce function for map events
-    let mapMoveTimeout: NodeJS.Timeout;
+    let mapMoveTimeout: NodeJS.Timeout | undefined;
+    let mapMoveStartTimeout: NodeJS.Timeout | undefined;
     
     // Handle map events for bounds tracking
     const handleMapMove = () => {
-      // Debounce bounds update
+      // Set moving state immediately
+      setIsMapMoving(true);
+      
+      // Clear existing timeouts
       clearTimeout(mapMoveTimeout);
+      clearTimeout(mapMoveStartTimeout);
+      
+      // Debounce bounds update - balanced approach
       mapMoveTimeout = setTimeout(() => {
         const bounds = map.current.getBounds();
         setMapBounds(bounds);
-      }, 100); // Debounce to 100ms
+        setIsMapMoving(false);
+      }, 600); // 600ms debounce - balance between responsiveness and performance
       
       // Reopen popup if one was open before the view change and wasn't manually closed
       if (openPopupToiletIdRef.current && !manuallyClosedPopupRef.current && !isReopeningPopupRef.current) {
@@ -625,19 +711,21 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
     map.current.on('moveend zoomend', handleMapMove);
     map.current.on('click', handleMapClick);
 
-    // Initialize bounds
+    // Initialize bounds immediately
     const initialBounds = map.current.getBounds();
-    console.log('🗺️ Initial map bounds:', initialBounds);
     setMapBounds(initialBounds);
     
-    // Force a bounds update after a short delay to ensure proper initialization
+    // Ensure initial fetch happens
     setTimeout(() => {
       if (map.current) {
         const bounds = map.current.getBounds();
-        console.log('🗺️ Delayed map bounds:', bounds);
         setMapBounds(bounds);
+        // Force initial fetch
+        if (false) { // Disabled manual refetch for now
+          // Manual refetch not needed with caching system
+        }
       }
-    }, 100);
+    }, 200);
 
     return () => {
       // Clear any pending timeouts
@@ -681,7 +769,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
       userRingMarker.current = null;
     }
 
-    console.log(`📍 Setting user location: ${stableUserLocation.lat.toFixed(6)}, ${stableUserLocation.lng.toFixed(6)}`);
+            // Silent for performance
 
     // Create single combined marker with pulse animation
     const combinedIcon = L.divIcon({
@@ -703,39 +791,30 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
     // Update location reference
     lastUserLocation.current = { lat: stableUserLocation.lat, lng: stableUserLocation.lng };
 
-    // Center map on first location
+    // Center map on first location and trigger toilet fetch
     if (!userLocationSet.current) {
       map.current.setView([stableUserLocation.lat, stableUserLocation.lng], 16);
       userLocationSet.current = true;
+      
+      // Trigger immediate refetch of toilets around user location
+      setTimeout(() => {
+        if (false) { // Disabled manual refetch for now
+          // Manual refetch not needed with caching system
+        }
+      }, 200); // Small delay to ensure map bounds are updated
     }
   }, [stableUserLocation, leafletLoaded]);
 
-  // Efficient toilet marker rendering
+  // Efficient toilet marker rendering with clustering and viewport optimization
   useEffect(() => {
-    console.log(`🔍 Toilet rendering effect triggered:`, {
-      hasMap: !!map.current,
-      leafletLoaded,
-      toiletsLength: toilets.length,
-      toilets: toilets.slice(0, 3), // Show first 3 toilets for debugging
-      openPopup: openPopupToiletIdRef.current
-    });
-    
-    // Skip toilet re-rendering if a popup is currently open
-    if (openPopupToiletIdRef.current) {
-      console.log('⏸️ Skipping toilet re-rendering - popup is open');
+    // Skip toilet re-rendering if a popup is currently open or map is moving
+    if (openPopupToiletIdRef.current || isMapMoving) {
       return;
     }
     
     if (!map.current || !leafletLoaded || !toilets.length) {
-      console.log('❌ Skipping toilet rendering:', {
-        noMap: !map.current,
-        noLeaflet: !leafletLoaded,
-        noToilets: !toilets.length
-      });
       return;
     }
-
-    console.log(`📍 Rendering ${toilets.length} toilet markers`);
 
     // Store current open popup info before removing markers
     const currentOpenPopup = openPopupToiletIdRef.current;
@@ -749,31 +828,87 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
     // Clear toilet markers ref
     toiletMarkers.current = [];
 
-    // Use individual markers only (clustering disabled to prevent crashes)
+    // Use regular layer group with viewport optimization
     markersLayer.current = L.layerGroup();
 
-    const filteredToilets = toilets.filter(toilet => !toilet.isRemoved);
-    console.log(`🔍 Filtered toilets: ${filteredToilets.length} out of ${toilets.length} (removed ${toilets.length - filteredToilets.length})`);
-    
-    filteredToilets.forEach(toilet => {
-      // Validate toilet coordinates
+    // Make sure we're not filtering out any valid toilets
+    const filteredToilets = toilets.filter(toilet => {
+      // Check for invalid toilets
+      if (!toilet) {
+        console.error('❌ Invalid toilet: null or undefined');
+        return false;
+      }
+      
+      // Fix invalid coordinates instead of filtering out
       if (!toilet.coordinates || typeof toilet.coordinates.lat !== 'number' || typeof toilet.coordinates.lng !== 'number') {
-        console.error('❌ Invalid toilet coordinates:', toilet);
+        console.warn(`⚠️ Toilet ${toilet.id} has invalid coordinates:`, toilet.coordinates);
+        
+        // Fix coordinates with Sofia center as fallback
+        toilet.coordinates = {
+          lat: 42.6977,
+          lng: 23.3219
+        };
+        toilet.lat = toilet.coordinates.lat;
+        toilet.lng = toilet.coordinates.lng;
+        
+        // Silent for performance
+      }
+      
+      // Silent for performance
+      
+      // Only filter out removed toilets
+      return !toilet.isRemoved;
+    });
+    
+    // Silent for performance
+    
+    // Limit the number of markers for performance (max 1000)
+    const limitedToilets = filteredToilets.slice(0, 1000);
+    
+    // No need for viewport filtering since we only fetch toilets in viewport
+    const viewportToilets = limitedToilets;
+    
+    // Silent for performance
+    
+    viewportToilets.forEach(toilet => {
+      // Validate toilet coordinates - this should never happen now that we fix them above
+      if (!toilet.coordinates || typeof toilet.coordinates.lat !== 'number' || typeof toilet.coordinates.lng !== 'number') {
+        // Silent for performance
         return;
       }
       
-      const markerColor = toilet.source === 'user' ? '#3B82F6' : '#FF385C';
+      // Set marker color: blue for user-added toilets, red for OSM and Geoapify toilets
+      const markerColor = toilet.source === 'user' ? '#3B82F6' : '#FF385C'; 
       
-      const icon = L.divIcon({
-        className: 'toilet-marker',
-        html: createToiletMarkerHTML(toilet, markerColor),
-        iconSize: [40, 50],
-        iconAnchor: [20, 50]
-      });
+               // Silent for performance
+      
+      try {
+        const icon = L.divIcon({
+          className: 'toilet-marker',
+          html: createToiletMarkerHTML(toilet, markerColor),
+          iconSize: [40, 50],
+          iconAnchor: [20, 50]
+        });
 
-      const marker = L.marker([toilet.coordinates.lat, toilet.coordinates.lng], { icon })
-        .addTo(markersLayer.current)
-        .bindPopup(createToiletPopupHTML(toilet), {
+      const marker = L.marker([toilet.coordinates.lat, toilet.coordinates.lng], { 
+          icon,
+          // Optimize marker performance
+          keyboard: false,
+          title: toilet.isCluster ? `${toilet.clusterCount} toilets` : (toilet.title || 'Toilet')
+        })
+        .addTo(markersLayer.current);
+        
+      // Handle cluster vs regular toilet clicks
+      if (toilet.isCluster) {
+        // Cluster marker - zoom in when clicked
+        marker.on('click', () => {
+          if (map.current && toilet.clusterCenter) {
+            map.current.setView([toilet.clusterCenter.lat, toilet.clusterCenter.lng], Math.min(mapZoom + 2, 18));
+          }
+        });
+      } else {
+        // Regular toilet marker - show popup
+        marker.bindPopup(createToiletPopupHTML(toilet), {
           maxWidth: 400,
           minWidth: 320,
           className: 'refined-toilet-popup',
@@ -782,7 +917,10 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
           autoPan: true,
           keepInView: true,
           autoPanPadding: [40, 40]
-        })
+        });
+      }
+      
+      marker
         .on('popupopen', () => {
           openPopupToiletIdRef.current = toilet.id;
           manuallyClosedPopupRef.current = false;
@@ -803,6 +941,8 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
               });
             }
           }, 100);
+          
+          // Reviews will be loaded and state restored automatically
         })
         .on('popupclose', () => {
           openPopupToiletIdRef.current = null;
@@ -811,7 +951,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
           // Trigger toilet re-rendering after popup closes to catch up on any missed updates
           setTimeout(() => {
             if (map.current && leafletLoaded && toilets.length) {
-              console.log('🔄 Triggering delayed toilet re-rendering after popup close');
+              // Silent for performance
               // Force a re-render by updating the dependency
               setMapBounds(map.current.getBounds());
             }
@@ -829,13 +969,30 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
           }, 100);
         });
       
-      // Store marker reference for later use
-      toiletMarkers.current.push({ toiletId: toilet.id, marker });
+        // Store marker reference for later use
+        toiletMarkers.current.push({ toiletId: toilet.id, marker });
+      } catch (error) {
+        console.error(`❌ Error creating marker for toilet ${toilet.id}:`, error);
+      }
     });
 
     if (markersLayer.current && map.current) {
       map.current.addLayer(markersLayer.current);
-      console.log(`✅ Rendered ${toilets.length} toilet markers successfully`);
+      
+      // Count how many markers of each type were actually rendered
+      const renderedUserMarkers = toiletMarkers.current.filter(m => 
+        toilets.find(t => t.id === m.toiletId && t.source === 'user')
+      ).length;
+      
+      const renderedOsmMarkers = toiletMarkers.current.filter(m => 
+        toilets.find(t => t.id === m.toiletId && t.source === 'osm')
+      ).length;
+      
+      const renderedGeoapifyMarkers = toiletMarkers.current.filter(m => 
+        toilets.find(t => t.id === m.toiletId && t.source === 'geoapify')
+      ).length;
+      
+               // Silent for performance
       
       // Reopen popup if one was open before toilet re-rendering
       if (currentOpenPopup && !manuallyClosedPopupRef.current) {
@@ -843,7 +1000,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
           const marker = toiletMarkers.current.find(m => m.toiletId === currentOpenPopup)?.marker;
           if (marker) {
             marker.openPopup();
-            // Reload reviews for the reopened popup
+            // Reload reviews for the reopened popup (state will be restored automatically)
             setTimeout(() => {
               window.loadReviews(currentOpenPopup);
             }, 200);
@@ -856,7 +1013,41 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
   }, [toilets, leafletLoaded]);
 
   // Helper functions for marker and popup creation
-  const createToiletMarkerHTML = (toilet: Toilet, markerColor: string) => {
+  const createToiletMarkerHTML = (toilet: any, markerColor: string) => {
+    // Handle cluster markers
+    if (toilet.isCluster) {
+      return `
+        <div style="
+          position: relative;
+          width: 50px;
+          height: 50px;
+          cursor: pointer;
+        ">
+          <div style="
+            position: absolute;
+            bottom: 5px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 46px;
+            height: 46px;
+            background: linear-gradient(135deg, #ff6b6b, #4ecdc4);
+            border: 3px solid white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+            font-weight: bold;
+            color: white;
+            font-size: 14px;
+          ">
+            ${toilet.clusterCount}
+          </div>
+        </div>
+      `;
+    }
+    
+    // Regular toilet marker
     return `
       <div style="
         position: relative;
@@ -902,19 +1093,9 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
   const createToiletPopupHTML = (toilet: Toilet) => {
     const tags = toilet.tags as any || {};
     
-    // Debug logging for toilet data
-    console.log('🔍 Creating popup for toilet:', {
-      id: toilet.id,
-      title: toilet.title,
-      type: toilet.type,
-      source: toilet.source
-    });
-    
     // Get proper title based on type and custom title
     const getProperTitle = () => {
-      // Debug logging for custom titles
       if (toilet.title && toilet.title.trim() !== '') {
-        console.log('🔍 Using custom title:', toilet.title, 'for toilet:', toilet.id);
         return toilet.title;
       }
       if (tags.name) return tags.name;
@@ -959,8 +1140,9 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
         
         <!-- Added by information for user-added toilets -->
         ${toilet.source === 'user' && toilet.addedByUserName ? `
-        <div style="margin-bottom: 12px; padding: 8px 12px; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px;">
-          <span style="font-size: 13px; color: #0369a1; font-weight: 600;">
+        <div style="margin-bottom: 8px; display: flex; align-items: center; gap: 4px;">
+          <div style="width: 6px; height: 6px; background: #3b82f6; border-radius: 50%; flex-shrink: 0;"></div>
+          <span style="font-size: 11px; color: #6b7280; font-weight: 500;">
             Added by ${toilet.addedByUserName}
           </span>
         </div>
@@ -969,7 +1151,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
         <!-- 2. Rating and Reviews Summary -->
         <div id="review-summary-${toilet.id}" style="display: flex; align-items: center; gap: 6px; margin-bottom: 12px;">
           <div style="display: flex; align-items: center; gap: 3px;">
-            <span style="color: #facc15; font-size: 16px;">★★★★★</span>
+            <span style="color: #facc15; font-size: 16px;">☆☆☆☆☆</span>
             <span style="font-size: 14px; font-weight: 600; color: #374151;">0.0</span>
           </div>
           <span style="color: #6b7280; font-size: 12px;">(0 reviews)</span>
@@ -1014,6 +1196,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
               id="comment-${toilet.id}"
               placeholder="Share your experience with this toilet..."
               style="width: 100%; min-height: 80px; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; font-family: inherit; resize: vertical; box-sizing: border-box;"
+              oninput="window.handleTextareaChange('${toilet.id}', this.value)"
             ></textarea>
             <div style="display: flex; gap: 8px; margin-top: 12px;">
               <button 
@@ -1036,8 +1219,9 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
           </div>
         </div>
         
-        <!-- 6. Preview of Previous Reviews -->
-        <div id="reviews-${toilet.id}" style="margin-bottom: 20px;">
+        <!-- 6. Reviews Section -->
+        <div id="reviews-section-${toilet.id}" style="margin-bottom: 20px;">
+          <!-- This will be populated by loadReviews function -->
           <div style="text-align: center; color: #6b7280; font-size: 14px; padding: 8px 0;">
             No reviews yet. Be the first to review this toilet!
           </div>
@@ -1098,10 +1282,52 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
     }
   };
 
+  // Expose refresh function globally for debugging
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+              window.refreshMapData = () => {
+          // Silent for performance
+          // Simply refetch the data
+          if (false) { // Disabled manual refetch for now
+            // Manual refetch not needed with caching system
+          }
+        };
+        
+        // Add a simple test function
+        window.testAPI = async () => {
+          // Silent for performance
+          try {
+            const response = await fetch('/api/toilets');
+            const data = await response.json();
+            // Silent for performance
+            return data;
+          } catch (error) {
+            console.error('❌ API test failed:', error);
+            return null;
+          }
+        };
+        
+        // Add a force refresh function - NO CACHING, minimal logging
+        window.forceRefreshToilets = () => {
+          if (false) { // Disabled manual refetch for now
+            // Manual refetch not needed with caching system
+          }
+        };
+        
+        // Add a simple refresh function - NO CACHING, minimal logging
+        window.refreshToilets = () => {
+          if (false) { // Disabled manual refetch for now
+            // Manual refetch not needed with caching system
+          }
+        };
+    }
+  }, [toiletsError]);
+
   // Handle query errors
   useEffect(() => {
-    if (toiletsQuery.error) {
-      const errMsg = (toiletsQuery.error as any)?.message || '';
+    const error = toiletsError;
+    if (error) {
+      const errMsg = (error as any)?.message || '';
       if (errMsg.includes('quota') || errMsg.includes('503')) {
         setFetchError('Service temporarily unavailable due to database limits. Please try again later.');
       } else {
@@ -1110,7 +1336,58 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
     } else {
       setFetchError(null);
     }
-  }, [toiletsQuery.error]);
+  }, [toiletsError]);
+
+  // Handle review visibility state changes
+  useEffect(() => {
+    Object.entries(reviewVisibility).forEach(([toiletId, isVisible]) => {
+      const reviewsContainer = document.getElementById(`reviews-${toiletId}`);
+      if (reviewsContainer) {
+        reviewsContainer.style.display = isVisible ? 'block' : 'none';
+      }
+      
+      // Update toggle button arrow
+      const toggleButton = document.querySelector(`button[onclick="window.toggleReviews('${toiletId}')"]`);
+      if (toggleButton) {
+        const arrow = toggleButton.querySelector('span:last-child');
+        if (arrow) {
+          arrow.textContent = isVisible ? '▲' : '▼';
+        }
+      }
+    });
+  }, [reviewVisibility]);
+
+  // Restore review input state when popup is reopened
+  useEffect(() => {
+    Object.entries(reviewInputState).forEach(([toiletId, state]) => {
+      if (state.visible) {
+        // Restore rating stars
+        for (let i = 1; i <= 5; i++) {
+          const star = document.getElementById(`star-${toiletId}-${i}`);
+          if (star) {
+            star.innerHTML = '★';
+            star.style.color = i <= state.rating ? '#facc15' : '#d1d5db';
+            star.style.background = i <= state.rating ? '#fef3c7' : '#f3f4f6';
+            star.style.borderColor = i <= state.rating ? '#f59e0b' : '#e5e7eb';
+          }
+        }
+        
+        // Show comment section and restore text
+        const commentSection = document.getElementById(`review-comment-${toiletId}`);
+        if (commentSection) {
+          commentSection.style.display = 'block';
+        }
+        
+        const textarea = document.getElementById(`comment-${toiletId}`) as HTMLTextAreaElement;
+        if (textarea && state.text) {
+          textarea.value = state.text;
+        }
+        
+        // Restore current rating
+        window.currentRating = { toiletId, rating: state.rating };
+      }
+    });
+  }, [reviewInputState]);
 
   return (
     <div className="relative w-full h-full">
@@ -1137,8 +1414,8 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
         {stableUserLocation && (
           <Button
             onClick={handleReturnToLocation}
-            className="bg-white text-blue-600 shadow-xl rounded-full p-0 border border-gray-200 transition-transform duration-200 hover:scale-105 active:scale-95 floating-button"
-            variant="ghost"
+            className="bg-white text-blue-600 shadow-xl rounded-full p-0 border border-gray-200 transition-all duration-200 hover:scale-105 hover:bg-blue-50 hover:border-blue-300 active:scale-95 floating-button"
+            variant="outline"
             title="Return to my location"
             style={{ position: 'fixed', bottom: '36px', left: '24px', zIndex: 1000, width: '55px', height: '55px' }}
           >
@@ -1153,11 +1430,9 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
         </div>
       )}
 
-      {toiletsQuery.isLoading && (
-        <div className="absolute top-4 right-4 bg-blue-100 text-blue-800 p-2 rounded shadow-lg z-[1000] text-sm">
-          Loading toilets...
-        </div>
-      )}
+      <LoadingScreen isLoading={toiletsLoading} toiletCount={allToiletsCount} />
+      
+
       
 
     </div>

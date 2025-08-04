@@ -9,10 +9,15 @@
     "dev:server": "tsx server/index.ts",
     "dev:client": "cd client && npm run dev",
     "build": "cd client && npm run build",
-    "start": "tsx server/index.ts",
+    "build:server": "tsc server/index.ts --outDir dist --target es2020 --module commonjs",
+    "start": "NODE_ENV=production tsx server/index.ts",
+    "start:prod": "NODE_ENV=production node dist/index.js",
     "install:all": "npm install && cd client && npm install",
     "migrate": "node setup_and_migrate_all.mjs",
-    "check-quota": "node check_firebase_quota.mjs"
+    "check-quota": "node check_firebase_quota.mjs",
+    "test": "cd client && npm test",
+    "lint": "cd client && npm run lint",
+    "deploy:build": "npm run build && npm run build:server"
   },
   "keywords": [
     "toilet",

@@ -8,8 +8,12 @@ import { PWABanner } from "./components/PWABanner";
 import { Map } from "./components/Map";
 import { FilterPanel, type FilterOptions } from "./components/FilterPanel";
 import { AddToiletModal } from "./components/AddToiletModal";
-
 import { LoginModal } from "./components/LoginModal";
+import ErrorBoundary, { MapErrorBoundary } from "./components/ErrorBoundary";
+
+// Utils
+import { initAccessibility } from "./utils/accessibility";
+import { initPerformanceMonitoring } from "./utils/performance";
 
 // Hooks
 import { useAuth } from "./hooks/useAuth";
@@ -58,6 +62,19 @@ const queryClient = new QueryClient({
 });
 
 function App() {
+  // 🚀 Initialize performance monitoring and accessibility
+  useEffect(() => {
+    initPerformanceMonitoring();
+    initAccessibility();
+    
+    // Register service worker for offline support
+    if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
+      navigator.serviceWorker.register('/sw.js')
+        .then(() => console.log('🚀 Service Worker registered'))
+        .catch(err => console.error('❌ Service Worker registration failed:', err));
+    }
+  }, []);
+
   const [selectedToilet, setSelectedToilet] = useState<Toilet | null>(null);
   const [showAddToilet, setShowAddToilet] = useState(false);
   const [showFilter, setShowFilter] = useState(false);
@@ -79,11 +96,11 @@ function App() {
 
   // Debug state changes
   useEffect(() => {
-    console.log("isAddingToilet changed to:", isAddingToilet);
+    // Adding toilet state changed
   }, [isAddingToilet]);
   
   useEffect(() => {
-    console.log("pendingToiletData changed to:", pendingToiletData);
+    // Pending toilet data updated
   }, [pendingToiletData]);
 
   // Add/remove modal-open class to body when modals are open
@@ -118,7 +135,7 @@ function App() {
           description: "All cached toilet data has been cleared.",
           duration: 3000,
         });
-        console.log("Cache manually cleared via keyboard shortcut");
+        // Cache cleared via keyboard shortcut
       }
     };
 
@@ -146,13 +163,10 @@ function App() {
 
   const handleAddToilet = useCallback(() => {
     haptics.light();
-    console.log("Add toilet button clicked, user:", !!user);
     if (!user) {
-      console.log("No user found, showing login modal");
       setShowLogin(true);
       return;
     }
-    console.log("Starting add toilet workflow - showing form first");
     // Step 1: Show the form first
     setIsAddingToilet(false);
     setPendingToiletLocation(undefined);
@@ -160,16 +174,14 @@ function App() {
   }, [user]);
 
   const handleMapClick = useCallback((location: MapLocation) => {
-    console.log("Map clicked, isAddingToilet:", isAddingToilet, "pendingToiletData:", pendingToiletData, "location:", location);
-    console.log("Global state check:", globalAddingState);
+    // Map click processed
     
     // Check both React state and global state
     const shouldProcessClick = (isAddingToilet && pendingToiletData) || (globalAddingState.isAdding && globalAddingState.pendingData);
     
     if (shouldProcessClick) {
-      console.log("Processing map click for toilet addition");
+      // Processing toilet addition
       const dataToUse = pendingToiletData || globalAddingState.pendingData;
-      console.log("Using data:", dataToUse);
       
       // Clear global state
       globalAddingState.isAdding = false;
@@ -181,17 +193,16 @@ function App() {
       setIsAddingToilet(false);
       setShowAddToilet(true);
     } else {
-      console.log("Map click ignored - not in adding mode or no pending data");
+      // Map click ignored - not in adding mode
     }
   }, [isAddingToilet, pendingToiletData]);
 
   const handleLocationSelectionRequest = useCallback((type: ToiletType, title: string, accessibility: Accessibility, accessType: AccessType) => {
-    console.log("Location selection requested for:", { type, title, accessibility, accessType });
+    // Location selection requested
     
     // Set global state immediately
     globalAddingState.isAdding = true;
     globalAddingState.pendingData = { type, title, accessibility, accessType };
-    console.log("Global state set:", globalAddingState);
     
     // Set React states
     setIsTransitioningToLocationMode(true);
@@ -202,7 +213,7 @@ function App() {
     
     setTimeout(() => {
       setIsTransitioningToLocationMode(false);
-      console.log("Transition complete. Global state:", globalAddingState);
+      // Transition to location selection complete
     }, 100);
     
     toast({
@@ -239,61 +250,7 @@ function App() {
     }
   }, [signOut, toast]);
 
-  const handleAddToiletSubmit = useCallback(async (toiletData: { type: ToiletType; title: string; accessibility: Accessibility; accessType: AccessType }) => {
-    if (!pendingToiletLocation) {
-      toast({
-        title: "Error",
-        description: "No location selected for the toilet",
-        variant: "destructive",
-      });
-      return;
-    }
 
-    try {
-      const response = await fetch('/api/toilets', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          type: toiletData.type,
-          title: toiletData.title,
-          coordinates: pendingToiletLocation,
-
-          accessibility: toiletData.accessibility,
-          accessType: toiletData.accessType,
-          userId: user?.uid || 'anonymous',
-          source: 'user',
-          addedByUserName: user?.displayName || 'Anonymous User',
-        }),
-      });
-
-      if (response.ok) {
-        toast({
-          title: "Success",
-          description: "New toilet location added successfully!",
-          duration: 5000,
-        });
-        
-        // Invalidate queries to refresh the map
-        queryClient.invalidateQueries({ queryKey: ["toilets"] });
-        queryClient.invalidateQueries({ queryKey: ["toilets-supabase"] });
-        
-        setShowAddToilet(false);
-        setPendingToiletLocation(undefined);
-        setPendingToiletData(null);
-      } else {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to add toilet');
-      }
-    } catch (error) {
-      console.error('Error adding toilet:', error);
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to add toilet. Please try again.",
-        variant: "destructive",
-      });
-    }
-  }, [pendingToiletLocation, user, toast]);
 
 
 
@@ -377,32 +334,42 @@ function App() {
 
           {/* Map Container */}
           <main className="flex-1 pt-12 md:pt-16 relative overflow-hidden">
-            <Map
-              onToiletClick={handleToiletClick}
-              onAddToiletClick={handleMapClick}
-              onLoginClick={handleLoginClick}
-              isAdmin={isAdmin}
-              currentUser={user}
-              isAddingToilet={isAddingToilet}
-            />
+            <MapErrorBoundary>
+              <Map
+                onToiletClick={handleToiletClick}
+                onAddToiletClick={handleMapClick}
+                onLoginClick={handleLoginClick}
+                isAdmin={isAdmin}
+                currentUser={user}
+                isAddingToilet={isAddingToilet}
+              />
+            </MapErrorBoundary>
             
-            {/* Floating Action Button */}
+            {/* Floating Action Button with Attention Animation */}
             <Button
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                console.log("Floating button clicked!");
                 handleAddToilet();
               }}
-              className={`rounded-full shadow-lg pointer-events-auto floating-button ${
+              className={`rounded-full shadow-lg pointer-events-auto floating-button transition-all duration-300 ${
                 isAddingToilet 
-                  ? 'bg-green-600 hover:bg-green-700 animate-pulse' 
-                  : 'bg-blue-600 hover:bg-blue-700'
+                  ? 'bg-green-600 hover:bg-green-700 slow-pulse-with-ring' 
+                  : 'bg-blue-600 hover:bg-blue-700 add-toilet-attention'
               }`}
               size="icon"
-              style={{ position: 'fixed', bottom: '36px', right: '24px', zIndex: 1000, width: '55px', height: '55px' }}
+              style={{ 
+                position: 'fixed', 
+                bottom: '36px', 
+                right: '24px', 
+                zIndex: 1000, 
+                width: '55px', 
+                height: '55px'
+              }}
             >
-              <Plus className="w-6 h-6 text-white" />
+              <Plus className={`w-6 h-6 text-white transition-transform duration-300 ${
+                isAddingToilet ? 'rotate-45' : 'rotate-0'
+              }`} />
             </Button>
           </main>
 
@@ -416,13 +383,11 @@ function App() {
           <AddToiletModal
             isOpen={showAddToilet}
             onClose={() => {
-              console.log("AddToiletModal onClose called, transitioning:", isTransitioningToLocationMode);
+              // Handle modal close
               if (isTransitioningToLocationMode) {
-                console.log("Ignoring onClose - in transition mode");
+                // Ignore close during transition
                 return;
               }
-              
-              console.log("Processing normal user close");
               setShowAddToilet(false);
               setPendingToiletLocation(undefined);
               setPendingToiletData(null);
@@ -430,6 +395,13 @@ function App() {
             }}
             location={pendingToiletLocation}
             onRequestLocationSelection={handleLocationSelectionRequest}
+            onToiletAdded={(toilet) => {
+              // Toilet added successfully
+              // Gently refresh the map data without clearing all caches
+              if (typeof window !== 'undefined' && window.refreshToilets) {
+                window.refreshToilets();
+              }
+            }}
           />
 
           <LoginModal

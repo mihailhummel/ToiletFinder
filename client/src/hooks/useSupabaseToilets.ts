@@ -1,10 +1,8 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../lib/supabase';
-import type { Toilet } from '../types/toilet';
+import { useEffect, useRef } from 'react';
+import { Toilet } from '@/types/toilet';
 
-// Debug flag
-const DEBUG = true;
+const DEBUG = false; // Disabled all debug logging for performance
 
 interface ViewportBounds {
   north: number;
@@ -19,90 +17,8 @@ interface UseSupabaseToiletsOptions {
   enabled?: boolean;
 }
 
-interface CacheEntry {
-  toilets: Toilet[];
-  timestamp: number;
-  bounds: ViewportBounds;
-}
-
-const CACHE_DURATION = 3 * 24 * 60 * 60 * 1000; // 3 days
-const STALE_SERVE_DURATION = 7 * 24 * 60 * 60 * 1000; // 7 days
-const FETCH_DEBOUNCE_MS = 500;
-const MIN_FETCH_INTERVAL = 5 * 1000; // 5 seconds (reduced from 30)
-
-// In-memory cache for ultra-fast access
-const toiletCache = new Map<string, CacheEntry>();
-const pendingRequests = new Map<string, Promise<Toilet[]>>();
-
-/**
- * Generate cache key from bounds
- */
-function getCacheKey(bounds: ViewportBounds): string {
-  const precision = 2; // ~1km precision
-  return [
-    Math.round(bounds.north * 10 ** precision),
-    Math.round(bounds.south * 10 ** precision), 
-    Math.round(bounds.east * 10 ** precision),
-    Math.round(bounds.west * 10 ** precision)
-  ].join(',');
-}
-
-/**
- * Check if bounds are covered by existing cache entries
- */
-function findCachedToilets(bounds: ViewportBounds): Toilet[] | null {
-  const cacheKey = getCacheKey(bounds);
-  const cached = toiletCache.get(cacheKey);
-  
-  if (cached && Date.now() - cached.timestamp < STALE_SERVE_DURATION) {
-    if (DEBUG) console.log(`🎯 Cache hit for bounds: ${cacheKey}`);
-    return cached.toilets;
-  }
-  
-  // Try to piece together from multiple cache entries
-  const allCachedToilets: Toilet[] = [];
-  let coverage = 0;
-  
-  for (const [key, entry] of toiletCache.entries()) {
-    if (Date.now() - entry.timestamp < STALE_SERVE_DURATION) {
-      // Check if this cache entry overlaps with our bounds
-      const overlaps = !(
-        entry.bounds.east < bounds.west ||
-        entry.bounds.west > bounds.east ||
-        entry.bounds.north < bounds.south ||
-        entry.bounds.south > bounds.north
-      );
-      
-      if (overlaps) {
-        // Add toilets that fall within our target bounds
-        const relevantToilets = entry.toilets.filter(toilet => 
-          toilet.coordinates.lat >= bounds.south &&
-          toilet.coordinates.lat <= bounds.north &&
-          toilet.coordinates.lng >= bounds.west &&
-          toilet.coordinates.lng <= bounds.east
-        );
-        
-        allCachedToilets.push(...relevantToilets);
-        coverage += 0.3; // Rough coverage estimate
-      }
-    }
-  }
-  
-  // If we have decent coverage, return cached data
-  if (coverage >= 0.7 && allCachedToilets.length > 0) {
-    if (DEBUG) console.log(`🧩 Pieced together ${allCachedToilets.length} toilets from cache`);
-    return allCachedToilets;
-  }
-  
-  return null;
-}
-
-/**
- * Fetch ALL toilets from Supabase (no bounds filtering)
- */
-async function fetchAllToiletsFromSupabase(): Promise<Toilet[]> {
-  if (DEBUG) console.log('🌍 Fetching ALL toilets from server API...');
-  
+// Simple function to fetch all toilets from the server API
+async function fetchAllToiletsFromServer(): Promise<Toilet[]> {
   try {
     const response = await fetch('/api/toilets');
     if (!response.ok) {
@@ -110,140 +26,64 @@ async function fetchAllToiletsFromSupabase(): Promise<Toilet[]> {
     }
     
     const data = await response.json();
-    
-    if (DEBUG) {
-      console.log(`📊 Raw Supabase response:`, data ? `${data.length} items` : 'No data');
-      if (data && data.length > 0) {
-        console.log('📊 First item sample:', data[0]);
-        console.log('📊 Fields in response:', Object.keys(data[0]).join(', '));
-      }
-    }
-    
-    // Server API already returns data in the correct format
-    const toilets: Toilet[] = data.map((row: any) => {
-      // Debug log for coordinates and title
-      if (DEBUG && row.coordinates) {
-        console.log(`📍 Toilet ${row.id} coordinates:`, row.coordinates);
-      }
-      if (DEBUG && row.title) {
-        console.log(`📝 Toilet ${row.id} has custom title:`, row.title);
-      }
-      
-      return row; // Server already returns data in the correct format
-    });
-    
-    if (DEBUG) console.log(`✅ Fetched ${toilets.length} toilets from server API (ALL)`);
-    return toilets;
-    
+    return data;
   } catch (error) {
-    console.error('❌ Error fetching all toilets from server API:', error);
+    console.error('❌ Error fetching all toilets from server:', error);
     throw error;
   }
 }
 
-/**
- * Fetch toilets from Supabase using spatial queries
- */
-async function fetchToiletsFromSupabase(bounds: ViewportBounds): Promise<Toilet[]> {
-  const cacheKey = getCacheKey(bounds);
-  
-  // Check for pending request to avoid duplicates
-  if (pendingRequests.has(cacheKey)) {
-    if (DEBUG) console.log(`⏳ Request already pending for ${cacheKey}`);
-    return pendingRequests.get(cacheKey)!;
-  }
-  
-  if (DEBUG) console.log(`🔍 Fetching toilets from server API for bounds:`, bounds);
-  
-  const fetchPromise = (async () => {
-    try {
-      // Expand bounds slightly for better cache coverage
-      const expandedBounds = {
-        north: bounds.north + 0.01,
-        south: bounds.south - 0.01,
-        east: bounds.east + 0.01,
-        west: bounds.west - 0.01
-      };
-      
-      if (DEBUG) console.log('📊 Calling server API with bounds:', expandedBounds);
-      
-      // Use the server API instead of direct Supabase query
-      const params = new URLSearchParams({
-        lat: ((expandedBounds.north + expandedBounds.south) / 2).toString(),
-        lng: ((expandedBounds.east + expandedBounds.west) / 2).toString(),
-        radius: '20' // Use a larger radius to cover the bounds
-      });
-      
-      const response = await fetch(`/api/toilets?${params}`);
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-      
-      const data = await response.json();
-      
-      // No error handling needed since we're using the server API
-      
-      if (DEBUG) {
-        console.log(`📊 Raw Supabase response:`, data ? `${data.length} items` : 'No data');
-        if (data && data.length > 0) {
-          console.log('📊 First item sample:', data[0]);
-          console.log('📊 Fields in response:', Object.keys(data[0]).join(', '));
-        }
-      }
-      
-      // Server API already returns data in the correct format
-      const toilets: Toilet[] = data.map((row: any) => {
-        // Debug log for coordinates and title
-        if (DEBUG && row.coordinates) {
-          console.log(`📍 Toilet ${row.id} coordinates:`, row.coordinates);
-        }
-        if (DEBUG && row.title) {
-          console.log(`📝 Toilet ${row.id} has custom title:`, row.title);
-        }
-        
-        return row; // Server already returns data in the correct format
-      });
-      
-      // Cache the result
-      toiletCache.set(cacheKey, {
-        toilets,
-        timestamp: Date.now(),
-        bounds: expandedBounds
-      });
-      
-      if (DEBUG) console.log(`✅ Fetched ${toilets.length} toilets from server API`);
-      return toilets;
-      
-    } catch (error) {
-      console.error('❌ Error fetching from server API:', error);
-      throw error;
-    } finally {
-      pendingRequests.delete(cacheKey);
+// Simple function to fetch toilets within bounds from the server API
+async function fetchToiletsInBoundsFromServer(bounds: ViewportBounds): Promise<Toilet[]> {
+  try {
+    // Add 200m buffer around viewport bounds to ensure edge toilets are always visible
+    const bufferDegrees = 0.002; // ~200m in degrees (approximate)
+    
+    const expandedBounds = {
+      north: bounds.north + bufferDegrees,
+      south: bounds.south - bufferDegrees,
+      east: bounds.east + bufferDegrees,
+      west: bounds.west - bufferDegrees
+    };
+    
+    // Calculate center point and radius from expanded bounds
+    const centerLat = (expandedBounds.north + expandedBounds.south) / 2;
+    const centerLng = (expandedBounds.east + expandedBounds.west) / 2;
+    
+    // Calculate radius in km (approximate)
+    const latDiff = expandedBounds.north - expandedBounds.south;
+    const lngDiff = expandedBounds.east - expandedBounds.west;
+    const radiusKm = Math.max(latDiff, lngDiff) * 111; // Rough conversion to km
+    
+    // Add additional buffer for smooth experience (1000m = 1km)
+    const radiusWithBuffer = Math.max(radiusKm + 1, 5); // Minimum 5km radius
+    
+    const params = new URLSearchParams({
+      lat: centerLat.toString(),
+      lng: centerLng.toString(),
+      radius: radiusWithBuffer.toString()
+    });
+    
+    const response = await fetch(`/api/toilets?${params}`);
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
-  })();
-  
-  pendingRequests.set(cacheKey, fetchPromise);
-  return fetchPromise;
+    
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('❌ Error fetching toilets in bounds from server:', error);
+    throw error;
+  }
 }
 
-/**
- * Hook for fetching toilets in viewport with Supabase
- */
 export function useSupabaseToilets({ bounds, enabled = true }: UseSupabaseToiletsOptions) {
   const queryClient = useQueryClient();
-  const lastFetchTime = useRef<number>(0);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   
-  // Create stable query key
-  const queryKey = bounds ? ['toilets-supabase', getCacheKey(bounds)] : ['toilets-supabase', 'no-bounds'];
+  // Create stable query key - use consistent key but include bounds in data fetching
+  const queryKey = ['toilets-supabase'];
   
-  // Debug logging
-  useEffect(() => {
-    if (DEBUG && bounds) {
-      console.log('🔄 useSupabaseToilets called with bounds:', bounds);
-    }
-  }, [bounds]);
+  // Silent for performance
   
   const {
     data: toilets = [],
@@ -254,252 +94,52 @@ export function useSupabaseToilets({ bounds, enabled = true }: UseSupabaseToilet
     queryKey,
     queryFn: async () => {
       if (!bounds) {
-        if (DEBUG) console.log('🌍 Loading ALL toilets (no bounds provided)');
-        // Load all toilets when no bounds are provided
-        return await fetchAllToiletsFromSupabase();
-      }
-      
-      // Check cache first
-      const cached = findCachedToilets(bounds);
-      if (cached) {
-        return cached;
-      }
-      
-      // Rate limiting - only apply if we don't have cached data
-      const now = Date.now();
-      if (now - lastFetchTime.current < MIN_FETCH_INTERVAL) {
-        if (DEBUG) console.log(`⏱️ Rate limited: ${Math.round((MIN_FETCH_INTERVAL - (now - lastFetchTime.current)) / 1000)}s remaining`);
-        // Try to return cached data instead of empty array
-        const cached = findCachedToilets(bounds);
-        if (cached && cached.length > 0) {
-          if (DEBUG) console.log(`🎯 Returning ${cached.length} cached toilets due to rate limiting`);
-          return cached;
-        }
+        // No bounds yet - return empty array and wait for bounds to be set
         return [];
       }
       
-      lastFetchTime.current = now;
-      return await fetchToiletsFromSupabase(bounds);
+      // Fetch toilets within bounds
+      return await fetchToiletsInBoundsFromServer(bounds);
     },
-    enabled: enabled && !!bounds,
-    staleTime: 60 * 60 * 1000, // 1 hour
-    gcTime: 4 * 60 * 60 * 1000, // 4 hours
-    retry: (failureCount, error) => {
-      // Don't retry rate limit errors
-      if (error.message && error.message.includes('Rate limited')) return false;
-      return failureCount < 2;
-    },
-    retryDelay: 2000
+    enabled: enabled, // Always enabled when requested
+    staleTime: 60 * 1000, // Data is fresh for 1 minute - balanced
+    gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes after unmount
+    refetchOnMount: true, // Always fetch on mount to ensure initial load
+    refetchOnWindowFocus: false, // Don't refetch on window focus (reduces requests)
+    refetchOnReconnect: true, // Refetch when reconnecting (network issues)
+    retry: 1, // Retry failed requests once
+    retryDelay: 1000 // 1 second delay between retries
   });
   
-  // Combine loading states
-  const finalIsLoading = queryLoading || isLoading;
-  const finalError = queryError?.message || error;
-  
-  // Clear cache on mount
+  // Force refetch when bounds change
+  const boundsRef = useRef(bounds);
   useEffect(() => {
-    // Clear cache on first load
-    toiletCache.clear();
-    pendingRequests.clear();
-    if (DEBUG) console.log('🧹 Toilet cache cleared on mount');
-  }, []);
-
-  // Debug logging for results
-  useEffect(() => {
-          if (DEBUG) {
-        if (toilets.length > 0) {
-          console.log(`🚽 useSupabaseToilets returned ${toilets.length} toilets`);
-          console.log('🚽 Sample toilet:', toilets[0]);
-          
-          // Check for toilets with custom titles
-          const toiletsWithTitles = toilets.filter(t => t.title && t.title.trim() !== '');
-          if (toiletsWithTitles.length > 0) {
-            console.log('🚽 useSupabaseToilets - Toilets with custom titles:', toiletsWithTitles.map(t => ({ id: t.id, title: t.title, type: t.type })));
-          } else {
-            console.log('⚠️ useSupabaseToilets - No toilets with custom titles found');
-          }
-        } else if (!isLoading && enabled && bounds) {
-          console.log('⚠️ useSupabaseToilets returned 0 toilets');
-        }
-        
-        if (finalError) {
-          console.error('❌ useSupabaseToilets error:', finalError);
-        }
-      }
-  }, [toilets, finalError, isLoading, enabled, bounds]);
-  
-  // Don't clear cache on mount - let it persist
-  useEffect(() => {
-    if (DEBUG) console.log('🔄 useSupabaseToilets hook mounted');
-  }, []);
-  
-  // Debounced bounds update
-  const debouncedRefetch = useCallback(() => {
-    if (!bounds) return;
-    
-    setIsLoading(true);
-    setError(null);
-    
-    const timer = setTimeout(() => {
-      refetch().finally(() => {
-        setIsLoading(false);
-      });
-    }, FETCH_DEBOUNCE_MS);
-    
-    return () => clearTimeout(timer);
-  }, [bounds, refetch]);
-  
-  // Cache management utilities
-  const clearCache = useCallback(() => {
-    toiletCache.clear();
-    pendingRequests.clear();
-    queryClient.removeQueries({ queryKey: ['toilets-supabase'] });
-    if (DEBUG) console.log('🧹 Toilet cache cleared');
-  }, [queryClient]);
-  
-  const getCacheStats = useCallback(() => {
-    return {
-      cacheSize: toiletCache.size,
-      pendingRequests: pendingRequests.size,
-      entries: Array.from(toiletCache.entries()).map(([key, entry]) => ({
-        key,
-        toilets: entry.toilets.length,
-        age: Math.round((Date.now() - entry.timestamp) / 1000 / 60), // minutes
-        bounds: entry.bounds
-      }))
-    };
-  }, []);
-  
-  // Expose debug utilities
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      window.debugSupabaseToiletCache = getCacheStats;
-      window.clearSupabaseToiletCache = clearCache;
+    // Refetch if bounds changed and we have bounds
+    if (bounds && boundsRef.current !== bounds) {
+      refetch();
     }
-  }, [getCacheStats, clearCache]);
+    boundsRef.current = bounds;
+  }, [bounds, refetch]);
   
   return {
     data: toilets,
-    isLoading: finalIsLoading,
-    error: finalError,
-    refetch: debouncedRefetch,
-    clearCache,
-    getCacheStats
+    error: queryError,
+    isLoading: queryLoading,
+    refetch
   };
 }
 
-/**
- * Hook for getting toilets near a specific location
- */
+// Simple hook for nearby toilets
 export function useNearbyToilets(
   location: { lat: number; lng: number } | null,
   radiusKm: number = 5
 ) {
-  return useQuery({
-    queryKey: ['toilets-nearby', location?.lat, location?.lng, radiusKm],
-    queryFn: async () => {
-      if (!location) return [];
-      
-      if (DEBUG) console.log(`🔍 Fetching toilets near point: ${location.lat}, ${location.lng} (${radiusKm}km)`);
-      
-      try {
-        const { data, error } = await supabase
-          .rpc('get_toilets_near_point', {
-            lat: location.lat,
-            lng: location.lng,
-            radius_meters: radiusKm * 1000
-          });
-        
-        if (error) {
-          console.error('❌ Nearby toilets query error:', error);
-          throw error;
-        }
-        
-        if (DEBUG) {
-          console.log(`✅ Found ${data?.length || 0} toilets near point`);
-          if (data && data.length > 0) {
-            console.log('Sample nearby toilet:', data[0]);
-          }
-        }
-        
-        return data.map((row: any) => ({
-          id: row.id,
-          coordinates: row.coordinates,
-          type: row.type,
-          title: row.title,
-          tags: row.tags || {},
-          source: row.source,
-          notes: row.notes,
-          isRemoved: row.is_removed || false,
-          createdAt: new Date(row.created_at),
-          updatedAt: new Date(row.updated_at),
-          distance: row.distance_meters,
-          addedByUserName: row.added_by_user_name,
-          accessibility: row.accessibility || 'unknown',
-          accessType: row.access_type || 'unknown',
-          userId: row.user_id,
-          osmId: row.osm_id,
-          reportCount: row.report_count || 0,
-          removedAt: row.removed_at ? new Date(row.removed_at) : null,
-          averageRating: row.average_rating || 0,
-          reviewCount: row.review_count || 0
-        }));
-      } catch (error) {
-        // If the function doesn't exist yet, try the bounds function as fallback
-        if (error.message && error.message.includes('Could not find the function')) {
-          if (DEBUG) console.log('⚠️ get_toilets_near_point function not found, using fallback');
-          
-          // Calculate bounds around the point (rough approximation)
-          const latDelta = radiusKm / 111; // ~111km per degree of latitude
-          const lngDelta = radiusKm / (111 * Math.cos(location.lat * Math.PI / 180));
-          
-          const bounds = {
-            north: location.lat + latDelta,
-            south: location.lat - latDelta,
-            east: location.lng + lngDelta,
-            west: location.lng - lngDelta
-          };
-          
-          const { data, error: boundsError } = await supabase
-            .rpc('get_toilets_in_bounds', {
-              west: bounds.west,
-              south: bounds.south,
-              east: bounds.east,
-              north: bounds.north
-            });
-          
-          if (boundsError) throw boundsError;
-          
-          if (DEBUG) console.log(`✅ Fallback found ${data?.length || 0} toilets in bounds`);
-          
-          return data.map((row: any) => ({
-            id: row.id,
-            coordinates: row.coordinates,
-            type: row.type,
-            title: row.title,
-            tags: row.tags || {},
-            source: row.source,
-            notes: row.notes,
-            isRemoved: row.is_removed || false,
-            createdAt: new Date(row.created_at),
-            updatedAt: new Date(row.updated_at),
-            addedByUserName: row.added_by_user_name,
-            accessibility: row.accessibility || 'unknown',
-            accessType: row.access_type || 'unknown',
-            userId: row.user_id,
-            osmId: row.osm_id,
-            reportCount: row.report_count || 0,
-            removedAt: row.removed_at ? new Date(row.removed_at) : null,
-            averageRating: row.average_rating || 0,
-            reviewCount: row.review_count || 0
-          }));
-        }
-        
-        throw error;
-      }
-    },
-    enabled: !!location,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 30 * 60 * 1000 // 30 minutes
-  });
+  const bounds = location ? {
+    north: location.lat + (radiusKm / 111.32),
+    south: location.lat - (radiusKm / 111.32),
+    east: location.lng + (radiusKm / (111.32 * Math.cos(location.lat * Math.PI / 180))),
+    west: location.lng - (radiusKm / (111.32 * Math.cos(location.lat * Math.PI / 180)))
+  } : undefined;
+
+  return useSupabaseToilets({ bounds, enabled: !!location });
 } 

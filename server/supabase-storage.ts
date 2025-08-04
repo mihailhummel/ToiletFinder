@@ -2,8 +2,15 @@ import { createClient } from '@supabase/supabase-js';
 import { IStorage } from './storage';
 import type { Toilet, Review, Report, ToiletReport, InsertToilet, InsertReview, InsertReport, InsertToiletReport } from '@shared/schema';
 
-const supabaseUrl = 'https://fvohytokcumrauwplnwo.supabase.co';
-const supabaseServiceKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2b2h5dG9rY3VtcmF1d3BsbndvIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTg5MDczOCwiZXhwIjoyMDY3NDY2NzM4fQ.nJIBMdMfRd7BB38zS43g40zfLTLGisXVvaKH6SZDvXw';
+const supabaseUrl = process.env.SUPABASE_URL || 'https://fvohytokcumrauwplnwo.supabase.co';
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2b2h5dG9rY3VtcmF1d3BsbndvIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTg5MDczOCwiZXhwIjoyMDY3NDY2NzM4fQ.nJIBMdMfRd7BB38zS43g40zfLTLGisXVvaKH6SZDvXw';
+
+// Environment check for production
+if (process.env.NODE_ENV === 'production' && !process.env.SUPABASE_SERVICE_KEY) {
+  console.error('🚨 CRITICAL: SUPABASE_SERVICE_KEY environment variable is required in production');
+  console.error('Please set your Supabase service key in the .env file');
+  process.exit(1);
+}
 
 // Use service key for server-side operations
 const supabase = createClient(supabaseUrl, supabaseServiceKey, {
@@ -17,8 +24,6 @@ export class SupabaseStorage implements IStorage {
   
   async createToilet(toilet: InsertToilet): Promise<string> {
     try {
-      console.log('🚽 Creating toilet in Supabase:', toilet);
-      
       // Generate a unique ID for the toilet
       const toiletId = `toilet_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       
@@ -38,12 +43,6 @@ export class SupabaseStorage implements IStorage {
         updated_at: new Date().toISOString(),
         review_count: 0
       };
-      
-      console.log('🚽 Server: Toilet data being stored:', {
-        title: toiletData.title,
-        originalTitle: toilet.title,
-        type: toiletData.type
-      });
 
       const { data, error } = await supabase
         .from('toilets')
@@ -62,8 +61,6 @@ export class SupabaseStorage implements IStorage {
         throw error;
       }
 
-      console.log('✅ Toilet created successfully:', data.id);
-      console.log('🚽 Created toilet data:', data);
       return data.id;
       
     } catch (error) {
@@ -74,22 +71,48 @@ export class SupabaseStorage implements IStorage {
 
   async getToilets(): Promise<Toilet[]> {
     try {
-      const { data, error } = await supabase
-        .from('toilets')
-        .select('*')
-        .eq('is_removed', false)
-        .order('created_at', { ascending: false });
+      // Silent for performance
+      
+      // Use pagination to get all toilets - fetch in chunks of 1000
+      let allToilets: any[] = [];
+      let from = 0;
+      const pageSize = 1000;
+      let hasMore = true;
+      
+      while (hasMore) {
+        const { data, error } = await supabase
+          .from('toilets')
+          .select('*')
+          .eq('is_removed', false)
+          .order('created_at', { ascending: false })
+          .range(from, from + pageSize - 1);
 
-      if (error) {
-        console.error('❌ Error fetching all toilets:', error);
-        throw error;
+        if (error) {
+          console.error('❌ Error fetching toilets:', error);
+          throw error;
+        }
+
+        if (data && data.length > 0) {
+          allToilets = allToilets.concat(data);
+          from += pageSize;
+          // Silent for performance
+        } else {
+          hasMore = false;
+        }
       }
 
-      const transformedToilets = data.map(this.transformToilet);
-      console.log('🚽 Retrieved toilets from database:', transformedToilets.length);
-      if (transformedToilets.length > 0) {
-        console.log('🚽 Sample toilet:', transformedToilets[0]);
-      }
+            // Silent for performance
+      
+      // Check for toilets with invalid coordinates (silent for performance)
+      const invalidToilets = allToilets.filter(t => 
+        !t.coordinates || 
+        typeof t.coordinates.lat !== 'number' || 
+        typeof t.coordinates.lng !== 'number'
+      );
+      
+      const transformedToilets = allToilets.map(this.transformToilet);
+      // Silent for performance
+      
       return transformedToilets;
     } catch (error) {
       console.error('❌ Failed to fetch toilets:', error);
@@ -99,20 +122,34 @@ export class SupabaseStorage implements IStorage {
 
   async getToiletsNearby(lat: number, lng: number, radiusKm: number = 10): Promise<Toilet[]> {
     try {
-      console.log(`🔍 Fetching toilets near ${lat}, ${lng} within ${radiusKm}km`);
+      // Use a more efficient approach with rough bounding box filtering first
+      // This reduces the number of toilets we need to process
       
-      // Get all toilets and filter by distance since we can't query JSON coordinates directly
+      // Calculate rough bounding box (1 degree ≈ 111 km)
+      const latBuffer = radiusKm / 111;
+      const lngBuffer = radiusKm / (111 * Math.cos(lat * Math.PI / 180));
+      
+      const minLat = lat - latBuffer;
+      const maxLat = lat + latBuffer;
+      const minLng = lng - lngBuffer;
+      const maxLng = lng + lngBuffer;
+      
+      // First, get toilets within the bounding box using JSON path queries
       const { data, error } = await supabase
         .from('toilets')
         .select('*')
-        .eq('is_removed', false);
+        .eq('is_removed', false)
+        .gte('coordinates->lat', minLat)
+        .lte('coordinates->lat', maxLat)
+        .gte('coordinates->lng', minLng)
+        .lte('coordinates->lng', maxLng);
 
       if (error) {
-        console.error('❌ Error fetching toilets:', error);
+        console.error('❌ Error fetching nearby toilets:', error);
         throw error;
       }
 
-      // Filter by distance and transform
+      // Now filter by exact distance and transform
       const toilets = data
         .map(this.transformToilet)
         .filter((toilet: Toilet) => {
@@ -120,7 +157,7 @@ export class SupabaseStorage implements IStorage {
           return distance <= radiusKm;
         });
 
-      console.log(`✅ Found ${toilets.length} toilets within ${radiusKm}km`);
+      return toilets;
       return toilets;
       
     } catch (error) {
@@ -131,8 +168,6 @@ export class SupabaseStorage implements IStorage {
 
   async createReview(review: InsertReview): Promise<void> {
     try {
-      console.log('📝 Creating review:', review);
-      
       // First, check if reviews table exists and has the right structure
       const { data: existingReviews, error: checkError } = await supabase
         .from('reviews')
@@ -172,8 +207,6 @@ export class SupabaseStorage implements IStorage {
       if (updateError) {
         console.error('❌ Error updating toilet review count:', updateError);
       }
-
-      console.log('✅ Review created successfully');
     } catch (error) {
       console.error('❌ Failed to create review:', error);
       throw error;
@@ -231,7 +264,7 @@ export class SupabaseStorage implements IStorage {
 
   async createReport(report: InsertReport): Promise<void> {
     try {
-      console.log('📝 Creating report in Supabase:', report);
+      // Silent for performance
       
       const reportData = {
         toilet_id: report.toiletId,
@@ -251,7 +284,7 @@ export class SupabaseStorage implements IStorage {
         throw error;
       }
 
-      console.log('✅ Report created successfully');
+              // Silent for performance
     } catch (error) {
       console.error('❌ Failed to create report:', error);
       throw error;
@@ -260,7 +293,7 @@ export class SupabaseStorage implements IStorage {
 
   async reportToiletNotExists(toiletReport: InsertToiletReport): Promise<void> {
     try {
-      console.log('🚫 Reporting toilet as non-existent:', toiletReport);
+      // Silent for performance
       
       const reportData = {
         toilet_id: toiletReport.toiletId,
@@ -277,7 +310,7 @@ export class SupabaseStorage implements IStorage {
         throw error;
       }
 
-      console.log('✅ Toilet reported as non-existent');
+              // Silent for performance
     } catch (error) {
       console.error('❌ Failed to report toilet:', error);
       throw error;
@@ -296,7 +329,7 @@ export class SupabaseStorage implements IStorage {
         throw error;
       }
 
-      console.log(`📊 Report count for toilet ${toiletId}: ${count || 0}`);
+      // Silent for performance
       return count || 0;
     } catch (error) {
       console.error('❌ Failed to get report count:', error);
@@ -340,7 +373,7 @@ export class SupabaseStorage implements IStorage {
         throw error;
       }
 
-      console.log('✅ Toilet marked as removed');
+              // Silent for performance
     } catch (error) {
       console.error('❌ Failed to remove toilet:', error);
       throw error;
@@ -359,7 +392,7 @@ export class SupabaseStorage implements IStorage {
         throw error;
       }
 
-      console.log('✅ Toilet deleted successfully');
+              // Silent for performance
     } catch (error) {
       console.error('❌ Failed to delete toilet:', error);
       throw error;
@@ -368,7 +401,7 @@ export class SupabaseStorage implements IStorage {
 
   async queueChange(type: 'add' | 'report' | 'delete', data: any): Promise<void> {
     // For Supabase, we execute changes immediately instead of queuing
-    console.log(`🔄 Executing ${type} operation immediately in Supabase`);
+    // Silent for performance
     
     try {
       switch (type) {
@@ -395,37 +428,50 @@ export class SupabaseStorage implements IStorage {
   }
 
   private transformToilet(data: any): Toilet {
+    // Check for invalid data but don't throw errors - try to fix if possible
+    if (!data) {
+      console.error('❌ Invalid toilet data in transformToilet: data is null or undefined');
+      throw new Error('Invalid toilet data: data is null or undefined');
+    }
+    
+    // Try to fix coordinates if they're invalid
+    let coordinates = data.coordinates;
+    if (!coordinates || typeof coordinates.lat !== 'number' || typeof coordinates.lng !== 'number') {
+      console.warn(`⚠️ Toilet ${data.id} has invalid coordinates:`, coordinates);
+      
+      // Try to use a default coordinate if none exists
+      coordinates = {
+        lat: typeof coordinates?.lat === 'number' ? coordinates.lat : 42.6977, // Sofia center as fallback
+        lng: typeof coordinates?.lng === 'number' ? coordinates.lng : 23.3219
+      };
+      
+      // Silent for performance
+    }
+    
     const transformed = {
       id: data.id,
-      coordinates: data.coordinates,
-      lat: data.coordinates.lat,
-      lng: data.coordinates.lng,
-      type: data.type,
+      coordinates: coordinates,
+      lat: coordinates.lat,
+      lng: coordinates.lng,
+      type: data.type || 'other',
       title: data.title,
-      source: data.source,
+      source: data.source || 'user', // Default to user if source is missing
       tags: data.tags || {},
       notes: data.notes,
       accessibility: data.accessibility || 'unknown',
       accessType: data.access_type || 'unknown',
-      userId: data.user_id,
+      userId: data.user_id || 'unknown',
       addedByUserName: data.added_by_user_name,
       osmId: data.osm_id || null,
       reportCount: data.report_count || 0,
       isRemoved: data.is_removed || false,
       removedAt: data.removed_at ? new Date(data.removed_at) : null,
-      createdAt: new Date(data.created_at),
+      createdAt: new Date(data.created_at || Date.now()),
       averageRating: data.average_rating || 0,
       reviewCount: data.review_count || 0
     };
     
-    // Debug logging for user-added toilets with titles
-    if (data.source === 'user' && data.title) {
-      console.log('🚽 Server: Transformed toilet with custom title:', {
-        id: data.id,
-        title: data.title,
-        transformedTitle: transformed.title
-      });
-    }
+    // No logging for performance
     
     return transformed;
   }
