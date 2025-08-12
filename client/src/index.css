@@ -592,7 +592,7 @@ button:active,
   }
   button:not(.floating-button), .clickable, input, select, textarea {
     min-height: 48px;
-    font-size: 1rem;
+    font-size: .9rem;
   }
   
   /* Override for floating buttons to maintain their size and positioning */
@@ -685,6 +685,33 @@ button:active,
   .floating-button:hover {
     transform: scale(1.1) !important;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  }
+  
+  /* Language toggle button overrides - ULTRA specific to override .floating-button */
+  button.language-toggle-btn,
+  .language-toggle-btn.language-toggle-btn {
+    width: 30px !important;
+    height: 30px !important;
+    min-width: 30px !important;
+    min-height: 30px !important;
+    padding: 0 !important;
+    font-size: 0.7rem !important;
+    position: relative !important; /* Override fixed positioning */
+    z-index: auto !important;
+    margin: 0 !important;
+  }
+  
+  /* Desktop override for language toggle - ULTRA specific */
+  @media (min-width: 768px) {
+    button.language-toggle-btn,
+    .language-toggle-btn.language-toggle-btn {
+      width: auto !important;
+      height: auto !important;
+      min-width: unset !important;
+      min-height: unset !important;
+      padding: 0.25rem 0.5rem !important;
+      font-size: 0.75rem !important;
+    }
   }
 
 

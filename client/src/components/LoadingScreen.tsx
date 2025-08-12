@@ -1,4 +1,5 @@
 import React from 'react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface LoadingScreenProps {
   isLoading: boolean;
@@ -6,6 +7,8 @@ interface LoadingScreenProps {
 }
 
 export const LoadingScreen: React.FC<LoadingScreenProps> = ({ isLoading, toiletCount }) => {
+  const { t } = useLanguage();
+  
   if (!isLoading) return null;
 
   return (
@@ -22,24 +25,24 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({ isLoading, toiletC
         
         {/* Loading Text */}
         <h2 className="text-xl font-semibold text-gray-800 mb-2">
-          Loading Toilet Locations
+          {t('loading.toilets')}
         </h2>
         
         <p className="text-gray-600 mb-4">
-          Fetching all available toilet locations for the best experience...
+          {t('loading.message')}
         </p>
         
-        {toiletCount && toiletCount > 0 && (
+        {/* {toiletCount && toiletCount > 0 && (
           <div className="bg-blue-50 rounded-lg p-4 inline-block">
             <p className="text-blue-700 font-medium">
-              📍 {toiletCount.toLocaleString()} locations loaded
+              📍 {toiletCount.toLocaleString()} {t('loading.count')}
             </p>
           </div>
         )}
         
         <p className="text-xs text-gray-500 mt-4">
-          This happens only once - future map interactions will be instant!
-        </p>
+          {t('loading.oneTime')}
+        </p> */}
       </div>
     </div>
   );

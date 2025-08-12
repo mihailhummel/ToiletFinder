@@ -5,6 +5,7 @@ import { useGeolocation } from '@/hooks/useGeolocation';
 import { useToiletCache } from '@/hooks/useToiletCache';
 import { useDeleteToilet, useAddReview, preloadToiletsForRegion } from '@/hooks/useToilets';
 import { useAuth } from '@/hooks/useAuth';
+import { useLanguage } from '@/contexts/LanguageContext';
 import type { Toilet, MapLocation } from '@/types/toilet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -48,6 +49,7 @@ declare global {
 
 const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, currentUser, isAddingToilet }: MapProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
+  const { t } = useLanguage();
   const map = useRef<any>(null);
   const markersLayer = useRef<any>(null);
   const userMarker = useRef<any>(null);
@@ -1099,33 +1101,33 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
         return toilet.title;
       }
       if (tags.name) return tags.name;
-      if (tags.operator && toilet.type === 'gas-station') return `Toilet at ${tags.operator} Gas Station`;
-      if (tags.brand && toilet.type === 'gas-station') return `Toilet at ${tags.brand} Gas Station`;
-      if (toilet.type === 'mall') return 'Toilet in Shopping Mall';
-      if (toilet.type === 'restaurant') return 'Toilet in Restaurant';
-      if (toilet.type === 'cafe') return 'Toilet in Cafe';
-      if (toilet.type === 'gas-station') return 'Toilet at Gas Station';
-      return 'Public Toilet';
+      if (tags.operator && toilet.type === 'gas-station') return `${t('popup.toiletAt')} ${tags.operator} ${t('popup.gasStation')}`;
+      if (tags.brand && toilet.type === 'gas-station') return `${t('popup.toiletAt')} ${tags.brand} ${t('popup.gasStation')}`;
+      if (toilet.type === 'mall') return `${t('popup.toiletIn')} ${t('popup.shoppingMall')}`;
+      if (toilet.type === 'restaurant') return `${t('popup.toiletIn')} ${t('popup.restaurant')}`;
+      if (toilet.type === 'cafe') return `${t('popup.toiletIn')} ${t('popup.cafe')}`;
+      if (toilet.type === 'gas-station') return `${t('popup.toiletAt')} ${t('popup.gasStation')}`;
+      return t('popup.publicToilet');
     };
     
     const properTitle = getProperTitle();
     
     // Determine availability and accessibility based on database fields or tags
     const getAvailability = () => {
-      if (toilet.accessType === 'paid') return { text: 'Paid Access', color: '#9333ea', bg: '#f3e8ff' };
-      if (toilet.accessType === 'customers-only') return { text: 'Customers Only', color: '#eab308', bg: '#fefce8' };
-      if (toilet.accessType === 'free') return { text: 'Free to use', color: '#16a34a', bg: '#f0fdf4' };
-      if (tags.fee === 'yes' || tags.charge === 'yes') return { text: 'Paid', color: '#9333ea', bg: '#f3e8ff' };
-      if (tags.access === 'customers' || tags.fee === 'customers') return { text: 'Only for Customers', color: '#eab308', bg: '#fefce8' };
-      return { text: 'Unknown', color: '#6b7280', bg: '#f9fafb' };
+      if (toilet.accessType === 'paid') return { text: t('popup.paidAccess'), color: '#9333ea', bg: '#f3e8ff' };
+      if (toilet.accessType === 'customers-only') return { text: t('popup.customersOnly'), color: '#eab308', bg: '#fefce8' };
+      if (toilet.accessType === 'free') return { text: t('popup.freeToUse'), color: '#16a34a', bg: '#f0fdf4' };
+      if (tags.fee === 'yes' || tags.charge === 'yes') return { text: t('popup.paid'), color: '#9333ea', bg: '#f3e8ff' };
+      if (tags.access === 'customers' || tags.fee === 'customers') return { text: t('popup.onlyForCustomers'), color: '#eab308', bg: '#fefce8' };
+      return { text: t('popup.unknown'), color: '#6b7280', bg: '#f9fafb' };
     };
     
     const getAccessibility = () => {
-      if (toilet.accessibility === 'accessible') return { text: 'Wheelchair accessible', color: '#2563eb', bg: '#eff6ff' };
-      if (toilet.accessibility === 'not-accessible') return { text: 'Not wheelchair accessible', color: '#dc2626', bg: '#fef2f2' };
-      if (tags.wheelchair === 'yes') return { text: 'Wheelchair accessible', color: '#2563eb', bg: '#eff6ff' };
-      if (tags.wheelchair === 'no') return { text: 'Not wheelchair accessible', color: '#dc2626', bg: '#fef2f2' };
-      return { text: 'Unknown', color: '#6b7280', bg: '#f9fafb' };
+      if (toilet.accessibility === 'accessible') return { text: t('popup.wheelchairAccessible'), color: '#2563eb', bg: '#eff6ff' };
+      if (toilet.accessibility === 'not-accessible') return { text: t('popup.notWheelchairAccessible'), color: '#dc2626', bg: '#fef2f2' };
+      if (tags.wheelchair === 'yes') return { text: t('popup.wheelchairAccessible'), color: '#2563eb', bg: '#eff6ff' };
+      if (tags.wheelchair === 'no') return { text: t('popup.notWheelchairAccessible'), color: '#dc2626', bg: '#fef2f2' };
+      return { text: t('popup.unknown'), color: '#6b7280', bg: '#f9fafb' };
     };
     
     const availability = getAvailability();
@@ -1143,7 +1145,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
         <div style="margin-bottom: 8px; display: flex; align-items: center; gap: 4px;">
           <div style="width: 6px; height: 6px; background: #3b82f6; border-radius: 50%; flex-shrink: 0;"></div>
           <span style="font-size: 11px; color: #6b7280; font-weight: 500;">
-            Added by ${toilet.addedByUserName}
+            ${t('popup.addedBy')} ${toilet.addedByUserName}
           </span>
         </div>
         ` : ''}
@@ -1154,19 +1156,19 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
             <span style="color: #facc15; font-size: 16px;">☆☆☆☆☆</span>
             <span style="font-size: 14px; font-weight: 600; color: #374151;">0.0</span>
           </div>
-          <span style="color: #6b7280; font-size: 12px;">(0 reviews)</span>
+          <span style="color: #6b7280; font-size: 12px;">(0 ${t('popup.reviews')})</span>
         </div>
         
         <!-- 3. Availability and Accessibility Indicators -->
         <div style="display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px;">
           <div style="display: flex; align-items: center; gap: 6px;">
-            <span style="font-size: 12px; font-weight: 600; color: #374151; min-width: 70px;">Availability:</span>
+            <span style="font-size: 12px; font-weight: 600; color: #374151; min-width: 70px;">${t('popup.availability')}</span>
             <span style="background: ${availability.bg}; color: ${availability.color}; padding: 3px 6px; border-radius: 4px; font-size: 11px; font-weight: 500;">
               ${availability.text}
             </span>
           </div>
           <div style="display: flex; align-items: center; gap: 6px;">
-            <span style="font-size: 12px; font-weight: 600; color: #374151; min-width: 70px;">Accessibility:</span>
+            <span style="font-size: 12px; font-weight: 600; color: #374151; min-width: 70px;">${t('popup.accessibility')}</span>
             <span style="background: ${accessibility.bg}; color: ${accessibility.color}; padding: 3px 6px; border-radius: 4px; font-size: 11px; font-weight: 500;">
               ${accessibility.text}
             </span>
@@ -1176,7 +1178,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
         <!-- 4. Star Rating Section -->
         <div id="rating-section-${toilet.id}" style="margin-bottom: 20px;">
           <div style="text-align: center; margin-bottom: 12px;">
-            <div style="font-size: 16px; color: #374151; font-weight: 600; margin-bottom: 12px;">Rate this toilet</div>
+            <div style="font-size: 16px; color: #374151; font-weight: 600; margin-bottom: 12px;">${t('popup.rateThisToilet')}</div>
             <div id="stars-${toilet.id}" style="display: flex; justify-content: center; gap: 4px;">
               ${[1,2,3,4,5].map(i => `
                 <button 
@@ -1194,7 +1196,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
           <div id="review-comment-${toilet.id}" style="display: none; margin-top: 16px;">
             <textarea 
               id="comment-${toilet.id}"
-              placeholder="Share your experience with this toilet..."
+              placeholder="${t('popup.shareExperience')}"
               style="width: 100%; min-height: 80px; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; font-family: inherit; resize: vertical; box-sizing: border-box;"
               oninput="window.handleTextareaChange('${toilet.id}', this.value)"
             ></textarea>
@@ -1205,7 +1207,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
                 onmouseover="this.style.background='#047857'"
                 onmouseout="this.style.background='#059669'"
               >
-                Submit Review
+                ${t('popup.submitReview')}
               </button>
               <button 
                 onclick="window.cancelReview('${toilet.id}')"
@@ -1213,7 +1215,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
                 onmouseover="this.style.background='#4b5563'"
                 onmouseout="this.style.background='#6b7280'"
               >
-                Cancel
+                ${t('popup.cancel')}
               </button>
             </div>
           </div>
@@ -1223,7 +1225,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
         <div id="reviews-section-${toilet.id}" style="margin-bottom: 20px;">
           <!-- This will be populated by loadReviews function -->
           <div style="text-align: center; color: #6b7280; font-size: 14px; padding: 8px 0;">
-            No reviews yet. Be the first to review this toilet!
+            ${t('popup.noReviews')}
           </div>
         </div>
         
@@ -1236,7 +1238,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
             onmouseout="this.style.background='#3b82f6'"
           >
             <span style="font-size: 16px;">🧭</span>
-            Directions
+            ${t('popup.directions')}
           </button>
           <button 
             onclick="window.reportToiletNotExists('${toilet.id}')" 
@@ -1245,7 +1247,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
             onmouseout="this.style.background='#dc2626'"
           >
             <span style="font-size: 16px;">⚠️</span>
-            Report
+            ${t('popup.report')}
           </button>
           ${isAdmin ? `
             <button 
@@ -1255,7 +1257,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
               onmouseout="this.style.background='#991b1b'"
             >
               <span style="font-size: 16px;">🗑️</span>
-              Delete
+              ${t('popup.delete')}
             </button>
           ` : ''}
         </div>

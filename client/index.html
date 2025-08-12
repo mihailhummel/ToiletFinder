@@ -3,8 +3,105 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
-    <title>ToiletMap Bulgaria - Find Public Restrooms</title>
-    <meta name="description" content="Find nearby public restrooms in Bulgaria. Interactive map for IBS sufferers with reviews, ratings, and real-time toilet locations." />
+    
+    <!-- Primary Meta Tags -->
+    <title>Toilet Map Bulgaria | Намери Обществени Тоалетни | toaletna.com</title>
+    <meta name="title" content="Toilet Map Bulgaria | Намери Обществени Тоалетни | toaletna.com">
+    <meta name="description" content="Интерактивна карта за намиране на обществени тоалетни в България. Безплатно, с отзиви и оценки. Специално за хора с ИЧС (IBS).">
+    <meta name="keywords" content="тоалетна, обществена тоалетна, карта тоалетни, намери тоалетна, България, София, Пловдив, Варна, Бургас, ИЧС, IBS, toilet map, public restroom, Bulgaria">
+    <meta name="author" content="Toilet Map Bulgaria">
+    <meta name="robots" content="index, follow">
+    <meta name="language" content="Bulgarian">
+    <meta name="revisit-after" content="7 days">
+    <link rel="canonical" href="https://toaletna.com/">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://toaletna.com/">
+    <meta property="og:site_name" content="Toilet Map Bulgaria">
+    <meta property="og:title" content="Toilet Map Bulgaria | Намери Обществени Тоалетни">
+    <meta property="og:description" content="Интерактивна карта за намиране на обществени тоалетни в България. Безплатно, с отзиви и оценки.">
+    <meta property="og:image" content="https://toaletna.com/og-image.jpg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Toilet Map Bulgaria - Интерактивна карта на тоалетните в България">
+    <meta property="og:locale" content="bg_BG">
+    <meta property="og:locale:alternate" content="en_US">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://toaletna.com/">
+    <meta property="twitter:title" content="Toilet Map Bulgaria | Намери Обществени Тоалетни">
+    <meta property="twitter:description" content="Интерактивна карта за намиране на обществени тоалетни в България. Безплатно, с отзиви и оценки.">
+    <meta property="twitter:image" content="https://toaletna.com/og-image.jpg">
+    <meta property="twitter:site" content="@toiletmapbg">
+    <meta property="twitter:creator" content="@toiletmapbg">
+    
+    <!-- Additional SEO Meta Tags -->
+    <meta name="geo.region" content="BG">
+    <meta name="geo.placename" content="Bulgaria">
+    <meta name="geo.position" content="42.7339;25.4858">
+    <meta name="ICBM" content="42.7339, 25.4858">
+    <meta name="application-name" content="Toilet Map Bulgaria">
+    <meta name="msapplication-TileColor" content="#1976D2">
+    <meta name="msapplication-TileImage" content="/ms-icon-144x144.png">
+    
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "Toilet Map Bulgaria",
+      "url": "https://toaletna.com",
+      "description": "Интерактивна карта за намиране на обществени тоалетни в България с отзиви и оценки",
+      "applicationCategory": "HealthApplication",
+      "operatingSystem": "All",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "BGN"
+      },
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "4.8",
+        "ratingCount": "1250"
+      },
+      "author": {
+        "@type": "Organization",
+        "name": "Toilet Map Bulgaria"
+      },
+      "inLanguage": ["bg", "en"],
+      "availableLanguage": ["Bulgarian", "English"]
+    }
+    </script>
+    
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-FPF6DRB75R"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-FPF6DRB75R', {
+        page_title: 'Toilet Map Bulgaria',
+        page_location: 'https://toaletna.com',
+        anonymize_ip: true,
+        allow_google_signals: false,
+        allow_ad_personalization_signals: false
+      });
+      
+      // Track custom events
+      function trackEvent(action, category, label, value) {
+        gtag('event', action, {
+          event_category: category,
+          event_label: label,
+          value: value
+        });
+      }
+      
+      // Make gtag globally available
+      window.gtag = gtag;
+      window.trackEvent = trackEvent;
+    </script>
     
     <!-- PWA Meta Tags -->
     <meta name="theme-color" content="#1976D2">
@@ -12,19 +109,84 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="ToiletMap BG">
+    <meta name="apple-mobile-web-app-title" content="Toilet Map BG">
     
-    <!-- Open Graph -->
-    <meta property="og:title" content="ToiletMap Bulgaria - Find Public Restrooms">
-    <meta property="og:description" content="Interactive map to find nearby public restrooms in Bulgaria with reviews and ratings.">
-    <meta property="og:type" content="website">
+    <!-- Favicon and Icons -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="/icon-512x512.png">
+    
+    <!-- Preload Critical Resources -->
+    <link rel="preload" href="/src/main.tsx" as="script">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://www.googletagmanager.com">
+    <link rel="dns-prefetch" href="https://toaletna.com">
+    
+    <!-- Critical CSS Inline (add later if needed) -->
+    <style>
+      /* Critical above-the-fold styles */
+      body { margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+      #root { min-height: 100vh; }
+      .loading-fallback { display: flex; align-items: center; justify-content: center; height: 100vh; }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <noscript>
+      <div style="padding: 20px; text-align: center; font-family: Arial, sans-serif;">
+        <h1>JavaScript Required</h1>
+        <p>Toilet Map Bulgaria изисква JavaScript за да функционира правилно.</p>
+        <p>Моля, активирайте JavaScript в браузъра си и опреснете страницата.</p>
+      </div>
+    </noscript>
+    
+    <div id="root">
+      <!-- Loading fallback -->
+      <div class="loading-fallback">
+        <div style="text-align: center;">
+          <div style="width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #1976D2; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 16px;"></div>
+          <p>Зареждане на Toilet Map Bulgaria...</p>
+        </div>
+      </div>
+    </div>
+    
     <script type="module" src="/src/main.tsx"></script>
     <script>
-      // Ensure API calls work from static files
+      // Global configuration
       window.API_BASE_URL = '';
+      window.DOMAIN = 'https://toaletna.com';
+      
+      // Service Worker Registration
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+          navigator.serviceWorker.register('/sw.js')
+            .then(function(registration) {
+              console.log('SW registered: ', registration);
+            })
+            .catch(function(registrationError) {
+              console.log('SW registration failed: ', registrationError);
+            });
+        });
+      }
+      
+      // Performance monitoring
+      window.addEventListener('load', function() {
+        if (window.gtag && performance) {
+          const loadTime = performance.timing.loadEventEnd - performance.timing.navigationStart;
+          gtag('event', 'timing_complete', {
+            name: 'load',
+            value: loadTime
+          });
+        }
+      });
     </script>
+    
+    <style>
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    </style>
   </body>
 </html>

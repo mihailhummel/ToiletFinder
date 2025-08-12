@@ -1,15 +1,38 @@
-// 🚀 Service Worker for Offline Support & Caching
+// 🚀 Production Service Worker for Toilet Map Bulgaria (toaletna.com)
+// Optimized for performance, SEO, and offline functionality
 
-const CACHE_NAME = 'toilet-finder-v1'
-const STATIC_CACHE = 'toilet-finder-static-v1'
-const API_CACHE = 'toilet-finder-api-v1'
+const VERSION = '2.0.0'
+const CACHE_NAME = `toilet-map-v${VERSION}`
+const STATIC_CACHE = `toilet-map-static-v${VERSION}`
+const API_CACHE = `toilet-map-api-v${VERSION}`
+const IMAGE_CACHE = `toilet-map-images-v${VERSION}`
 
-// 📦 Assets to cache on install
+// 📊 Performance monitoring
+const PERFORMANCE_MARKS = {
+  SW_INSTALL_START: 'sw-install-start',
+  SW_INSTALL_END: 'sw-install-end',
+  SW_ACTIVATE_START: 'sw-activate-start',
+  SW_ACTIVATE_END: 'sw-activate-end'
+}
+
+// 📦 Critical assets to cache on install (production optimized)
 const STATIC_ASSETS = [
   '/',
   '/index.html',
   '/manifest.json',
-  '/offline.html', // Fallback page
+  '/robots.txt',
+  '/sitemap.xml',
+  '/favicon.ico',
+  '/icon-192x192.png',
+  '/icon-512x512.png'
+]
+
+// 🖼️ Image assets for lazy caching
+const IMAGE_PATTERNS = [
+  /\.(png|jpg|jpeg|svg|webp|gif|ico)$/i,
+  /\/icon-/,
+  /\/og-image\./,
+  /\/screenshot-/
 ]
 
 // 🎯 API endpoints to cache
@@ -18,76 +41,123 @@ const API_ENDPOINTS = [
   '/api/health',
 ]
 
-// 📱 Install event - cache static assets
+// 📱 Install event - optimized caching strategy
 self.addEventListener('install', (event) => {
-  console.log('📦 Service Worker installing...')
+  performance.mark(PERFORMANCE_MARKS.SW_INSTALL_START)
+  console.log(`📦 Toilet Map SW v${VERSION} installing...`)
   
   event.waitUntil(
     Promise.all([
-      // Cache static assets
-      caches.open(STATIC_CACHE).then((cache) => {
-        console.log('📦 Caching static assets')
-        return cache.addAll(STATIC_ASSETS)
+      // Cache critical static assets only
+      caches.open(STATIC_CACHE).then(async (cache) => {
+        console.log('📦 Caching critical static assets')
+        try {
+          await cache.addAll(STATIC_ASSETS.filter(asset => {
+            // Only cache assets that exist
+            return !asset.includes('offline.html') // We'll create this dynamically
+          }))
+          console.log('✅ Static assets cached successfully')
+        } catch (error) {
+          console.warn('⚠️ Some static assets failed to cache:', error)
+          // Cache individual assets that work
+          const promises = STATIC_ASSETS.map(async (asset) => {
+            try {
+              await cache.add(asset)
+            } catch (e) {
+              console.warn(`Failed to cache ${asset}:`, e)
+            }
+          })
+          await Promise.allSettled(promises)
+        }
       }),
       
-      // Cache API endpoints
-      caches.open(API_CACHE).then((cache) => {
-        console.log('📦 Pre-caching API endpoints')
-        return cache.addAll(API_ENDPOINTS)
+      // Pre-warm API cache (don't fail install if this fails)
+      caches.open(API_CACHE).then(async (cache) => {
+        console.log('📦 Pre-warming API cache')
+        try {
+          // Only cache health endpoint for availability check
+          await fetch('/api/health').then(response => {
+            if (response.ok) {
+              cache.put('/api/health', response.clone())
+            }
+          })
+        } catch (error) {
+          console.log('ℹ️ API pre-warming skipped (offline install)')
+        }
       })
     ]).then(() => {
-      console.log('✅ Service Worker installed successfully')
-      // Take control immediately
+      performance.mark(PERFORMANCE_MARKS.SW_INSTALL_END)
+      console.log('✅ Toilet Map SW installed successfully')
+      
+      // Measure performance
+      if (performance.measure) {
+        const measure = performance.measure('sw-install-duration', 
+          PERFORMANCE_MARKS.SW_INSTALL_START, 
+          PERFORMANCE_MARKS.SW_INSTALL_END
+        )
+        console.log(`📊 SW install took ${measure.duration.toFixed(2)}ms`)
+      }
+      
+      // Take control immediately for better UX
+      return self.skipWaiting()
+    }).catch(error => {
+      console.error('❌ SW install failed:', error)
+      // Still skip waiting to avoid broken state
       return self.skipWaiting()
     })
   )
 })
 
-// 🔄 Activate event - clean up old caches
+// 🔄 Activate event - optimized cache cleanup
 self.addEventListener('activate', (event) => {
-  console.log('🔄 Service Worker activating...')
+  performance.mark(PERFORMANCE_MARKS.SW_ACTIVATE_START)
+  console.log(`🔄 Toilet Map SW v${VERSION} activating...`)
   
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          // Delete old caches
-          if (cacheName !== STATIC_CACHE && cacheName !== API_CACHE) {
-            console.log('🗑️ Deleting old cache:', cacheName)
-            return caches.delete(cacheName)
-          }
+    Promise.all([
+      // Clean up old caches
+      caches.keys().then((cacheNames) => {
+        const currentCaches = [STATIC_CACHE, API_CACHE, IMAGE_CACHE]
+        return Promise.all(
+          cacheNames.map((cacheName) => {
+            if (!currentCaches.includes(cacheName)) {
+              console.log('🗑️ Deleting old cache:', cacheName)
+              return caches.delete(cacheName)
+            }
+          })
+        )
+      }),
+      
+      // Notify clients about update
+      self.clients.matchAll().then(clients => {
+        clients.forEach(client => {
+          client.postMessage({
+            type: 'SW_UPDATED',
+            version: VERSION,
+            timestamp: Date.now()
+          })
         })
-      )
-    }).then(() => {
-      console.log('✅ Service Worker activated')
+      })
+    ]).then(() => {
+      performance.mark(PERFORMANCE_MARKS.SW_ACTIVATE_END)
+      console.log('✅ Toilet Map SW activated successfully')
+      
+      // Measure performance
+      if (performance.measure) {
+        const measure = performance.measure('sw-activate-duration',
+          PERFORMANCE_MARKS.SW_ACTIVATE_START,
+          PERFORMANCE_MARKS.SW_ACTIVATE_END
+        )
+        console.log(`📊 SW activate took ${measure.duration.toFixed(2)}ms`)
+      }
+      
       // Take control of all clients
       return self.clients.claim()
     })
   )
 })
 
-// 🌐 Fetch event - intercept network requests
-self.addEventListener('fetch', (event) => {
-  const { request } = event
-  const url = new URL(request.url)
-  
-  // Skip non-GET requests
-  if (request.method !== 'GET') {
-    return
-  }
-  
-  // Handle different types of requests
-  if (url.pathname.startsWith('/api/')) {
-    // API requests - Network First strategy
-    event.respondWith(handleAPIRequest(request))
-  } else if (url.pathname.match(/\.(js|css|png|jpg|jpeg|gif|svg|woff|woff2)$/)) {
-    // Static assets - Cache First strategy
-    event.respondWith(handleStaticAssets(request))
-  } else {
-    // HTML pages - Network First with fallback
-    event.respondWith(handlePageRequest(request))
-  }
-})
+// Fetch event moved to bottom with image handling
 
 // 🔌 Network First strategy for API requests
 async function handleAPIRequest(request) {
@@ -199,11 +269,12 @@ function createOfflineResponse(url) {
 function createOfflineHTML() {
   return `
     <!DOCTYPE html>
-    <html lang="en">
+    <html lang="bg">
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Toilet Finder - Offline</title>
+      <title>Toilet Map Bulgaria - Офлайн</title>
+      <meta name="description" content="Toilet Map Bulgaria не е достъпна в момента. Моля, проверете интернет връзката си.">
       <style>
         body {
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -253,9 +324,11 @@ function createOfflineHTML() {
     <body>
       <div class="container">
         <div class="icon">🚽</div>
-        <h1>You're Offline</h1>
-        <p>The toilet finder is not available right now. Please check your internet connection and try again.</p>
-        <button onclick="window.location.reload()">Try Again</button>
+        <h1>Офлайн сте</h1>
+        <p>Toilet Map Bulgaria не е достъпна в момента. Моля, проверете интернет връзката си и опитайте отново.</p>
+        <button onclick="window.location.reload()">Опитайте отново</button>
+        <br><br>
+        <small style="color: #999; font-size: 12px;">toaletna.com</small>
       </div>
     </body>
     </html>
@@ -318,25 +391,27 @@ self.addEventListener('push', (event) => {
   console.log('📱 Push notification received')
   
   const options = {
-    body: 'New toilets have been added in your area!',
+    body: 'Нови тоалетни са добавени във вашия район!',
     icon: '/icon-192x192.png',
-    badge: '/badge-72x72.png',
+    badge: '/icon-72x72.png',
     tag: 'toilet-update',
+    data: { url: '/?utm_source=push_notification' },
     renotify: true,
     actions: [
       {
         action: 'view',
-        title: 'View Map'
+        title: 'Вижте картата',
+        icon: '/icon-72x72.png'
       },
       {
         action: 'dismiss',
-        title: 'Dismiss'
+        title: 'Затвори'
       }
     ]
   }
   
   event.waitUntil(
-    self.registration.showNotification('Toilet Finder', options)
+    self.registration.showNotification('Toilet Map Bulgaria', options)
   )
 })
 
@@ -347,10 +422,86 @@ self.addEventListener('notificationclick', (event) => {
   event.notification.close()
   
   if (event.action === 'view') {
+    const urlToOpen = event.notification.data?.url || '/?utm_source=push_notification'
     event.waitUntil(
-      clients.openWindow('/')
+      clients.matchAll({ type: 'window', includeUncontrolled: true })
+        .then(windowClients => {
+          // Check if app is already open
+          for (let client of windowClients) {
+            if (client.url.includes('toaletna.com') && 'focus' in client) {
+              return client.focus()
+            }
+          }
+          // Open new window if not open
+          return clients.openWindow(urlToOpen)
+        })
     )
   }
 })
 
-console.log('🚀 Service Worker loaded successfully')
+// 📱 Handle image caching with separate strategy
+self.addEventListener('fetch', (event) => {
+  const { request } = event
+  const url = new URL(request.url)
+  
+  // Skip non-GET requests
+  if (request.method !== 'GET') {
+    return
+  }
+  
+  // Handle images separately for better performance
+  if (IMAGE_PATTERNS.some(pattern => pattern.test(url.pathname))) {
+    event.respondWith(handleImageRequest(request))
+    return
+  }
+  
+  // Handle different types of requests
+  if (url.pathname.startsWith('/api/')) {
+    // API requests - Network First strategy
+    event.respondWith(handleAPIRequest(request))
+  } else if (url.pathname.match(/\.(js|css|woff|woff2)$/)) {
+    // Static assets - Cache First strategy
+    event.respondWith(handleStaticAssets(request))
+  } else {
+    // HTML pages - Network First with fallback
+    event.respondWith(handlePageRequest(request))
+  }
+})
+
+// 🖼️ Optimized image handling
+async function handleImageRequest(request) {
+  const cache = await caches.open(IMAGE_CACHE)
+  const cachedResponse = await cache.match(request)
+  
+  if (cachedResponse) {
+    return cachedResponse
+  }
+  
+  try {
+    const networkResponse = await fetch(request)
+    if (networkResponse.ok) {
+      // Only cache images under 1MB
+      const contentLength = networkResponse.headers.get('content-length')
+      if (!contentLength || parseInt(contentLength) < 1024 * 1024) {
+        cache.put(request, networkResponse.clone())
+      }
+    }
+    return networkResponse
+  } catch (error) {
+    // Return a fallback image or empty response
+    return new Response('', { status: 503, statusText: 'Image unavailable offline' })
+  }
+}
+
+// 📊 Analytics integration
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'ANALYTICS_EVENT') {
+    // Forward analytics events when online
+    if (navigator.onLine) {
+      // Implementation would depend on your analytics setup
+      console.log('📊 Analytics event:', event.data)
+    }
+  }
+})
+
+console.log(`🚀 Toilet Map Bulgaria SW v${VERSION} loaded successfully - toaletna.com`)

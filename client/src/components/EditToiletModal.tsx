@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { haptics } from "@/lib/haptics";
+import { useLanguage } from "@/contexts/LanguageContext";
 import type { ToiletType, Accessibility, AccessType, MapLocation } from "@/types/toilet";
 
 interface EditToiletModalProps {
@@ -27,27 +28,7 @@ interface EditToiletModalProps {
   }) => void;
 }
 
-const toiletTypes: { value: ToiletType; label: string }[] = [
-  { value: "public", label: "Public Toilet" },
-  { value: "restaurant", label: "Restaurant" },
-  { value: "cafe", label: "Cafe" },
-  { value: "gas-station", label: "Gas Station" },
-  { value: "mall", label: "Mall" },
-  { value: "other", label: "Other" },
-];
-
-const accessibilityOptions: { value: Accessibility; label: string }[] = [
-  { value: "accessible", label: "Wheelchair Accessible" },
-  { value: "not-accessible", label: "Not Accessible" },
-  { value: "unknown", label: "Unknown" },
-];
-
-const accessTypeOptions: { value: AccessType; label: string }[] = [
-  { value: "free", label: "Free of Charge" },
-  { value: "customers-only", label: "Customers Only" },
-  { value: "paid", label: "Paid Access" },
-  { value: "unknown", label: "Unknown" },
-];
+// Static arrays moved inside component for translation access
 
 export const EditToiletModal = ({ isOpen, onClose, location, initialData, onConfirm }: EditToiletModalProps) => {
   const [type, setType] = useState<ToiletType>(initialData.type);
@@ -56,6 +37,32 @@ export const EditToiletModal = ({ isOpen, onClose, location, initialData, onConf
   const [accessType, setAccessType] = useState<AccessType>(initialData.accessType);
   
   const { toast } = useToast();
+  const { t } = useLanguage();
+  
+  // Dynamic toilet types with translations
+  const toiletTypes: { value: ToiletType; label: string }[] = [
+    { value: "public", label: t('toiletType.public') },
+    { value: "restaurant", label: t('toiletType.restaurant') },
+    { value: "cafe", label: t('toiletType.cafe') },
+    { value: "gas-station", label: t('toiletType.gasStation') },
+    { value: "mall", label: t('toiletType.mall') },
+    { value: "other", label: t('toiletType.other') },
+  ];
+  
+  // Dynamic accessibility options with translations
+  const accessibilityOptions: { value: Accessibility; label: string }[] = [
+    { value: "accessible", label: t('accessibility.accessible') },
+    { value: "not-accessible", label: t('accessibility.notAccessible') },
+    { value: "unknown", label: t('accessibility.unknown') },
+  ];
+  
+  // Dynamic access type options with translations
+  const accessTypeOptions: { value: AccessType; label: string }[] = [
+    { value: "free", label: t('accessType.free') },
+    { value: "customers-only", label: t('accessType.customersOnly') },
+    { value: "paid", label: t('accessType.paid') },
+    { value: "unknown", label: t('accessType.unknown') },
+  ];
 
   // Update state when initialData changes
   useEffect(() => {
@@ -121,10 +128,10 @@ export const EditToiletModal = ({ isOpen, onClose, location, initialData, onConf
       >
         <DialogHeader className="text-left space-y-2">
           <DialogTitle className="text-lg font-semibold text-gray-900">
-            Edit Toilet Details
+            {t('button.edit')}
           </DialogTitle>
           <DialogDescription className="text-gray-600 text-xs leading-relaxed">
-            Make changes to the toilet details
+            {t('description.editToilet')}
           </DialogDescription>
         </DialogHeader>
         
@@ -133,7 +140,7 @@ export const EditToiletModal = ({ isOpen, onClose, location, initialData, onConf
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
             <div className="flex items-center space-x-2 mb-2">
               <Check className="w-4 h-4 text-blue-600" />
-              <span className="font-medium text-blue-800 text-sm">Selected Location</span>
+              <span className="font-medium text-blue-800 text-sm">{t('addToilet.selectLocation')}</span>
             </div>
             <div className="text-xs text-blue-700">
               {location.lat.toFixed(6)}, {location.lng.toFixed(6)}
@@ -144,7 +151,7 @@ export const EditToiletModal = ({ isOpen, onClose, location, initialData, onConf
         {/* Edit Form */}
         <form onSubmit={handleSubmit} className="space-y-3">
           <div>
-            <Label htmlFor="toilet-type" className="text-xs font-medium text-gray-700">Type of Place</Label>
+            <Label htmlFor="toilet-type" className="text-xs font-medium text-gray-700">{t('addToilet.toiletType')}</Label>
             <Select value={type} onValueChange={(value: ToiletType) => setType(value)}>
               <SelectTrigger id="toilet-type" className="border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 h-9 text-sm">
                 <SelectValue />
@@ -160,19 +167,19 @@ export const EditToiletModal = ({ isOpen, onClose, location, initialData, onConf
           </div>
 
           <div>
-            <Label htmlFor="toilet-title" className="text-xs font-medium text-gray-700">Title (Optional)</Label>
+            <Label htmlFor="toilet-title" className="text-xs font-medium text-gray-700">{t('addToilet.toiletTitle')}</Label>
             <Input
               id="toilet-title"
               name="toilet-title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g., Central Park Restroom"
+              placeholder={t('addToilet.titlePlaceholder')}
               className="border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white h-9 text-sm"
             />
           </div>
 
           <div>
-            <Label htmlFor="toilet-accessibility" className="text-xs font-medium text-gray-700">Accessibility</Label>
+            <Label htmlFor="toilet-accessibility" className="text-xs font-medium text-gray-700">{t('addToilet.accessibility')}</Label>
             <Select value={accessibility} onValueChange={(value: Accessibility) => setAccessibility(value)}>
               <SelectTrigger id="toilet-accessibility" className="border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 h-9 text-sm">
                 <SelectValue />
@@ -188,7 +195,7 @@ export const EditToiletModal = ({ isOpen, onClose, location, initialData, onConf
           </div>
 
           <div>
-            <Label htmlFor="toilet-access-type" className="text-xs font-medium text-gray-700">Access Type</Label>
+            <Label htmlFor="toilet-access-type" className="text-xs font-medium text-gray-700">{t('addToilet.accessType')}</Label>
             <Select value={accessType} onValueChange={(value: AccessType) => setAccessType(value)}>
               <SelectTrigger id="toilet-access-type" className="border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 h-9 text-sm">
                 <SelectValue />
@@ -210,14 +217,14 @@ export const EditToiletModal = ({ isOpen, onClose, location, initialData, onConf
               onClick={handleCancel}
               className="flex-1 border-gray-300 text-gray-700 hover:bg-gray-50 text-sm py-2"
             >
-              Cancel
+              {t('button.cancel')}
             </Button>
             <Button
               type="submit"
               onClick={() => haptics.medium()}
               className="flex-1 bg-green-600 hover:bg-green-700 text-white shadow-sm text-sm py-2"
             >
-              Confirm & Add
+              {t('button.save')}
             </Button>
           </div>
         </form>

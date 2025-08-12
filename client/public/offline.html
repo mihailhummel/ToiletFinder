@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Toilet Map Bulgaria - Офлайн</title>
+  <meta name="description" content="Toilet Map Bulgaria не е достъпна в момента. Моля, проверете интернет връзката си.">
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="canonical" href="https://toaletna.com/">
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #333;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      text-align: center;
+    }
+    .container {
+      background: white;
+      padding: 40px 30px;
+      border-radius: 16px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+      max-width: 420px;
+      width: 100%;
+      animation: fadeIn 0.6s ease-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .icon {
+      font-size: 72px;
+      margin-bottom: 24px;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+    h1 {
+      color: #2d3748;
+      margin-bottom: 16px;
+      font-size: 28px;
+      font-weight: 700;
+    }
+    p {
+      color: #4a5568;
+      line-height: 1.6;
+      margin-bottom: 24px;
+      font-size: 16px;
+    }
+    .button-group {
+      display: flex;
+      gap: 12px;
+      flex-direction: column;
+    }
+    @media (min-width: 400px) {
+      .button-group {
+        flex-direction: row;
+        justify-content: center;
+      }
+    }
+    button {
+      background: #1976D2;
+      color: white;
+      border: none;
+      padding: 14px 24px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: 600;
+      transition: all 0.2s ease;
+      flex: 1;
+      max-width: 160px;
+    }
+    button:hover {
+      background: #1565C0;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(25, 118, 210, 0.3);
+    }
+    button:active {
+      transform: translateY(0);
+    }
+    .secondary {
+      background: #6c757d;
+    }
+    .secondary:hover {
+      background: #5a6268;
+    }
+    .status {
+      margin-top: 24px;
+      padding: 12px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      font-size: 14px;
+      color: #6c757d;
+    }
+    .logo {
+      font-size: 12px;
+      color: #adb5bd;
+      margin-top: 20px;
+      font-weight: 500;
+    }
+    .connection-indicator {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-right: 8px;
+    }
+    .online { background-color: #28a745; }
+    .offline { background-color: #dc3545; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="icon">🚽</div>
+    <h1>Офлайн сте</h1>
+    <p>Toilet Map Bulgaria не е достъпна в момента. Моля, проверете интернет връзката си и опитайте отново.</p>
+    
+    <div class="button-group">
+      <button onclick="window.location.reload()">Опитайте отново</button>
+      <button class="secondary" onclick="goHome()">Начална страница</button>
+    </div>
+    
+    <div class="status">
+      <span class="connection-indicator" id="connectionStatus"></span>
+      <span id="statusText">Проверяване на връзката...</span>
+    </div>
+    
+    <div class="logo">toaletna.com</div>
+  </div>
+
+  <script>
+    // Monitor connection status
+    function updateConnectionStatus() {
+      const indicator = document.getElementById('connectionStatus');
+      const statusText = document.getElementById('statusText');
+      
+      if (navigator.onLine) {
+        indicator.className = 'connection-indicator online';
+        statusText.textContent = 'Връзката е възстановена! Можете да опитате отново.';
+      } else {
+        indicator.className = 'connection-indicator offline';
+        statusText.textContent = 'Няма интернет връзка';
+      }
+    }
+
+    function goHome() {
+      window.location.href = '/';
+    }
+
+    // Auto-reload when connection is restored
+    window.addEventListener('online', function() {
+      updateConnectionStatus();
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000);
+    });
+
+    window.addEventListener('offline', updateConnectionStatus);
+
+    // Initial status check
+    updateConnectionStatus();
+
+    // Periodic connectivity check
+    setInterval(() => {
+      fetch('/api/health', { 
+        method: 'HEAD',
+        cache: 'no-cache'
+      }).then(() => {
+        if (!navigator.onLine) {
+          // Force online status if fetch succeeds
+          window.dispatchEvent(new Event('online'));
+        }
+      }).catch(() => {
+        // Connection still down
+      });
+    }, 5000);
+
+    // Analytics for offline page visits
+    if (window.gtag) {
+      gtag('event', 'page_view', {
+        page_title: 'Offline Page',
+        page_location: 'https://toaletna.com/offline.html'
+      });
+    }
+  </script>
+</body>
+</html>

@@ -1,6 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { User } from "lucide-react";
 
 interface LoginModalProps {
@@ -10,6 +11,7 @@ interface LoginModalProps {
 
 export const LoginModal = ({ isOpen, onClose }: LoginModalProps) => {
   const { signInWithGoogle } = useAuth();
+  const { t } = useLanguage();
 
   const handleGoogleSignIn = async () => {
     try {
@@ -39,10 +41,10 @@ export const LoginModal = ({ isOpen, onClose }: LoginModalProps) => {
         }}
       >
         <DialogHeader className="text-center">
-          <DialogTitle className="text-xl font-semibold text-gray-900">Sign In</DialogTitle>
-          <DialogDescription className="text-gray-600">
-            Sign in with Google to add toilet locations and reviews
-          </DialogDescription>
+         {/* <DialogTitle className="text-xl font-semibold text-gray-900">{t('login.title')}</DialogTitle> */}
+          {/* <DialogDescription className="text-gray-600">
+            {t('login.requiredMessage')}
+          </DialogDescription> */}
         </DialogHeader>
         <div className="text-center space-y-6">
           <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-blue-700 rounded-full flex items-center justify-center mx-auto shadow-lg">
@@ -50,9 +52,9 @@ export const LoginModal = ({ isOpen, onClose }: LoginModalProps) => {
           </div>
           
           <div>
-            <h2 className="text-xl font-semibold mb-2 text-gray-900">Sign In Required</h2>
+            <h2 className="text-xl font-semibold mb-2 text-gray-900">{t('login.required')}</h2>
             <p className="text-gray-600 text-sm leading-relaxed">
-              Please sign in with Google to leave reviews and help the community.
+              {t('login.requiredMessage')}
             </p>
           </div>
           
@@ -79,11 +81,11 @@ export const LoginModal = ({ isOpen, onClose }: LoginModalProps) => {
                 d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
               />
             </svg>
-            <span>Continue with Google</span>
+            <span>{t('login.signInWith')} {t('login.google')}</span>
           </Button>
           
           <Button variant="ghost" onClick={onClose} className="text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100">
-            Maybe later
+            {t('button.cancel')}
           </Button>
         </div>
       </DialogContent>

@@ -1,0 +1,55 @@
+# Robots.txt for Toilet Map Bulgaria (toaletna.com)
+# Production-ready robots configuration
+
+User-agent: *
+Allow: /
+
+# Allow access to important resources
+Allow: /api/toilets
+Allow: /manifest.json
+Allow: /sw.js
+Allow: /*.css
+Allow: /*.js
+Allow: /*.png
+Allow: /*.jpg
+Allow: /*.jpeg
+Allow: /*.svg
+Allow: /*.ico
+Allow: /*.webp
+
+# Disallow admin and private areas (if any in future)
+Disallow: /admin/
+Disallow: /private/
+Disallow: /.env
+Disallow: /debug.html
+
+# Crawl-delay for aggressive bots
+Crawl-delay: 1
+
+# Sitemap location
+Sitemap: https://toaletna.com/sitemap.xml
+
+# Popular search engines
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 0
+
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 1
+
+User-agent: Slurp
+Allow: /
+Crawl-delay: 1
+
+User-agent: DuckDuckBot
+Allow: /
+Crawl-delay: 1
+
+User-agent: Baiduspider
+Allow: /
+Crawl-delay: 2
+
+User-agent: YandexBot
+Allow: /
+Crawl-delay: 1

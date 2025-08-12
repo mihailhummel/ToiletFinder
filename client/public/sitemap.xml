@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+  
+  <!-- Main homepage -->
+  <url>
+    <loc>https://toaletna.com/</loc>
+    <lastmod>2024-01-24</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="bg" href="https://toaletna.com/?lang=bg"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://toaletna.com/?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://toaletna.com/"/>
+    <image:image>
+      <image:loc>https://toaletna.com/og-image.jpg</image:loc>
+      <image:title>Toilet Map Bulgaria - Интерактивна карта на тоалетните</image:title>
+      <image:caption>Намери обществени тоалетни в България с отзиви и оценки</image:caption>
+    </image:image>
+  </url>
+
+  <!-- City-specific landing pages (can be added later) -->
+  <url>
+    <loc>https://toaletna.com/?city=sofia</loc>
+    <lastmod>2024-01-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="bg" href="https://toaletna.com/?city=sofia&amp;lang=bg"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://toaletna.com/?city=sofia&amp;lang=en"/>
+  </url>
+
+  <url>
+    <loc>https://toaletna.com/?city=plovdiv</loc>
+    <lastmod>2024-01-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="bg" href="https://toaletna.com/?city=plovdiv&amp;lang=bg"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://toaletna.com/?city=plovdiv&amp;lang=en"/>
+  </url>
+
+  <url>
+    <loc>https://toaletna.com/?city=varna</loc>
+    <lastmod>2024-01-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="bg" href="https://toaletna.com/?city=varna&amp;lang=bg"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://toaletna.com/?city=varna&amp;lang=en"/>
+  </url>
+
+  <url>
+    <loc>https://toaletna.com/?city=burgas</loc>
+    <lastmod>2024-01-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="bg" href="https://toaletna.com/?city=burgas&amp;lang=bg"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://toaletna.com/?city=burgas&amp;lang=en"/>
+  </url>
+
+  <!-- About/Help pages (if implemented later) -->
+  <url>
+    <loc>https://toaletna.com/?page=about</loc>
+    <lastmod>2024-01-24</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+    <xhtml:link rel="alternate" hreflang="bg" href="https://toaletna.com/?page=about&amp;lang=bg"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://toaletna.com/?page=about&amp;lang=en"/>
+  </url>
+
+  <url>
+    <loc>https://toaletna.com/?page=help</loc>
+    <lastmod>2024-01-24</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+    <xhtml:link rel="alternate" hreflang="bg" href="https://toaletna.com/?page=help&amp;lang=bg"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://toaletna.com/?page=help&amp;lang=en"/>
+  </url>
+
+</urlset>

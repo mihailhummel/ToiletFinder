@@ -1,7 +1,7 @@
 {
-  "name": "toilet-finder",
-  "version": "1.0.0",
-  "description": "IBS Health Tracker - Find toilets near you",
+  "name": "toilet-map-bulgaria",
+  "version": "2.0.0",
+  "description": "Toilet Map Bulgaria (toaletna.com) - Interactive map for finding public toilets in Bulgaria",
   "main": "server/index.ts",
   "type": "module",
   "scripts": {
@@ -10,24 +10,46 @@
     "dev:client": "cd client && npm run dev",
     "build": "cd client && npm run build",
     "build:server": "tsc server/index.ts --outDir dist --target es2020 --module commonjs",
+    "build:production": "NODE_ENV=production npm run build && npm run build:server",
     "start": "NODE_ENV=production tsx server/index.ts",
     "start:prod": "NODE_ENV=production node dist/index.js",
     "install:all": "npm install && cd client && npm install",
     "migrate": "node setup_and_migrate_all.mjs",
     "check-quota": "node check_firebase_quota.mjs",
     "test": "cd client && npm test",
+    "test:e2e": "cd client && npm run test:e2e",
     "lint": "cd client && npm run lint",
-    "deploy:build": "npm run build && npm run build:server"
+    "lint:fix": "cd client && npm run lint:fix",
+    "preview": "cd client && npm run preview",
+    "analyze": "cd client && ANALYZE=true npm run build",
+    "deploy:build": "npm run build && npm run build:server",
+    "deploy:production": "node scripts/deploy-production.js",
+    "icons:generate": "node scripts/generate-icons.js",
+    "seo:check": "cd client && npm run build && lighthouse http://localhost:4173 --chrome-flags=\"--headless\"",
+    "performance:check": "cd client && npm run build && npm run preview & npx wait-on http://localhost:4173 && npx lighthouse http://localhost:4173 --output html --output-path lighthouse-report.html"
   },
   "keywords": [
     "toilet",
-    "finder",
+    "map",
+    "bulgaria",
+    "toilets",
+    "public restrooms",
     "ibs",
     "health",
-    "tracker",
-    "bulgaria"
+    "accessibility",
+    "navigation",
+    "pwa",
+    "toaletna"
   ],
-  "author": "Your Name",
+  "author": "Toilet Map Bulgaria Team",
+  "homepage": "https://toaletna.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/toiletmap/toiletmap-bulgaria.git"
+  },
+  "bugs": {
+    "url": "https://github.com/toiletmap/toiletmap-bulgaria/issues"
+  },
   "license": "MIT",
   "dependencies": {
     "@neondatabase/serverless": "^0.7.2",
@@ -50,6 +72,13 @@
     "typescript": "^5.2.2"
   },
   "engines": {
-    "node": ">=18.0.0"
-  }
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "browserslist": [
+    "> 1%",
+    "last 2 versions",
+    "not dead",
+    "not ie 11"
+  ]
 }

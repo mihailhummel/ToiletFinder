@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { LanguageProvider, useLanguage } from "@/contexts/LanguageContext";
 
 // Components
 import { PWABanner } from "./components/PWABanner";
@@ -9,6 +10,7 @@ import { Map } from "./components/Map";
 import { FilterPanel, type FilterOptions } from "./components/FilterPanel";
 import { AddToiletModal } from "./components/AddToiletModal";
 import { LoginModal } from "./components/LoginModal";
+import { LanguageSwitch } from "./components/LanguageSwitch";
 import ErrorBoundary, { MapErrorBoundary } from "./components/ErrorBoundary";
 
 // Utils
@@ -22,7 +24,7 @@ import { useToast } from "./hooks/use-toast";
 import { clearToiletCache } from "@/hooks/useToilets";
 
 // Icons
-import { User, MapPin, Filter, Plus, Search, Menu, LogOut } from "lucide-react";
+import { User, MapPin, Filter, Plus, Search, Menu, LogOut, Download } from "lucide-react";
 import { Button } from "./components/ui/button";
 import { Input } from "./components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./components/ui/dialog";
@@ -61,7 +63,8 @@ const queryClient = new QueryClient({
   },
 });
 
-function App() {
+function AppContent() {
+  const { t } = useLanguage();
   // 🚀 Initialize performance monitoring and accessibility
   useEffect(() => {
     initPerformanceMonitoring();
@@ -73,6 +76,29 @@ function App() {
         .then(() => console.log('🚀 Service Worker registered'))
         .catch(err => console.error('❌ Service Worker registration failed:', err));
     }
+
+    // PWA Install detection
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+
+    // Listen for PWA install prompt
+    const handleBeforeInstallPrompt = (e: any) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setCanInstall(true);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    // Cleanup
+    return () => {
+      window.removeEventListener('resize', checkMobile);
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
   }, []);
 
   const [selectedToilet, setSelectedToilet] = useState<Toilet | null>(null);
@@ -93,6 +119,11 @@ function App() {
   const { user, loading: authLoading, isAdmin, signInWithGoogle, signOut } = useAuth();
   const { location: userLocation, getCurrentLocation, loading: locationLoading } = useGeolocation();
   const { toast } = useToast();
+
+  // PWA Install functionality
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [canInstall, setCanInstall] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   // Debug state changes
   useEffect(() => {
@@ -131,8 +162,8 @@ function App() {
         clearToiletCache();
         queryClient.clear();
         toast({
-          title: "Cache cleared",
-          description: "All cached toilet data has been cleared.",
+                  title: t('toast.cacheCleared'),
+        description: t('toast.cacheClearedMessage'),
           duration: 3000,
         });
         // Cache cleared via keyboard shortcut
@@ -155,8 +186,8 @@ function App() {
     getCurrentLocation();
     if (userLocation) {
       toast({
-        title: "Location found",
-        description: "Centered map on your location"
+        title: t('toast.locationFound'),
+        description: t('toast.locationFoundMessage')
       });
     }
   };
@@ -250,6 +281,30 @@ function App() {
     }
   }, [signOut, toast]);
 
+  // PWA Install function
+  const handleInstallApp = useCallback(async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      
+      if (outcome === 'accepted') {
+        toast({
+          title: t('pwa.install'),
+          description: t('pwa.installDescription')
+        });
+      }
+      
+      setDeferredPrompt(null);
+      setCanInstall(false);
+    } else {
+      // Fallback for browsers that don't support beforeinstallprompt
+      toast({
+        title: t('pwa.downloadApp'),
+        description: t('pwa.installDescription')
+      });
+    }
+  }, [deferredPrompt, toast, t]);
+
 
 
 
@@ -275,28 +330,35 @@ function App() {
           {/* Header */}
           <header className="app-header fixed top-0 left-0 right-0 bg-white shadow-lg z-40 border-b">
             <div className="flex items-center justify-between px-4 py-3">
-              <div className="flex items-center space-x-4">
-                <div className="w-9 h-9 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center shadow-md">
-                  <span className="text-white font-bold">🚽</span>
+              <div className="flex items-center space-x-3">
+                <div className="w-9 h-9 rounded-lg flex items-center justify-center overflow-hidden">
+                  <img 
+                    src="/logo.png" 
+                    alt="Toilet Map Bulgaria Logo" 
+                    className="w-full h-full object-contain"
+                  />
                 </div>
                 <div>
-                  <h1 className="text-lg font-bold text-gray-900">ToiletMap</h1>
+                  <h1 className="text-lg font-bold text-gray-900">{t('header.title')}</h1>
                   <p className="text-xs text-gray-600">Bulgaria</p>
                 </div>
               </div>
               
               <div className="flex items-center space-x-3">
-                {/* Location Status */}
-                <div className="flex items-center space-x-2">
+                {/* Language Switch */}
+                <LanguageSwitch />
+                
+                {/* Location Status - Hidden on mobile to save space */}
+                <div className="hidden md:flex items-center space-x-2">
                   {userLocation ? (
                     <div className="flex items-center space-x-1 text-xs text-green-600">
-                      <MapPin className="w-3 h-3 text-green-500" />
-                      <span>Located</span>
+                      <MapPin className="w-4 h-4 text-green-500" />
+                      <span>{t('header.located')}</span>
                     </div>
                   ) : locationLoading ? (
                     <div className="flex items-center space-x-1 text-xs text-blue-600">
-                      <div className="w-3 h-3 border border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                      <span>Finding...</span>
+                      <div className="w-4 h-4 border border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                      <span>{t('header.finding')}</span>
                     </div>
                   ) : (
                     <Button
@@ -305,8 +367,8 @@ function App() {
                       onClick={getCurrentLocation}
                       className="text-xs text-gray-600 hover:text-blue-600 h-6 px-2"
                     >
-                      <MapPin className="w-3 h-3 mr-1" />
-                      Find Location
+                      <MapPin className="w-4 h-4 mr-1" />
+                      <span>{t('header.findLocation')}</span>
                     </Button>
                   )}
                 </div>
@@ -428,7 +490,7 @@ function App() {
               }}
             >
               <DialogHeader>
-                <DialogTitle className="text-xl font-semibold text-gray-900">User Menu</DialogTitle>
+                <DialogTitle className="text-xl font-semibold text-gray-900">{t('user.menu')}</DialogTitle>
               </DialogHeader>
               <div className="flex flex-col space-y-6">
                 <div className="flex items-center space-x-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100">
@@ -457,14 +519,31 @@ function App() {
                     )}
                   </div>
                 </div>
-                <Button
-                  variant="outline"
-                  onClick={handleSignOut}
-                  className="w-full border-gray-300 text-gray-700 hover:bg-gray-50 h-12"
-                >
-                  <LogOut className="w-4 h-4 mr-2" />
-                  Sign Out
-                </Button>
+                
+                {/* Action buttons */}
+                <div className="flex flex-col space-y-3">
+                  {/* Download App button - only show on mobile */}
+                  {isMobile && (canInstall || true) && (
+                    <Button
+                      variant="default"
+                      onClick={handleInstallApp}
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white h-12"
+                    >
+                      <Download className="w-4 h-4 mr-2" />
+                      {t('pwa.downloadApp')}
+                    </Button>
+                  )}
+                  
+                  {/* Sign Out button */}
+                  <Button
+                    variant="outline"
+                    onClick={handleSignOut}
+                    className="w-full border-gray-300 text-gray-700 hover:bg-gray-50 h-12"
+                  >
+                    <LogOut className="w-4 h-4 mr-2" />
+                    {t('user.signOut')}
+                  </Button>
+                </div>
               </div>
             </DialogContent>
           </Dialog>
@@ -483,6 +562,15 @@ function App() {
         </div>
       </QueryClientProvider>
     </TooltipProvider>
+  );
+}
+
+// Main App component with Language Provider
+function App() {
+  return (
+    <LanguageProvider>
+      <AppContent />
+    </LanguageProvider>
   );
 }
 

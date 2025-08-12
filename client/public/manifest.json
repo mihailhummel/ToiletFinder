@@ -1,16 +1,113 @@
 {
-  "name": "ToiletMap Bulgaria",
-  "short_name": "ToiletMap BG",
-  "description": "Find nearby public restrooms in Bulgaria with reviews and ratings",
-  "start_url": "/",
+  "name": "Toilet Map Bulgaria - Намери Обществени Тоалетни",
+  "short_name": "Toilet Map BG",
+  "description": "Интерактивна карта за намиране на обществени тоалетни в България. Безплатно, с отзиви и оценки. Специално за хора с ИЧС (IBS).",
+  "start_url": "/?utm_source=pwa",
+  "scope": "/",
   "display": "standalone",
   "theme_color": "#1976D2",
   "background_color": "#FFFFFF",
   "orientation": "portrait-primary",
-  "categories": ["health", "travel", "utilities"],
+  "categories": ["health", "travel", "utilities", "navigation"],
   "lang": "bg",
   "dir": "ltr",
-  "icons": [],
-  "screenshots": [],
-  "shortcuts": []
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "any",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-72x72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icon-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icon-128x128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icon-144x144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icon-152x152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icon-384x384.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable any"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshot-desktop.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Toilet Map Bulgaria - Desktop View"
+    },
+    {
+      "src": "/screenshot-mobile.png",
+      "sizes": "375x812",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Toilet Map Bulgaria - Mobile View"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Намери близка тоалетна",
+      "short_name": "Близка тоалетна",
+      "description": "Намери най-близката тоалетна до мен",
+      "url": "/?action=find-nearest",
+      "icons": [
+        {
+          "src": "/icon-192x192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Добави тоалетна",
+      "short_name": "Добави",
+      "description": "Добави нова тоалетна към картата",
+      "url": "/?action=add-toilet",
+      "icons": [
+        {
+          "src": "/icon-192x192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ]
 }
