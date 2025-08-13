@@ -76,8 +76,8 @@ app.use((req, res, next) => {
     }
   });
 
-  // Serve the API on port 5001
-  const port = 5001;
+  // Use Railway's PORT environment variable or fallback to 5001 for development
+  const port = parseInt(process.env.PORT || "5001", 10);
   server.listen({
     port,
     host: "0.0.0.0",
