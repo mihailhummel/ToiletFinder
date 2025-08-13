@@ -213,7 +213,7 @@ const translations: Record<Language, Translations> = {
     'button.logout': 'Logout',
     'button.cancel': 'Cancel',
     'button.save': 'Save',
-    'button.submit': 'Submit',
+    'button.submit': 'Add',
     'button.close': 'Close',
     'button.edit': 'Edit',
     'button.delete': 'Delete',
