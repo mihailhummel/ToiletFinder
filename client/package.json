@@ -64,7 +64,7 @@
     "@vitejs/plugin-react": "^4.1.1",
     "vite": "^5.0.0",
     "vite-plugin-pwa": "^1.0.2",
-    "rollup-plugin-visualizer": "^5.9.2",
+    "rollup-plugin-visualizer": "^5.14.0",
     "typescript": "^5.2.2"
   },
   "devDependencies": {
