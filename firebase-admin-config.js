@@ -32,4 +32,7 @@ if (!admin.apps.length) {
 
 const auth = admin.auth();
 
-export { admin, auth }; 
+export { admin, auth };
+
+// TypeScript type declarations for CJS module
+export default admin; 

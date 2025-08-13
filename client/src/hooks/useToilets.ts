@@ -6,6 +6,10 @@ import { useCallback, useRef, useState, useMemo, useEffect } from 'react';
 // SIMPLIFIED CACHING - Let React Query handle it
 // Removed complex localStorage caching that was causing conflicts
 
+const CACHE_KEY = 'toilet-map-cache';
+const CACHE_EXPIRY_HOURS = 24;
+const STALE_SERVE_DAYS = 7;
+
 interface CachedToiletData {
   chunks: Record<string, { 
     toilets: Toilet[]; 
