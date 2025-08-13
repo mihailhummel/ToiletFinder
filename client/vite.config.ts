@@ -8,10 +8,8 @@ import { visualizer } from 'rollup-plugin-visualizer'
 export default defineConfig({
   plugins: [
     react({
-      // Optimize React Fast Refresh
-      fastRefresh: true,
-      // Remove dev annotations in production
-      jsxImportSource: undefined,
+      // Standard React configuration
+      include: "**/*.{jsx,tsx}",
     }),
     
     // PWA Plugin for production
@@ -66,26 +64,21 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: process.env.NODE_ENV === 'development',
-    // Advanced minification for production
+    // Safe minification for production
     minify: 'terser',
     terserOptions: {
       compress: {
         drop_console: process.env.NODE_ENV === 'production',
         drop_debugger: true,
-        pure_funcs: ['console.log', 'console.info', 'console.debug'],
-        passes: 2, // Multiple passes for better compression
-        unsafe_arrows: true,
-        unsafe_methods: true,
-        unsafe_proto: true
+        pure_funcs: ['console.log', 'console.info', 'console.debug']
+        // Removed unsafe optimizations that could break React
       },
       mangle: {
-        safari10: true,
-        properties: {
-          regex: /^_/ // Mangle private properties
-        }
+        // Safer mangling to avoid React hooks issues
+        reserved: ['React', 'useState', 'useEffect', 'useLayoutEffect', 'useCallback', 'useMemo', 'useRef', 'useContext']
       },
       format: {
-        comments: false // Remove all comments
+        comments: false
       }
     },
     // Target modern browsers for better optimization
@@ -215,16 +208,7 @@ export default defineConfig({
     force: process.env.NODE_ENV === 'production',
   },
   
-  // Experimental features for better performance
-  experimental: {
-    renderBuiltUrl: (filename, { hostType }) => {
-      if (hostType === 'js') {
-        return { js: `https://cdn.toaletna.com/${filename}` }
-      } else {
-        return filename
-      }
-    }
-  },
+  // Removed experimental CDN configuration to avoid deployment issues
   // Global definitions and environment variables
   define: {
     global: 'globalThis',
