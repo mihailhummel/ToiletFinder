@@ -3,6 +3,12 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import path from "path";
 import fs from "fs";
+import { fileURLToPath } from "url";
+import { dirname } from "path";
+
+// Get current directory for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const app = express();
 app.use(express.json());
@@ -50,8 +56,8 @@ app.use((req, res, next) => {
   });
 
   // Serve static files - prefer dist if available, otherwise client
-  const clientDistPath = path.resolve(import.meta.dirname, "..", "client", "dist");
-  const clientPath = fs.existsSync(clientDistPath) ? clientDistPath : path.resolve(import.meta.dirname, "..", "client");
+  const clientDistPath = path.resolve(__dirname, "..", "client", "dist");
+  const clientPath = fs.existsSync(clientDistPath) ? clientDistPath : path.resolve(__dirname, "..", "client");
   
   app.use((req, res, next) => {
     if (req.path.startsWith('/api/')) {
@@ -65,7 +71,7 @@ app.use((req, res, next) => {
     if (!req.path.startsWith('/api/')) {
       const indexPath = fs.existsSync(clientDistPath) 
         ? path.resolve(clientDistPath, "index.html")
-        : path.resolve(import.meta.dirname, "..", "client", "index.html");
+        : path.resolve(__dirname, "..", "client", "index.html");
       res.sendFile(indexPath);
     }
   });
