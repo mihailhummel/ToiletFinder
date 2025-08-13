@@ -15,7 +15,7 @@ import ErrorBoundary, { MapErrorBoundary } from "./components/ErrorBoundary";
 
 // Utils
 import { initAccessibility } from "./utils/accessibility";
-import { initPerformanceMonitoring } from "./utils/performance";
+// Performance monitoring removed for build simplicity
 
 // Hooks
 import { useAuth } from "./hooks/useAuth";
@@ -65,9 +65,8 @@ const queryClient = new QueryClient({
 
 function AppContent() {
   const { t } = useLanguage();
-  // 🚀 Initialize performance monitoring and accessibility
+  // 🚀 Initialize accessibility
   useEffect(() => {
-    initPerformanceMonitoring();
     initAccessibility();
     
     // Register service worker for offline support

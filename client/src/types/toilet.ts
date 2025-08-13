@@ -1,15 +1,15 @@
 export type {
   Toilet,
-  Review,
-  Report,
+  ToiletReview as Review,
+  ToiletReport as Report,
   InsertToilet,
-  InsertReview,
-  InsertReport,
+  InsertToiletReview as InsertReview,
+  InsertToiletReport as InsertReport,
   ToiletType,
   Accessibility,
   AccessType,
   ReportReason
-} from "@shared/schema";
+} from "../../../shared/schema";
 
 export interface MapLocation {
   lat: number;

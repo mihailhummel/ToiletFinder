@@ -403,12 +403,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(403).json({ error: "Email mismatch" });
         }
         
-      } catch (firebaseError) {
+      } catch (firebaseError: any) {
         console.error("❌ Firebase verification error:", firebaseError);
         console.error("❌ Error details:", {
-          code: firebaseError.code,
-          message: firebaseError.message,
-          stack: firebaseError.stack
+          code: firebaseError?.code,
+          message: firebaseError?.message,
+          stack: firebaseError?.stack
         });
         return res.status(403).json({ error: "Invalid user credentials" });
       }

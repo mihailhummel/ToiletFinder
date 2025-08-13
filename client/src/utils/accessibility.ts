@@ -202,7 +202,7 @@ export const addFocusVisibleSupport = () => {
   })
   
   keyboardInitiatedEvents.forEach(eventName => {
-    document.addEventListener(eventName, onKeyDown, true)
+    document.addEventListener(eventName, onKeyDown as EventListener, true)
   })
   
   document.addEventListener('focus', onFocus, true)

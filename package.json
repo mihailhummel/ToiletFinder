@@ -8,7 +8,7 @@
     "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
     "dev:server": "tsx server/index.ts",
     "dev:client": "cd client && npm run dev",
-    "build": "cd client && npm run build",
+    "build": "cd client && npx vite build --mode production",
     "build:server": "tsc server/index.ts --outDir dist --target es2020 --module commonjs",
     "build:production": "NODE_ENV=production npm run build && npm run build:server",
     "start": "NODE_ENV=production tsx server/index.ts",
