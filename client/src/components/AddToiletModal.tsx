@@ -24,9 +24,15 @@ interface AddToiletModalProps {
   onToiletAdded?: (toilet: any) => void;
 }
 
-// Toilet types will be translated dynamically
-
-// Accessibility and access type options are now defined dynamically inside the component
+// Toilet type templates for automatic assignment
+const TOILET_TYPE_TEMPLATES: Record<ToiletType, { accessibility: Accessibility; accessType: AccessType }> = {
+  "public": { accessibility: "unknown", accessType: "free" },
+  "restaurant": { accessibility: "accessible", accessType: "customers-only" },
+  "cafe": { accessibility: "accessible", accessType: "customers-only" },
+  "gas-station": { accessibility: "accessible", accessType: "customers-only" },
+  "mall": { accessibility: "accessible", accessType: "free" },
+  "other": { accessibility: "unknown", accessType: "unknown" }
+};
 
 export const AddToiletModal = ({ isOpen, onClose, location, onRequestLocationSelection, onCloseForLocationSelection, onToiletAdded }: AddToiletModalProps) => {
   const [type, setType] = useState<ToiletType>("public");
@@ -52,20 +58,28 @@ export const AddToiletModal = ({ isOpen, onClose, location, onRequestLocationSel
     { value: "other", label: t('toiletType.other') },
   ];
   
-  // Dynamic accessibility options with translations
-  const accessibilityOptions: { value: Accessibility; label: string }[] = [
-    { value: "accessible", label: t('accessibility.accessible') },
-    { value: "not-accessible", label: t('accessibility.notAccessible') },
-    { value: "unknown", label: t('accessibility.unknown') },
+  // Dynamic accessibility options with translations and colors
+  const accessibilityOptions: { value: Accessibility; label: string; color: string }[] = [
+    { value: "accessible", label: t('accessibility.accessible'), color: "text-green-700 bg-green-100" },
+    { value: "not-accessible", label: t('accessibility.notAccessible'), color: "text-red-700 bg-red-100" },
+    { value: "unknown", label: t('accessibility.unknown'), color: "text-gray-700 bg-gray-100" },
   ];
   
-  // Dynamic access type options with translations
-  const accessTypeOptions: { value: AccessType; label: string }[] = [
-    { value: "free", label: t('accessType.free') },
-    { value: "customers-only", label: t('accessType.customersOnly') },
-    { value: "paid", label: t('accessType.paid') },
-    { value: "unknown", label: t('accessType.unknown') },
+  // Dynamic access type options with translations and colors
+  const accessTypeOptions: { value: AccessType; label: string; color: string }[] = [
+    { value: "free", label: t('accessType.free'), color: "text-green-700 bg-green-100" },
+    { value: "customers-only", label: t('accessType.customersOnly'), color: "text-yellow-700 bg-yellow-100" },
+    { value: "paid", label: t('accessType.paid'), color: "text-purple-700 bg-purple-100" },
+    { value: "unknown", label: t('accessType.unknown'), color: "text-gray-700 bg-gray-100" },
   ];
+
+  // Auto-apply template when toilet type changes
+  const handleTypeChange = (newType: ToiletType) => {
+    setType(newType);
+    const template = TOILET_TYPE_TEMPLATES[newType];
+    setAccessibility(template.accessibility);
+    setAccessType(template.accessType);
+  };
 
   // Auto-show confirmation when location is provided (but not when editing)
   useEffect(() => {
@@ -271,7 +285,7 @@ export const AddToiletModal = ({ isOpen, onClose, location, onRequestLocationSel
               <div className="flex justify-between items-center">
                 <span className="text-xs font-medium text-gray-700">{t('addToilet.accessibility')}:</span>
                 <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-                  accessibility === 'accessible' ? 'bg-blue-100 text-blue-800' :
+                  accessibility === 'accessible' ? 'bg-green-100 text-green-800' :
                   accessibility === 'not-accessible' ? 'bg-red-100 text-red-800' :
                   'bg-gray-100 text-gray-800'
                 }`}>
@@ -325,7 +339,7 @@ export const AddToiletModal = ({ isOpen, onClose, location, onRequestLocationSel
             
             <div>
               <Label htmlFor="toilet-type" className="text-xs font-medium text-gray-700">{t('addToilet.toiletType')}</Label>
-              <Select value={type} onValueChange={(value: ToiletType) => setType(value)}>
+              <Select value={type} onValueChange={(value: ToiletType) => handleTypeChange(value)}>
                 <SelectTrigger id="toilet-type" className="border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 h-9 text-sm">
                   <SelectValue />
                 </SelectTrigger>
@@ -352,15 +366,17 @@ export const AddToiletModal = ({ isOpen, onClose, location, onRequestLocationSel
             </div>
 
             <div>
-              <Label htmlFor="toilet-accessibility" className="text-xs font-medium text-gray-700">{t('addToilet.accessibility')}</Label>
-              <Select value={accessibility} onValueChange={(value: Accessibility) => setAccessibility(value)}>
-                <SelectTrigger id="toilet-accessibility" className="border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 h-9 text-sm">
+              <Label htmlFor="toilet-access-type" className="text-xs font-medium text-gray-700">{t('addToilet.accessType')}</Label>
+              <Select value={accessType} onValueChange={(value: AccessType) => setAccessType(value)}>
+                <SelectTrigger id="toilet-access-type" className="border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 h-9 text-sm">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="bg-white border border-gray-200 shadow-lg">
-                  {accessibilityOptions.map(({ value, label }) => (
+                  {accessTypeOptions.map(({ value, label, color }) => (
                     <SelectItem key={value} value={value} className="hover:bg-blue-50 focus:bg-blue-50 text-sm">
-                      {label}
+                      <span className={`${color} px-2 py-1 rounded-full font-medium`}>
+                        {label}
+                      </span>
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -368,22 +384,22 @@ export const AddToiletModal = ({ isOpen, onClose, location, onRequestLocationSel
             </div>
 
             <div>
-              <Label htmlFor="toilet-access-type" className="text-xs font-medium text-gray-700">{t('addToilet.accessType')}</Label>
-              <Select value={accessType} onValueChange={(value: AccessType) => setAccessType(value)}>
-                <SelectTrigger id="toilet-access-type" className="border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 h-9 text-sm">
+              <Label htmlFor="toilet-accessibility" className="text-xs font-medium text-gray-700">{t('addToilet.accessibility')}</Label>
+              <Select value={accessibility} onValueChange={(value: Accessibility) => setAccessibility(value)}>
+                <SelectTrigger id="toilet-accessibility" className="border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 h-9 text-sm">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="bg-white border border-gray-200 shadow-lg">
-                  {accessTypeOptions.map(({ value, label }) => (
+                  {accessibilityOptions.map(({ value, label, color }) => (
                     <SelectItem key={value} value={value} className="hover:bg-blue-50 focus:bg-blue-50 text-sm">
-                      {label}
+                      <span className={`${color} px-2 py-1 rounded-full font-medium`}>
+                        {label}
+                      </span>
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-            
-
             
             <div className="flex space-x-2 pt-2">
               <Button

@@ -5,6 +5,7 @@ export type Language = 'en' | 'bg';
 interface LanguageContextType {
   language: Language;
   setLanguage: (lang: Language) => void;
+  changeLanguage: (lang: Language) => void;
   t: (key: keyof Translations) => string;
 }
 
@@ -24,6 +25,8 @@ interface Translations {
   'header.title': string;
   'header.located': string;
   'header.notLocated': string;
+  'header.finding': string;
+  'header.findLocation': string;
   
   // Buttons
   'button.filter': string;
@@ -49,6 +52,7 @@ interface Translations {
   'addToilet.accessibility': string;
   'addToilet.accessType': string;
   'addToilet.requestLocation': string;
+  'addToilet.templateHint': string;
   'addToilet.success': string;
   'addToilet.successMessage': string;
   'addToilet.error': string;
@@ -157,6 +161,11 @@ interface Translations {
   'language.english': string;
   'language.bulgarian': string;
 
+  // Descriptions
+  'description.editToilet': string;
+  'description.reviewDetails': string;
+  'description.fillDetails': string;
+
   // Popup translations
   'popup.toiletAt': string;
   'popup.gasStation': string;
@@ -194,6 +203,8 @@ const translations: Record<Language, Translations> = {
     'header.title': 'Toilet Map',
     'header.located': 'Located',
     'header.notLocated': 'Not Located',
+    'header.finding': 'Finding...',
+    'header.findLocation': 'Find Location',
     
     // Buttons
     'button.filter': 'Filter',
@@ -215,10 +226,11 @@ const translations: Record<Language, Translations> = {
     'addToilet.selectLocation': 'Select Location',
     'addToilet.toiletType': 'Toilet Type',
     'addToilet.toiletTitle': 'Title (Optional)',
-    'addToilet.titlePlaceholder': 'e.g., "Near the entrance"',
+    'addToilet.titlePlaceholder': 'e.g., "Near the station"',
     'addToilet.accessibility': 'Accessibility',
-    'addToilet.accessType': 'Access Type',
+    'addToilet.accessType': 'Access',
     'addToilet.requestLocation': 'Request Location',
+    'addToilet.templateHint': 'Accessibility and access type will be automatically set based on your selection',
     'addToilet.success': 'Toilet Added Successfully!',
     'addToilet.successMessage': 'Your toilet location is now visible to everyone.',
     'addToilet.error': 'Failed to Add Toilet',
@@ -367,6 +379,8 @@ const translations: Record<Language, Translations> = {
     'header.title': 'Toilet Map',
     'header.located': 'Локализиран',
     'header.notLocated': 'Нелокализиран',
+    'header.finding': 'Търсене...',
+    'header.findLocation': 'Намери Местоположение',
     
     // Buttons
     'button.filter': 'Филтър',
@@ -388,10 +402,11 @@ const translations: Record<Language, Translations> = {
     'addToilet.selectLocation': 'Избери Локация',
     'addToilet.toiletType': 'Тип Тоалетна',
     'addToilet.toiletTitle': 'Заглавие (Незадължително)',
-    'addToilet.titlePlaceholder': 'напр. "До входа"',
+    'addToilet.titlePlaceholder': 'напр. "EKOTOI"',
     'addToilet.accessibility': 'Достъпност',
-    'addToilet.accessType': 'Тип Достъп',
+    'addToilet.accessType': 'Достъп',
     'addToilet.requestLocation': 'Заяви Локация',
+    'addToilet.templateHint': 'Достъпността и типът достъп ще бъдат автоматично зададени според вашия избор',
     'addToilet.success': 'Тоалетната е Добавена Успешно!',
     'addToilet.successMessage': 'Вашата тоалетна вече е видима за всички.',
     'addToilet.error': 'Неуспешно Добавяне на Тоалетна',
@@ -406,14 +421,14 @@ const translations: Record<Language, Translations> = {
     'toiletType.other': 'Друго',
     
     // Accessibility
-    'accessibility.accessible': 'Достъпна',
-    'accessibility.notAccessible': 'Недостъпна',
+    'accessibility.accessible': 'Достъпна за инв. колични',
+    'accessibility.notAccessible': 'Недостъпна за инв. колички',
     'accessibility.unknown': 'Неизвестно',
     
     // Access Types
-    'accessType.free': 'Безплатна',
+    'accessType.free': 'Безплатен',
     'accessType.customersOnly': 'Само за Клиенти',
-    'accessType.paid': 'Платена',
+    'accessType.paid': 'Платен',
     'accessType.unknown': 'Неизвестно',
     
     // Login Modal
@@ -428,7 +443,7 @@ const translations: Record<Language, Translations> = {
     'filter.title': 'Филтрирай Тоалетни',
     'filter.type': 'Тип',
     'filter.accessibility': 'Достъпност',
-    'filter.accessType': 'Тип Достъп',
+    'filter.accessType': 'Достъп',
     'filter.showAll': 'Покажи Всички',
     'filter.applyFilters': 'Приложи Филтри',
     'filter.clearFilters': 'Изчисти Филтри',
@@ -516,8 +531,8 @@ const translations: Record<Language, Translations> = {
     'popup.addedBy': 'Добавена от',
     'popup.reviews': 'отзива',
     'popup.review': 'отзив',
-    'popup.noReviews': 'Все още няма отзиви. Бъдете първият, който ще остави отзив за тази тоалетна!',
-    'popup.availability': 'Достъпност:',
+    'popup.noReviews': 'Все още няма отзиви. Напишете първият отзив за тази тоалетна!',
+    'popup.availability': 'Достъп:',
     'popup.accessibility': 'Достъпност:',
     'popup.rateThisToilet': 'Оценете тази тоалетна',
     'popup.shareExperience': 'Споделете вашето преживяване с тази тоалетна...',
@@ -531,7 +546,7 @@ const translations: Record<Language, Translations> = {
     'popup.freeToUse': 'Безплатна за ползване',
     'popup.paid': 'Платена',
     'popup.onlyForCustomers': 'Само за Клиенти',
-    'popup.unknown': 'Неизвестна',
+    'popup.unknown': 'Неизвестно',
     'popup.wheelchairAccessible': 'Достъпна за инвалидни колички',
     'popup.notWheelchairAccessible': 'Недостъпна за инвалидни колички',
   },
@@ -567,8 +582,19 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
     return translations[language][key] || translations['en'][key] || key;
   };
 
+  const changeLanguage = (newLanguage: Language) => {
+    if (newLanguage !== language) {
+      setLanguage(newLanguage);
+      
+      // Simple and reliable: just refresh the browser
+      setTimeout(() => {
+        window.location.reload();
+      }, 50);
+    }
+  };
+
   return (
-    <LanguageContext.Provider value={{ language, setLanguage, t }}>
+    <LanguageContext.Provider value={{ language, setLanguage, changeLanguage, t }}>
       {children}
     </LanguageContext.Provider>
   );

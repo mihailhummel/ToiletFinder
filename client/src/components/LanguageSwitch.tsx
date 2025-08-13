@@ -8,12 +8,10 @@ interface LanguageSwitchProps {
 }
 
 export const LanguageSwitch: React.FC<LanguageSwitchProps> = ({ className = '' }) => {
-  const { language, setLanguage } = useLanguage();
+  const { language, changeLanguage } = useLanguage();
 
   const handleLanguageClick = (lang: Language) => {
-    if (lang !== language) {
-      setLanguage(lang);
-    }
+    changeLanguage(lang);
   };
 
   const getTooltip = () => {

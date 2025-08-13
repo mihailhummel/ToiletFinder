@@ -44,6 +44,7 @@ declare global {
     testAPI: () => Promise<any>;
     forceRefreshToilets: () => void;
     refreshToilets: () => void;
+    clearToiletCache: () => void;
   }
 }
 
@@ -103,7 +104,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
 
   // NEW: Use cached toilet system with clustering
   const [mapZoom, setMapZoom] = useState(14);
-  const { toilets, allToiletsCount, isLoading: toiletsLoading, error: toiletsError } = useToiletCache(boundParams, mapZoom);
+  const { toilets, allToiletsCount, isLoading: toiletsLoading, error: toiletsError, refetch } = useToiletCache(boundParams, mapZoom);
   
   // Cache system status available for debugging if needed
   
@@ -277,7 +278,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
               } else {
                 reviewsSection.innerHTML = `
                   <div style="text-align: center; color: #6b7280; font-size: 14px; padding: 8px 0;">
-                    No reviews yet. Be the first to review this toilet!
+                    ${t('popup.noReviews')}
                   </div>
                 `;
               }
@@ -609,8 +610,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
 
       // Add cache clearing function for debugging
       window.clearToiletCache = () => {
-        // Silent for performance
-        queryClient.clear();
+        // Cache clearing functionality will be handled by parent component
         window.location.reload();
       };
 
@@ -991,7 +991,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
       ).length;
       
       const renderedGeoapifyMarkers = toiletMarkers.current.filter(m => 
-        toilets.find(t => t.id === m.toiletId && t.source === 'geoapify')
+        toilets.find(t => t.id === m.toiletId && t.source === 'osm')
       ).length;
       
                // Silent for performance
@@ -1288,10 +1288,9 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
   useEffect(() => {
     if (typeof window !== 'undefined') {
               window.refreshMapData = () => {
-          // Silent for performance
-          // Simply refetch the data
-          if (false) { // Disabled manual refetch for now
-            // Manual refetch not needed with caching system
+          // Manual refresh function for debugging
+          if (refetch && typeof refetch === 'function') {
+            refetch();
           }
         };
         
