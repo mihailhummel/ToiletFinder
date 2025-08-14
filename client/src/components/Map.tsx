@@ -11,6 +11,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { haptics } from '@/lib/haptics';
 import { LoadingScreen } from './LoadingScreen';
+import { clusterPoints, isCluster, getClusterStyle, getClusterBounds, type ClusterPoint, type Cluster } from '@/utils/clustering';
 // @ts-ignore
 window.L = L;
 
@@ -108,18 +109,25 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
   
   // Cache system status available for debugging if needed
   
-  // Track map zoom level for clustering
+  // Track map zoom level for clustering with debouncing
   useEffect(() => {
     if (map.current) {
+      let timeoutId: NodeJS.Timeout;
+      
       const handleZoomEnd = () => {
-        const zoom = map.current.getZoom();
-        setMapZoom(zoom);
-        // Zoom level updated for clustering
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => {
+          const zoom = map.current?.getZoom();
+          if (zoom !== undefined) {
+            setMapZoom(zoom);
+          }
+        }, 100); // Small delay to prevent rapid zoom updates
       };
       
       map.current.on('zoomend', handleZoomEnd);
       
       return () => {
+        clearTimeout(timeoutId);
         if (map.current) {
           map.current.off('zoomend', handleZoomEnd);
         }
@@ -180,35 +188,18 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
 
       window.getDirections = (lat, lng) => {
         haptics.medium();
-        // Use navigation URLs that automatically start routing
-        // This will trigger the native app selection on mobile devices and start navigation
         
-        // For Google Maps - use navigation mode
-        const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`;
+        // Use geo: URL to trigger native OS app selection
+        const geoUrl = `geo:${lat},${lng}?q=${lat},${lng}`;
         
-        // For Apple Maps (iOS) - use navigation scheme
-        const appleMapsUrl = `http://maps.apple.com/?daddr=${lat},${lng}&dirflg=d`;
+        // Try to open geo: URL first (works on mobile)
+        window.location.href = geoUrl;
         
-        // Detect platform and use appropriate URL
-        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-        const isAndroid = /Android/.test(navigator.userAgent);
-        
-        let url;
-        if (isIOS) {
-          // Try Apple Maps first, fallback to Google Maps
-          url = appleMapsUrl;
-        } else {
-          // Use Google Maps for Android and desktop
-          url = googleMapsUrl;
-        }
-        
-        // Try to open in a new tab/window
-        const newWindow = window.open(url, '_blank');
-        
-        // If popup is blocked, fall back to current window
-        if (!newWindow) {
-          window.location.href = url;
-        }
+        // Fallback for desktop - Google Maps
+        setTimeout(() => {
+          const fallbackUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`;
+          window.open(fallbackUrl, '_blank');
+        }, 500);
       };
 
       window.loadReviews = async (toiletId) => {
@@ -654,25 +645,28 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
       setIsAwayFromUser(distance > 50);
     });
 
-    // Debounce function for map events
-    let mapMoveTimeout: NodeJS.Timeout | undefined;
-    let mapMoveStartTimeout: NodeJS.Timeout | undefined;
+      // Debounce function for map events - improved performance
+  let mapMoveTimeout: NodeJS.Timeout | undefined;
+  let mapMoveStartTimeout: NodeJS.Timeout | undefined;
+  
+  // Handle map events for bounds tracking
+  const handleMapMove = () => {
+    // Set moving state immediately
+    setIsMapMoving(true);
     
-    // Handle map events for bounds tracking
-    const handleMapMove = () => {
-      // Set moving state immediately
-      setIsMapMoving(true);
-      
-      // Clear existing timeouts
-      clearTimeout(mapMoveTimeout);
-      clearTimeout(mapMoveStartTimeout);
-      
-      // Debounce bounds update - balanced approach
-      mapMoveTimeout = setTimeout(() => {
-        const bounds = map.current.getBounds();
-        setMapBounds(bounds);
-        setIsMapMoving(false);
-      }, 600); // 600ms debounce - balance between responsiveness and performance
+    // Clear existing timeouts
+    clearTimeout(mapMoveTimeout);
+    clearTimeout(mapMoveStartTimeout);
+    
+    // Adaptive debounce based on zoom level for better performance
+    const currentZoom = map.current?.getZoom() || 14;
+    const debounceTime = currentZoom < 12 ? 1000 : currentZoom < 15 ? 600 : 300;
+    
+    mapMoveTimeout = setTimeout(() => {
+      const bounds = map.current.getBounds();
+      setMapBounds(bounds);
+      setIsMapMoving(false);
+    }, debounceTime); // Adaptive debounce for performance
       
       // Reopen popup if one was open before the view change and wasn't manually closed
       if (openPopupToiletIdRef.current && !manuallyClosedPopupRef.current && !isReopeningPopupRef.current) {
@@ -713,21 +707,28 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
     map.current.on('moveend zoomend', handleMapMove);
     map.current.on('click', handleMapClick);
 
-    // Initialize bounds immediately
+    // Initialize bounds immediately for instant pin loading
     const initialBounds = map.current.getBounds();
     setMapBounds(initialBounds);
     
-    // Ensure initial fetch happens
+    // Force immediate toilet fetch on map load
     setTimeout(() => {
       if (map.current) {
         const bounds = map.current.getBounds();
         setMapBounds(bounds);
-        // Force initial fetch
-        if (false) { // Disabled manual refetch for now
-          // Manual refetch not needed with caching system
-        }
+        // Trigger immediate map bounds update to load toilets
+        const updatedBounds = map.current.getBounds();
+        setMapBounds(updatedBounds);
       }
-    }, 200);
+    }, 100); // Reduced timeout for faster loading
+    
+    // Additional trigger after a short delay to ensure data loads
+    setTimeout(() => {
+      if (map.current) {
+        const bounds = map.current.getBounds();
+        setMapBounds(bounds);
+      }
+    }, 500);
 
     return () => {
       // Clear any pending timeouts
@@ -798,12 +799,19 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
       map.current.setView([stableUserLocation.lat, stableUserLocation.lng], 16);
       userLocationSet.current = true;
       
-      // Trigger immediate refetch of toilets around user location
+      // Immediate bounds update to trigger toilet fetch around user location
       setTimeout(() => {
-        if (false) { // Disabled manual refetch for now
-          // Manual refetch not needed with caching system
+        if (map.current) {
+          const bounds = map.current.getBounds();
+          setMapBounds(bounds);
+          // Force another update to ensure data loads
+          setTimeout(() => {
+            if (map.current) {
+              setMapBounds(map.current.getBounds());
+            }
+          }, 100);
         }
-      }, 200); // Small delay to ensure map bounds are updated
+      }, 100); // Small delay to ensure map bounds are updated
     }
   }, [stableUserLocation, leafletLoaded]);
 
@@ -864,117 +872,184 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
     
     // Silent for performance
     
-    // Limit the number of markers for performance (max 1000)
-    const limitedToilets = filteredToilets.slice(0, 1000);
+    // Google Maps style clustering system
+    const currentZoom = map.current?.getZoom() || 14;
     
-    // No need for viewport filtering since we only fetch toilets in viewport
-    const viewportToilets = limitedToilets;
+    // Convert toilets to cluster points
+    const clusterPointsArray: ClusterPoint[] = filteredToilets
+      .filter(toilet => toilet.coordinates && toilet.coordinates.lat && toilet.coordinates.lng)
+      .map(toilet => ({
+        lat: toilet.coordinates.lat,
+        lng: toilet.coordinates.lng,
+        id: toilet.id,
+        data: toilet
+      }));
     
-    // Silent for performance
-    
-    viewportToilets.forEach(toilet => {
-      // Validate toilet coordinates - this should never happen now that we fix them above
-      if (!toilet.coordinates || typeof toilet.coordinates.lat !== 'number' || typeof toilet.coordinates.lng !== 'number') {
-        // Silent for performance
-        return;
-      }
-      
-      // Set marker color: blue for user-added toilets, red for OSM and Geoapify toilets
-      const markerColor = toilet.source === 'user' ? '#3B82F6' : '#FF385C'; 
-      
-               // Silent for performance
-      
-      try {
-        const icon = L.divIcon({
-          className: 'toilet-marker',
-          html: createToiletMarkerHTML(toilet, markerColor),
-          iconSize: [40, 50],
-          iconAnchor: [20, 50]
-        });
+    // Apply clustering - conservative approach that mirrors Google Maps behavior
+    const clusteredItems = clusterPoints(clusterPointsArray, currentZoom, {
+      gridSize: currentZoom <= 4 ? 50 : currentZoom <= 6 ? 80 : currentZoom <= 8 ? 120 : currentZoom <= 10 ? 150 : 200,
+      maxZoom: 10, // Only cluster at very low zoom levels (country/regional view)
+      minimumClusterSize: currentZoom <= 4 ? 2 : currentZoom <= 6 ? 3 : currentZoom <= 8 ? 5 : 8 // More toilets needed at higher zoom
+    });
 
-      const marker = L.marker([toilet.coordinates.lat, toilet.coordinates.lng], { 
-          icon,
-          // Optimize marker performance
-          keyboard: false,
-          title: toilet.isCluster ? `${toilet.clusterCount} toilets` : (toilet.title || 'Toilet')
-        })
-        .addTo(markersLayer.current);
-        
-      // Handle cluster vs regular toilet clicks
-      if (toilet.isCluster) {
-        // Cluster marker - zoom in when clicked
-        marker.on('click', () => {
-          if (map.current && toilet.clusterCenter) {
-            map.current.setView([toilet.clusterCenter.lat, toilet.clusterCenter.lng], Math.min(mapZoom + 2, 18));
-          }
-        });
+    // Clustering applied successfully
+    
+    // Filter by viewport with buffer for better coverage
+    const mapBounds = map.current?.getBounds();
+    const viewportToilets = clusteredItems.filter((item: ClusterPoint | Cluster) => {
+      if (!mapBounds) return true;
+      
+      // Add buffer around viewport (roughly 20% on each side)
+      const latBuffer = (mapBounds.getNorth() - mapBounds.getSouth()) * 0.2;
+      const lngBuffer = (mapBounds.getEast() - mapBounds.getWest()) * 0.2;
+      
+      const expandedBounds = L.latLngBounds(
+        L.latLng(mapBounds.getSouth() - latBuffer, mapBounds.getWest() - lngBuffer),
+        L.latLng(mapBounds.getNorth() + latBuffer, mapBounds.getEast() + lngBuffer)
+      );
+      
+      if (isCluster(item)) {
+        return expandedBounds.contains(L.latLng(item.lat, item.lng));
       } else {
-        // Regular toilet marker - show popup
-        marker.bindPopup(createToiletPopupHTML(toilet), {
-          maxWidth: 400,
-          minWidth: 320,
-          className: 'refined-toilet-popup',
-          closeButton: true,
-          offset: [0, -40],
-          autoPan: true,
-          keepInView: true,
-          autoPanPadding: [40, 40]
-        });
+        return expandedBounds.contains(L.latLng(item.lat, item.lng));
       }
-      
-      marker
-        .on('popupopen', () => {
-          openPopupToiletIdRef.current = toilet.id;
-          manuallyClosedPopupRef.current = false;
-          isReopeningPopupRef.current = false;
+    }); // No limit - show all toilets in expanded viewport
+    
+    // Viewport filtering applied
+    
+    viewportToilets.forEach((item: ClusterPoint | Cluster) => {
+      try {
+        let marker: any;
+        let coordinates: { lat: number; lng: number };
+        let toiletData: any;
+        
+        if (isCluster(item)) {
+          // Handle cluster
+          coordinates = { lat: item.lat, lng: item.lng };
+          const style = getClusterStyle(item.count);
           
-          // Custom panning to ensure popup is visible without closing it
-          setTimeout(() => {
-            const markerLatLng = marker.getLatLng();
-            const mapBounds = map.current.getBounds();
-            const popup = marker.getPopup();
-            
-            if (popup && !mapBounds.contains(markerLatLng)) {
-              // Pan to marker with padding to ensure popup is visible
-              map.current.panTo(markerLatLng, { 
-                animate: true,
-                duration: 0.5,
-                easeLinearity: 0.25
-              });
+          const icon = L.divIcon({
+            className: 'cluster-marker',
+            html: createClusterMarkerHTML(item.count, style),
+            iconSize: [style.size, style.size],
+            iconAnchor: [style.size / 2, style.size / 2]
+          });
+          
+          marker = L.marker([coordinates.lat, coordinates.lng], { 
+            icon,
+            keyboard: false,
+            title: `${item.count} toilets`
+          }).addTo(markersLayer.current);
+          
+          // Handle cluster click - zoom in to show individual markers
+          marker.on('click', () => {
+            haptics.light();
+            if (map.current) {
+              const bounds = getClusterBounds(item);
+              // Calculate appropriate zoom level
+              const latDiff = bounds.north - bounds.south;
+              const lngDiff = bounds.east - bounds.west;
+              const maxDiff = Math.max(latDiff, lngDiff);
+              
+              let targetZoom = 16;
+              if (maxDiff > 0.01) targetZoom = 13;
+              else if (maxDiff > 0.005) targetZoom = 14;
+              else if (maxDiff > 0.002) targetZoom = 15;
+              
+              map.current.setView([item.lat, item.lng], targetZoom);
             }
-          }, 100);
+          });
           
-          // Reviews will be loaded and state restored automatically
-        })
-        .on('popupclose', () => {
-          openPopupToiletIdRef.current = null;
-          manuallyClosedPopupRef.current = true;
+        } else {
+          // Handle individual toilet
+          const toilet = item.data;
+          coordinates = { lat: item.lat, lng: item.lng };
+          toiletData = toilet;
           
-          // Trigger toilet re-rendering after popup closes to catch up on any missed updates
-          setTimeout(() => {
-            if (map.current && leafletLoaded && toilets.length) {
-              // Silent for performance
-              // Force a re-render by updating the dependency
-              setMapBounds(map.current.getBounds());
-            }
-          }, 500);
-        })
-        .on('click', (e: any) => {
-          haptics.light();
-          e.originalEvent?.stopPropagation();
-          openPopupToiletIdRef.current = toilet.id;
-          manuallyClosedPopupRef.current = false;
-          isReopeningPopupRef.current = false;
-          marker.openPopup();
-          setTimeout(() => {
-            window.loadReviews(toilet.id);
-          }, 100);
-        });
-      
-        // Store marker reference for later use
-        toiletMarkers.current.push({ toiletId: toilet.id, marker });
+          // Set marker color: blue for user-added toilets, red for OSM and Geoapify toilets
+          const markerColor = toilet.source === 'user' ? '#2563EB' : '#FF3131';
+          
+          // Performance optimization: simpler markers at lower zoom levels
+          const useSimpleMarker = currentZoom < 13;
+          const icon = L.divIcon({
+            className: useSimpleMarker ? 'toilet-marker-simple' : 'toilet-marker',
+            html: createToiletMarkerHTML(toilet, markerColor, useSimpleMarker),
+            iconSize: useSimpleMarker ? [24, 24] : [40, 50],
+            iconAnchor: useSimpleMarker ? [12, 12] : [20, 50]
+          });
+
+          marker = L.marker([coordinates.lat, coordinates.lng], { 
+            icon,
+            keyboard: false,
+            title: toilet.title || 'Toilet'
+          }).addTo(markersLayer.current);
+          
+          // Regular toilet marker - show popup
+          marker.bindPopup(createToiletPopupHTML(toilet), {
+            maxWidth: 400,
+            minWidth: 320,
+            className: 'refined-toilet-popup',
+            closeButton: true,
+            offset: [0, -40],
+            autoPan: true,
+            keepInView: true,
+            autoPanPadding: [40, 40]
+          });
+          
+          marker
+            .on('popupopen', () => {
+              openPopupToiletIdRef.current = toilet.id;
+              manuallyClosedPopupRef.current = false;
+              isReopeningPopupRef.current = false;
+              
+              // Custom panning to ensure popup is visible without closing it
+              setTimeout(() => {
+                const markerLatLng = marker.getLatLng();
+                const mapBounds = map.current.getBounds();
+                const popup = marker.getPopup();
+                
+                if (popup && !mapBounds.contains(markerLatLng)) {
+                  // Pan to marker with padding to ensure popup is visible
+                  map.current.panTo(markerLatLng, { 
+                    animate: true,
+                    duration: 0.5,
+                    easeLinearity: 0.25
+                  });
+                }
+              }, 100);
+              
+              // Reviews will be loaded and state restored automatically
+            })
+            .on('popupclose', () => {
+              openPopupToiletIdRef.current = null;
+              manuallyClosedPopupRef.current = true;
+              
+              // Trigger toilet re-rendering after popup closes to catch up on any missed updates
+              setTimeout(() => {
+                if (map.current && leafletLoaded && toilets.length) {
+                  // Silent for performance
+                  // Force a re-render by updating the dependency
+                  setMapBounds(map.current.getBounds());
+                }
+              }, 500);
+            })
+            .on('click', (e: any) => {
+              haptics.light();
+              e.originalEvent?.stopPropagation();
+              openPopupToiletIdRef.current = toilet.id;
+              manuallyClosedPopupRef.current = false;
+              isReopeningPopupRef.current = false;
+              marker.openPopup();
+              setTimeout(() => {
+                window.loadReviews(toilet.id);
+              }, 100);
+            });
+          
+          // Store marker reference for later use
+          toiletMarkers.current.push({ toiletId: toilet.id, marker });
+        }
       } catch (error) {
-        console.error(`❌ Error creating marker for toilet ${toilet.id}:`, error);
+        console.error(`❌ Error creating marker:`, error);
       }
     });
 
@@ -1015,37 +1090,41 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
   }, [toilets, leafletLoaded]);
 
   // Helper functions for marker and popup creation
-  const createToiletMarkerHTML = (toilet: any, markerColor: string) => {
-    // Handle cluster markers
-    if (toilet.isCluster) {
+  const createClusterMarkerHTML = (count: number, style: { size: number; color: string; textColor: string; fontSize: string }) => {
+    return `
+      <div style="
+        width: ${style.size}px;
+        height: ${style.size}px;
+        background: ${style.color};
+        border: 3px solid white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        font-weight: bold;
+        color: ${style.textColor};
+        font-size: ${style.fontSize};
+        cursor: pointer;
+        transition: transform 0.2s ease;
+      " onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
+        ${count}
+      </div>
+    `;
+  };
+
+  const createToiletMarkerHTML = (toilet: any, markerColor: string, useSimpleMarker = false) => {
+    // Simple marker for performance at low zoom levels
+    if (useSimpleMarker) {
       return `
         <div style="
-          position: relative;
-          width: 50px;
-          height: 50px;
-          cursor: pointer;
-        ">
-          <div style="
-            position: absolute;
-            bottom: 5px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 46px;
-            height: 46px;
-            background: linear-gradient(135deg, #ff6b6b, #4ecdc4);
-            border: 3px solid white;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.25);
-            font-weight: bold;
-            color: white;
-            font-size: 14px;
-          ">
-            ${toilet.clusterCount}
-          </div>
-        </div>
+          width: 20px;
+          height: 20px;
+          background: ${markerColor};
+          border: 2px solid white;
+          border-radius: 50%;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        "></div>
       `;
     }
     
@@ -1392,6 +1471,62 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
 
   return (
     <div className="relative w-full h-full">
+      <style>{`
+        /* GPU acceleration for map performance */
+        .leaflet-container {
+          transform: translateZ(0);
+          will-change: transform;
+        }
+        .toilet-marker-simple {
+          transform: translate3d(0,0,0);
+          will-change: transform;
+          backface-visibility: hidden;
+        }
+        .toilet-marker {
+          transform: translate3d(0,0,0);
+          will-change: transform;
+          backface-visibility: hidden;
+        }
+        .cluster-marker {
+          transform: translate3d(0,0,0);
+          will-change: transform;
+          backface-visibility: hidden;
+          contain: layout style paint;
+        }
+        .cluster-marker div {
+          transform: translate3d(0,0,0);
+          backface-visibility: hidden;
+        }
+        /* Optimize popup animations */
+        .leaflet-popup {
+          transform: translateZ(0);
+        }
+        /* Reduce paint complexity */
+        .leaflet-marker-icon {
+          image-rendering: optimizeSpeed;
+        }
+        /* Better rendering performance */
+        .leaflet-tile {
+          image-rendering: optimizeSpeed;
+        }
+        /* Loading states optimization */
+        .leaflet-control-container {
+          transform: translateZ(0);
+        }
+        /* Better scrolling performance */
+        .leaflet-container {
+          -webkit-overflow-scrolling: touch;
+          overflow-scrolling: touch;
+        }
+        /* Optimize animations */
+        @media (prefers-reduced-motion: reduce) {
+          *, *::before, *::after {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
+          }
+        }
+      `}</style>
       <div 
         ref={mapContainer} 
         className="w-full h-full" 

@@ -2,9 +2,9 @@
 // This file contains all production-specific settings
 
 export const productionConfig = {
-  // Domain and API configuration
-  domain: 'https://toaletna.com',
-  apiBaseUrl: 'https://toaletna.com/api',
+  // Domain and API configuration - use relative URLs for Railway deployment
+  domain: typeof window !== 'undefined' ? window.location.origin : 'https://toaletna.com',
+  apiBaseUrl: '/api', // Use relative URL to work with any domain
   
   // Analytics
   googleAnalyticsId: 'G-FPF6DRB75R',

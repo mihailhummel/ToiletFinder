@@ -245,8 +245,8 @@ const translations: Record<Language, Translations> = {
     'toiletType.other': 'Other',
     
     // Accessibility
-    'accessibility.accessible': 'Accessible',
-    'accessibility.notAccessible': 'Not Accessible',
+    'accessibility.accessible': 'Wheelchair Accessible',
+    'accessibility.notAccessible': 'Not Wheelchair Accessible',
     'accessibility.unknown': 'Unknown',
     
     // Access Types

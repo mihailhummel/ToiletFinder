@@ -92,69 +92,10 @@ function calculateDistance(lat1: number, lng1: number, lat2: number, lng2: numbe
   return R * c;
 }
 
-// Create clusters for zoomed-out views
+// DISABLED: Old clustering system - replaced by new clustering in Map component
 function createClusters(toilets: Toilet[], zoomLevel: number): ClusteredToilet[] {
-  // No clustering for zoom levels >= 14 (close-up views)
-  if (zoomLevel >= 14) {
-    // No clustering at this zoom level
-    return toilets;
-  }
-  
-  const clusterDistance = zoomLevel >= 12 ? 1 : zoomLevel >= 10 ? 3 : 5; // km
-  const clusters: ClusteredToilet[] = [];
-  const processed = new Set<string>();
-  
-  // Starting clustering process
-  
-  toilets.forEach(toilet => {
-    if (processed.has(toilet.id)) return;
-    
-    // Ensure toilet has valid coordinates
-    if (!toilet.coordinates || typeof toilet.coordinates.lat !== 'number' || typeof toilet.coordinates.lng !== 'number') {
-      // Skipping toilet with invalid coordinates
-      return;
-    }
-    
-    // Find nearby toilets for clustering
-    const nearbyToilets = toilets.filter(other => {
-      if (processed.has(other.id)) return false;
-      if (!other.coordinates || typeof other.coordinates.lat !== 'number' || typeof other.coordinates.lng !== 'number') {
-        return false;
-      }
-      
-      const distance = calculateDistance(
-        toilet.coordinates.lat, toilet.coordinates.lng,
-        other.coordinates.lat, other.coordinates.lng
-      );
-      return distance <= clusterDistance;
-    });
-    
-    if (nearbyToilets.length === 1) {
-      // Single toilet, no clustering needed
-      clusters.push(toilet);
-      processed.add(toilet.id);
-    } else {
-      // Create cluster
-      const centerLat = nearbyToilets.reduce((sum, t) => sum + t.coordinates.lat, 0) / nearbyToilets.length;
-      const centerLng = nearbyToilets.reduce((sum, t) => sum + t.coordinates.lng, 0) / nearbyToilets.length;
-      
-      const cluster: ClusteredToilet = {
-        ...toilet, // Use first toilet as base
-        id: `cluster-${toilet.id}`,
-        isCluster: true,
-        clusterCount: nearbyToilets.length,
-        clusterCenter: { lat: centerLat, lng: centerLng },
-        coordinates: { lat: centerLat, lng: centerLng }
-      };
-      
-      clusters.push(cluster);
-      nearbyToilets.forEach(t => processed.add(t.id));
-      // Cluster created
-    }
-  });
-  
-  // Clustering complete
-  return clusters;
+  // Return all toilets without clustering - clustering is now handled in Map component
+  return toilets;
 }
 
 // Filter toilets by viewport with buffer

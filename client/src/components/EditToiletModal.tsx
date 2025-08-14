@@ -139,7 +139,8 @@ export const EditToiletModal = ({ isOpen, onClose, location, initialData, onConf
           transform: 'translate(-50%, -50%)',
           boxShadow: '0 10px 40px rgba(0,0,0,0.2)',
           overflowY: 'auto',
-          padding: '1rem'
+          padding: '1rem',
+          gap: '.5rem',
         }}
       >
         <DialogHeader className="text-left space-y-2">
@@ -153,7 +154,7 @@ export const EditToiletModal = ({ isOpen, onClose, location, initialData, onConf
         
         {/* Location display */}
         {location && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-2">
             <div className="flex items-center space-x-2 mb-2">
               <Check className="w-4 h-4 text-blue-600" />
               <span className="font-medium text-blue-800 text-sm">{t('addToilet.selectLocation')}</span>

@@ -71,7 +71,7 @@ function findCoveringCache(viewport: { minLat: number; maxLat: number; minLng: n
         chunk.bounds.minLng <= viewport.minLng + buffer &&
         chunk.bounds.maxLng >= viewport.maxLng - buffer) {
       
-      console.log(`✅ Serving ${chunk.toilets.length} toilets from cache (age: ${Math.round(age/1000/60)}min)`);
+      // Serving from cache
       
       // Filter to exact viewport
       return chunk.toilets.filter(toilet => 
@@ -102,7 +102,7 @@ function findCoveringCache(viewport: { minLat: number; maxLat: number; minLng: n
     );
     
     if (viewportToilets.length > 10) { // If we have reasonable coverage
-      console.log(`✅ Serving ${viewportToilets.length} toilets from pieced cache`);
+      // Serving from pieced cache
       return viewportToilets;
     }
   }
@@ -141,7 +141,7 @@ function cacheToilets(toilets: Toilet[], viewport: { minLat: number; maxLat: num
   }
   
   setCachedData(cached);
-  console.log(`💾 Cached ${toilets.length} toilets for area`);
+  // Cached toilets for area
 }
 
 // Debounced viewport hook with EXTREME caching
@@ -172,7 +172,7 @@ export const useToiletsInViewport = (viewport?: {
         const lngDiff = Math.abs(stableViewport?.minLng || 0 - viewport.minLng);
         
         if (!stableViewport || latDiff > 0.01 || lngDiff > 0.01) {
-          console.log('📍 Viewport changed significantly, checking cache...');
+          // Viewport changed, checking cache
           setStableViewport(viewport);
           lastFetchTime.current = now;
         }
@@ -200,12 +200,12 @@ export const useToiletsInViewport = (viewport?: {
       // STEP 2: Check for pending request for same area
       const requestKey = `${stableViewport.minLat}-${stableViewport.maxLat}-${stableViewport.minLng}-${stableViewport.maxLng}`;
       if (pendingRequests.has(requestKey)) {
-        console.log('⏳ Using pending request for same area');
+        // Using pending request
         return await pendingRequests.get(requestKey)!;
       }
       
       // STEP 3: Make new request only if absolutely necessary
-      console.log('🌐 Cache miss - making database request (THIS SHOULD BE RARE!)');
+      // Making database request
       
       const requestPromise = (async () => {
         try {

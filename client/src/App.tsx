@@ -86,17 +86,31 @@ function AppContent() {
 
     // Listen for PWA install prompt
     const handleBeforeInstallPrompt = (e: any) => {
+      console.log('📱 beforeinstallprompt event fired');
       e.preventDefault();
       setDeferredPrompt(e);
       setCanInstall(true);
     };
 
+    // Listen for app installation
+    const handleAppInstalled = () => {
+      console.log('📱 App was installed');
+      setDeferredPrompt(null);
+      setCanInstall(false);
+      toast({
+        title: "App Installed!",
+        description: "App has been successfully added to your home screen"
+      });
+    };
+
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    window.addEventListener('appinstalled', handleAppInstalled);
 
     // Cleanup
     return () => {
       window.removeEventListener('resize', checkMobile);
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('appinstalled', handleAppInstalled);
     };
   }, []);
 
@@ -282,24 +296,50 @@ function AppContent() {
 
   // PWA Install function
   const handleInstallApp = useCallback(async () => {
+    console.log('🔽 Install app clicked. Deferred prompt:', !!deferredPrompt);
+    
     if (deferredPrompt) {
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      
-      if (outcome === 'accepted') {
+      try {
+        // Show the install prompt
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        
+        console.log('📱 Install outcome:', outcome);
+        
+        if (outcome === 'accepted') {
+          toast({
+            title: t('pwa.install'),
+            description: t('pwa.installDescription')
+          });
+        }
+        
+        setDeferredPrompt(null);
+        setCanInstall(false);
+      } catch (error) {
+        console.error('❌ Error during install:', error);
         toast({
-          title: t('pwa.install'),
-          description: t('pwa.installDescription')
+          title: "Install Error",
+          description: "Could not install app. Please try adding to home screen manually.",
+          variant: "destructive"
         });
       }
-      
-      setDeferredPrompt(null);
-      setCanInstall(false);
     } else {
-      // Fallback for browsers that don't support beforeinstallprompt
+      // Enhanced fallback with better instructions
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      const isAndroid = /Android/.test(navigator.userAgent);
+      
+      let instructions = '';
+      if (isIOS) {
+        instructions = 'Tap the share button and select "Add to Home Screen"';
+      } else if (isAndroid) {
+        instructions = 'Tap the browser menu and select "Add to Home Screen" or "Install App"';
+      } else {
+        instructions = 'Use your browser\'s menu to add this site to your home screen';
+      }
+      
       toast({
         title: t('pwa.downloadApp'),
-        description: t('pwa.installDescription')
+        description: instructions
       });
     }
   }, [deferredPrompt, toast, t]);
@@ -328,22 +368,22 @@ function AppContent() {
 
           {/* Header */}
           <header className="app-header fixed top-0 left-0 right-0 bg-white shadow-lg z-40 border-b">
-            <div className="flex items-center justify-between px-4 py-3">
-              <div className="flex items-center space-x-3">
-                <div className="w-9 h-9 rounded-lg flex items-center justify-center overflow-hidden">
+            <div className="flex items-center justify-between px-3 sm:px-4 py-3">
+              <div className="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
+                <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0">
                   <img 
                     src="/logo.png" 
                     alt="Toilet Map Bulgaria Logo" 
                     className="w-full h-full object-contain"
                   />
                 </div>
-                <div>
-                  <h1 className="text-lg font-bold text-gray-900">{t('header.title')}</h1>
-                  <p className="text-xs text-gray-600">Bulgaria</p>
+                <div className="min-w-0 flex-1">
+                  <h1 className="text-base sm:text-lg font-bold text-gray-900 truncate">{t('header.title')}</h1>
+                  <p className="text-xs text-gray-600 hidden sm:block">Bulgaria</p>
                 </div>
               </div>
               
-              <div className="flex items-center space-x-3">
+              <div className="flex items-center space-x-2 sm:space-x-3 flex-shrink-0">
                 {/* Language Switch */}
                 <LanguageSwitch />
                 
@@ -521,8 +561,8 @@ function AppContent() {
                 
                 {/* Action buttons */}
                 <div className="flex flex-col space-y-3">
-                  {/* Download App button - only show on mobile */}
-                  {isMobile && (canInstall || true) && (
+                  {/* Download App button - show on mobile and when PWA not already installed */}
+                  {isMobile && !window.matchMedia('(display-mode: standalone)').matches && (
                     <Button
                       variant="default"
                       onClick={handleInstallApp}
@@ -547,15 +587,7 @@ function AppContent() {
             </DialogContent>
           </Dialog>
 
-          {/* Development Tools - only show in development */}
-          {process.env.NODE_ENV === 'development' && (
-            <div className="fixed top-20 right-4 bg-black bg-opacity-75 text-white p-2 rounded text-xs z-50">
-              <div>Ctrl+Shift+C: Clear cache</div>
-              <div>User: {user ? user.email : 'Not logged in'}</div>
-              <div>Location: {userLocation ? `${userLocation.lat.toFixed(3)}, ${userLocation.lng.toFixed(3)}` : 'Unknown'}</div>
-              <div>Adding: {isAddingToilet ? 'Yes' : 'No'}</div>
-            </div>
-          )}
+
 
           <Toaster />
         </div>

@@ -23,7 +23,15 @@ const STATIC_ASSETS = [
   '/robots.txt',
   '/sitemap.xml',
   '/favicon.ico',
+  '/favicon-32x32.png',
+  '/apple-touch-icon.png',
+  '/icon-72x72.png',
+  '/icon-96x96.png',
+  '/icon-128x128.png',
+  '/icon-144x144.png',
+  '/icon-152x152.png',
   '/icon-192x192.png',
+  '/icon-384x384.png',
   '/icon-512x512.png'
 ]
 
@@ -165,23 +173,23 @@ async function handleAPIRequest(request) {
   
   try {
     // Try network first
-    console.log('🌐 Fetching from network:', request.url)
+    // Fetching from network
     const networkResponse = await fetch(request)
     
     // Cache successful responses
     if (networkResponse.ok) {
-      console.log('💾 Caching API response:', request.url)
+      // Caching API response
       cache.put(request, networkResponse.clone())
     }
     
     return networkResponse
   } catch (error) {
     // Network failed - try cache
-    console.log('📡 Network failed, trying cache:', request.url)
+    // Network failed, trying cache
     const cachedResponse = await cache.match(request)
     
     if (cachedResponse) {
-      console.log('💾 Serving from cache:', request.url)
+      // Serving from cache
       return cachedResponse
     }
     
@@ -196,12 +204,12 @@ async function handleStaticAssets(request) {
   const cachedResponse = await cache.match(request)
   
   if (cachedResponse) {
-    console.log('💾 Serving static asset from cache:', request.url)
+    // Serving static asset from cache
     return cachedResponse
   }
   
   try {
-    console.log('🌐 Fetching static asset from network:', request.url)
+    // Fetching static asset from network
     const networkResponse = await fetch(request)
     
     if (networkResponse.ok) {
@@ -218,7 +226,7 @@ async function handleStaticAssets(request) {
 // 📄 Network First for page requests
 async function handlePageRequest(request) {
   try {
-    console.log('🌐 Fetching page from network:', request.url)
+    // Fetching page from network
     const networkResponse = await fetch(request)
     
     // Cache successful page responses
@@ -230,7 +238,7 @@ async function handlePageRequest(request) {
     return networkResponse
   } catch (error) {
     // Network failed - try cache
-    console.log('📡 Network failed for page, trying cache:', request.url)
+    // Network failed for page, trying cache
     const cache = await caches.open(STATIC_CACHE)
     const cachedResponse = await cache.match(request)
     
@@ -480,9 +488,9 @@ async function handleImageRequest(request) {
   try {
     const networkResponse = await fetch(request)
     if (networkResponse.ok) {
-      // Only cache images under 1MB
+      // Optimized image caching - smaller limit for better performance
       const contentLength = networkResponse.headers.get('content-length')
-      if (!contentLength || parseInt(contentLength) < 1024 * 1024) {
+      if (!contentLength || parseInt(contentLength) < 512 * 1024) { // 512KB limit
         cache.put(request, networkResponse.clone())
       }
     }

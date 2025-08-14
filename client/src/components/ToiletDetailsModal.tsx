@@ -69,34 +69,16 @@ export const ToiletDetailsModal = ({ toilet, isOpen, onClose }: ToiletDetailsMod
     haptics.medium();
     const { lat, lng } = toilet.coordinates;
     
-    // Use navigation URLs that automatically start routing
-    // This will trigger the native app selection on mobile devices and start navigation
-    
-    // For Google Maps - use navigation mode
-    const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`;
-    
-    // For Apple Maps (iOS) - use navigation scheme
-    const appleMapsUrl = `http://maps.apple.com/?daddr=${lat},${lng}&dirflg=d`;
-    
-    // Detect platform and use appropriate URL
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    const isAndroid = /Android/.test(navigator.userAgent);
-    
-    let url;
-    if (isIOS) {
-      // Try Apple Maps first, fallback to Google Maps
-      url = appleMapsUrl;
+    // Use the global getDirections function for consistency
+    if (window.getDirections) {
+      window.getDirections(lat, lng);
     } else {
-      // Use Google Maps for Android and desktop
-      url = googleMapsUrl;
-    }
-    
-    // Try to open in a new tab/window
-    const newWindow = window.open(url, '_blank');
-    
-    // If popup is blocked, fall back to current window
-    if (!newWindow) {
-      window.location.href = url;
+      // Fallback to direct Google Maps if global function not available
+      const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`;
+      const newWindow = window.open(googleMapsUrl, '_blank');
+      if (!newWindow) {
+        window.location.href = googleMapsUrl;
+      }
     }
   };
 

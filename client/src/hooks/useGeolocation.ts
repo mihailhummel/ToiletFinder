@@ -27,7 +27,7 @@ export const useGeolocation = () => {
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const accuracy = position.coords.accuracy;
-        console.log(`📍 Location obtained: ${position.coords.latitude.toFixed(6)}, ${position.coords.longitude.toFixed(6)} (accuracy: ${accuracy}m)`);
+        // Location obtained successfully
         
         setState({
           location: {

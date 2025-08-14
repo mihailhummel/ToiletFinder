@@ -73,14 +73,14 @@ function getRequiredChunks(bounds: ViewportBounds): string[] {
     }
   }
   
-  console.log(`📍 Normal viewport: ${chunks.length} chunks needed`);
+  // Normal viewport chunks calculated
   return chunks;
 }
 
 // Fetch toilets for a specific chunk
 async function fetchToiletsForChunk(chunkKey: string): Promise<Toilet[]> {
   try {
-    console.log(`🔍 Fetching chunk: ${chunkKey}`);
+    // Fetching chunk data
     const response = await fetch(`/api/toilets/chunk/${chunkKey}`);
     
     if (!response.ok) {
@@ -88,7 +88,7 @@ async function fetchToiletsForChunk(chunkKey: string): Promise<Toilet[]> {
     }
     
     const data = await response.json();
-    console.log(`✅ Chunk ${chunkKey} loaded: ${data.length} toilets`);
+    // Chunk loaded successfully
     return data;
   } catch (error) {
     console.error(`❌ Error fetching chunk ${chunkKey}:`, error);
@@ -182,7 +182,7 @@ export function useToiletChunks(bounds: ViewportBounds | undefined) {
     const toilets = chunkQueries
       .filter(query => query.data)
       .flatMap(query => query.data || []);
-    console.log(`🚎 Chunk result: ${enabledChunks.length}/${debouncedChunks.length} chunks enabled, ${chunkQueries.length} queries, ${toilets.length} toilets`);
+    // Chunk system processing complete
     return toilets;
   }, [chunkQueries, enabledChunks.length, debouncedChunks.length]);
 

@@ -2,7 +2,7 @@
 <html lang="bg">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1" />
     
     <!-- Primary Meta Tags -->
     <title>Toilet Map Bulgaria | Намери Обществени Тоалетни | toaletna.com</title>
@@ -104,25 +104,42 @@
     </script>
     
     <!-- PWA Meta Tags -->
-    <meta name="theme-color" content="#1976D2">
+    <meta name="theme-color" content="#ffffff">
     <link rel="manifest" href="/manifest.json">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="Toilet Map BG">
     
-    <!-- Favicon and Icons -->
+    <!-- Apple Touch Icons for better iOS support -->
+    <link rel="apple-touch-icon" href="/icon-192x192.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="/icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="96x96" href="/icon-96x96.png">
+    <link rel="apple-touch-icon" sizes="128x128" href="/icon-128x128.png">
+    <link rel="apple-touch-icon" sizes="144x144" href="/icon-144x144.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="/icon-152x152.png">
+    <link rel="apple-touch-icon" sizes="192x192" href="/icon-192x192.png">
+    <link rel="apple-touch-icon" sizes="384x384" href="/icon-384x384.png">
+    <link rel="apple-touch-icon" sizes="512x512" href="/icon-512x512.png">
+    
+    <!-- Standard favicon -->
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/icon-72x72.png">
+    <link rel="shortcut icon" href="/favicon.ico">
+    
+    <!-- Additional Icons -->
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="192x192" href="/icon-192x192.png">
     <link rel="icon" type="image/png" sizes="512x512" href="/icon-512x512.png">
     
-    <!-- Preload Critical Resources -->
+    <!-- Performance Optimizations -->
     <link rel="preload" href="/src/main.tsx" as="script">
+    <link rel="modulepreload" href="/src/main.tsx">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://www.googletagmanager.com">
+    <link rel="preconnect" href="/api" crossorigin>
     <link rel="dns-prefetch" href="https://toaletna.com">
+
     
     <!-- Critical CSS Inline (add later if needed) -->
     <style>
@@ -153,9 +170,9 @@
     
     <script type="module" src="/src/main.tsx"></script>
     <script>
-      // Global configuration
-      window.API_BASE_URL = '';
-      window.DOMAIN = 'https://toaletna.com';
+      // Global configuration - use current domain for Railway deployment
+      window.API_BASE_URL = '/api';
+      window.DOMAIN = window.location.origin;
       
       // Service Worker Registration
       if ('serviceWorker' in navigator) {
