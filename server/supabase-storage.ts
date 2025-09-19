@@ -380,6 +380,34 @@ export class SupabaseStorage implements IStorage {
     }
   }
 
+  async updateToilet(toiletId: string, updateData: Partial<InsertToilet>): Promise<void> {
+    try {
+      const updatePayload: any = {};
+      
+      if (updateData.type) updatePayload.type = updateData.type;
+      if (updateData.title !== undefined) updatePayload.title = updateData.title;
+      if (updateData.accessibility) updatePayload.accessibility = updateData.accessibility;
+      if (updateData.accessType) updatePayload.access_type = updateData.accessType;
+      if (updateData.notes !== undefined) updatePayload.notes = updateData.notes;
+      if (updateData.coordinates) updatePayload.coordinates = updateData.coordinates;
+      
+      updatePayload.updated_at = new Date().toISOString();
+
+      const { error } = await supabase
+        .from('toilets')
+        .update(updatePayload)
+        .eq('id', toiletId);
+
+      if (error) {
+        console.error('❌ Error updating toilet:', error);
+        throw error;
+      }
+    } catch (error) {
+      console.error('❌ Failed to update toilet:', error);
+      throw error;
+    }
+  }
+
   async deleteToilet(toiletId: string): Promise<void> {
     try {
       const { error } = await supabase
@@ -395,6 +423,72 @@ export class SupabaseStorage implements IStorage {
               // Silent for performance
     } catch (error) {
       console.error('❌ Failed to delete toilet:', error);
+      throw error;
+    }
+  }
+
+  async getUserToilets(userId: string): Promise<Toilet[]> {
+    try {
+      const { data, error } = await supabase
+        .from('toilets')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('is_removed', false)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('❌ Error fetching user toilets:', error);
+        throw error;
+      }
+
+      return data.map(this.transformToilet);
+    } catch (error) {
+      console.error('❌ Failed to fetch user toilets:', error);
+      throw error;
+    }
+  }
+
+  async getUserReviews(userId: string): Promise<Review[]> {
+    try {
+      const { data, error } = await supabase
+        .from('reviews')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('❌ Error fetching user reviews:', error);
+        throw error;
+      }
+
+      return data.map((review: any) => ({
+        id: review.id,
+        toiletId: review.toilet_id,
+        userId: review.user_id,
+        userName: review.user_name,
+        rating: review.rating,
+        text: review.text,
+        createdAt: new Date(review.created_at)
+      }));
+    } catch (error) {
+      console.error('❌ Failed to fetch user reviews:', error);
+      throw error;
+    }
+  }
+
+  async deleteReview(reviewId: string): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('reviews')
+        .delete()
+        .eq('id', reviewId);
+
+      if (error) {
+        console.error('❌ Error deleting review:', error);
+        throw error;
+      }
+    } catch (error) {
+      console.error('❌ Failed to delete review:', error);
       throw error;
     }
   }

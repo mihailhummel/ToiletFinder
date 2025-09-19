@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { X, Check } from "lucide-react";
+import { X, Check, MapPin, Edit3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -25,7 +25,9 @@ interface EditToiletModalProps {
     title: string;
     accessibility: Accessibility;
     accessType: AccessType;
+    coordinates?: MapLocation;
   }) => void;
+  onRequestLocationSelection?: (type: ToiletType, title: string, accessibility: Accessibility, accessType: AccessType, originalLocation: MapLocation) => void;
 }
 
 // Toilet type templates for automatic assignment (same as AddToiletModal)
@@ -38,11 +40,12 @@ const TOILET_TYPE_TEMPLATES: Record<ToiletType, { accessibility: Accessibility; 
   "other": { accessibility: "unknown", accessType: "unknown" }
 };
 
-export const EditToiletModal = ({ isOpen, onClose, location, initialData, onConfirm }: EditToiletModalProps) => {
+export const EditToiletModal = ({ isOpen, onClose, location, initialData, onConfirm, onRequestLocationSelection }: EditToiletModalProps) => {
   const [type, setType] = useState<ToiletType>(initialData.type);
   const [title, setTitle] = useState(initialData.title);
   const [accessibility, setAccessibility] = useState<Accessibility>(initialData.accessibility);
   const [accessType, setAccessType] = useState<AccessType>(initialData.accessType);
+  const [editableLocation, setEditableLocation] = useState(location || { lat: 0, lng: 0 });
   
   const { toast } = useToast();
   const { t } = useLanguage();
@@ -87,8 +90,11 @@ export const EditToiletModal = ({ isOpen, onClose, location, initialData, onConf
       setTitle(initialData.title);
       setAccessibility(initialData.accessibility);
       setAccessType(initialData.accessType);
+      if (location) {
+        setEditableLocation(location);
+      }
     }
-  }, [isOpen, initialData]);
+  }, [isOpen, initialData, location]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -96,12 +102,23 @@ export const EditToiletModal = ({ isOpen, onClose, location, initialData, onConf
     
     console.log("Edit toilet form submitted");
     
+    // Validate coordinates
+    if (!editableLocation.lat || !editableLocation.lng) {
+      toast({
+        title: "Invalid coordinates",
+        description: "Please enter valid latitude and longitude values.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     // Pass the updated data back to the parent component
     onConfirm({
       type,
       title,
       accessibility,
-      accessType
+      accessType,
+      coordinates: editableLocation
     });
     
     // Close the modal
@@ -127,19 +144,20 @@ export const EditToiletModal = ({ isOpen, onClose, location, initialData, onConf
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent 
-        className="sm:max-w-md w-full max-w-full p-4 mobile:max-h-[75vh] mobile:h-auto bg-white shadow-xl border-0"
+        className="sm:max-w-md w-full max-w-full mobile:max-h-[75vh] mobile:h-auto bg-white shadow-xl border-0 overflow-hidden"
         style={{
           borderRadius: '24px',
           margin: '0',
           maxWidth: '500px',
-          width: 'calc(100vw - 40px)',
-          maxHeight: 'calc(100vh - 112px)',
+          width: 'calc(100vw - 16px)', // Reduced margins for more content space
+          maxHeight: 'calc(100vh - 80px)', // Reduced top/bottom margins
           left: '50%',
-          top: 'calc(50% + 16px)',
+          top: 'calc(50% + 8px)', // Moved closer to center
           transform: 'translate(-50%, -50%)',
           boxShadow: '0 10px 40px rgba(0,0,0,0.2)',
           overflowY: 'auto',
-          padding: '1rem',
+          overflowX: 'hidden', // Prevent horizontal overflow
+          padding: '0.75rem', // Reduced padding for more content space
           gap: '.5rem',
         }}
       >
@@ -152,25 +170,80 @@ export const EditToiletModal = ({ isOpen, onClose, location, initialData, onConf
           </DialogDescription>
         </DialogHeader>
         
-        {/* Location display */}
-        {location && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-2">
-            <div className="flex items-center space-x-2 mb-2">
-              <Check className="w-4 h-4 text-blue-600" />
-              <span className="font-medium text-blue-800 text-sm">{t('addToilet.selectLocation')}</span>
+        {/* Location editing section - Responsive */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-2.5">
+          {/* Desktop layout */}
+          <div className="hidden sm:block">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center space-x-2">
+                <MapPin className="w-4 h-4 text-blue-600" />
+                <span className="font-medium text-blue-800 text-sm">{t('location.title')}</span>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  if (onRequestLocationSelection) {
+                    onRequestLocationSelection(type, title, accessibility, accessType, editableLocation);
+                  }
+                }}
+                className="h-7 px-3 text-xs text-blue-600 border-blue-300 hover:bg-blue-100"
+              >
+                <Edit3 className="w-3 h-3 mr-1" />
+                {t('location.changeOnMap')}
+              </Button>
             </div>
-            <div className="text-xs text-blue-700">
-              {location.lat.toFixed(6)}, {location.lng.toFixed(6)}
+            
+            <div className="text-xs text-blue-700 break-all">
+              <span className="font-medium">{t('location.coordinates')}:</span> <span className="font-mono">{editableLocation.lat.toFixed(6)}, {editableLocation.lng.toFixed(6)}</span>
+            </div>
+            <div className="text-xs text-blue-500 mt-1">
+              {t('location.changeInstruction')}
             </div>
           </div>
-        )}
+
+          {/* Mobile layout */}
+          <div className="sm:hidden">
+            <div className="flex items-center justify-between">
+              {/* Left side - Location title and coordinates */}
+              <div className="flex-1">
+                <div className="flex items-center space-x-2 mb-1">
+                  <MapPin className="w-4 h-4 text-blue-600" />
+                  <span className="font-medium text-blue-800 text-sm">{t('location.title')}</span>
+                </div>
+                <div className="text-xs text-blue-700 break-all">
+                  <span className="font-mono text-xs">{editableLocation.lat.toFixed(6)}, {editableLocation.lng.toFixed(6)}</span>
+                </div>
+              </div>
+              
+              {/* Right side - Change button */}
+              <div className="ml-2 flex-shrink-0">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    if (onRequestLocationSelection) {
+                      onRequestLocationSelection(type, title, accessibility, accessType, editableLocation);
+                    }
+                  }}
+                  className="h-8 px-2 text-xs text-blue-600 border-blue-300 hover:bg-blue-100 whitespace-nowrap"
+                >
+                  <Edit3 className="w-3 h-3 mr-1" />
+                  {t('location.change')}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
         
         {/* Edit Form */}
-        <form onSubmit={handleSubmit} className="space-y-3">
-          <div>
+        <form onSubmit={handleSubmit} className="space-y-2.5 min-w-0">
+          <div className="min-w-0">
             <Label htmlFor="toilet-type" className="text-xs font-medium text-gray-700">{t('addToilet.toiletType')}</Label>
             <Select value={type} onValueChange={handleTypeChange}>
-              <SelectTrigger id="toilet-type" className="border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 h-9 text-sm">
+              <SelectTrigger id="toilet-type" className="border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 h-9 text-sm w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="bg-white border border-gray-200 shadow-lg">
@@ -183,7 +256,7 @@ export const EditToiletModal = ({ isOpen, onClose, location, initialData, onConf
             </Select>
           </div>
 
-          <div>
+          <div className="min-w-0">
             <Label htmlFor="toilet-title" className="text-xs font-medium text-gray-700">{t('addToilet.toiletTitle')}</Label>
             <Input
               id="toilet-title"
@@ -191,14 +264,14 @@ export const EditToiletModal = ({ isOpen, onClose, location, initialData, onConf
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder={t('addToilet.titlePlaceholder')}
-              className="border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white h-9 text-sm"
+              className="border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white h-9 text-sm w-full"
             />
           </div>
 
-          <div>
+          <div className="min-w-0">
             <Label htmlFor="toilet-access-type" className="text-xs font-medium text-gray-700">{t('addToilet.accessType')}</Label>
             <Select value={accessType} onValueChange={(value: AccessType) => setAccessType(value)}>
-              <SelectTrigger id="toilet-access-type" className="border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 h-9 text-sm">
+              <SelectTrigger id="toilet-access-type" className="border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 h-9 text-sm w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="bg-white border border-gray-200 shadow-lg">
@@ -213,10 +286,10 @@ export const EditToiletModal = ({ isOpen, onClose, location, initialData, onConf
             </Select>
           </div>
 
-          <div>
+          <div className="min-w-0">
             <Label htmlFor="toilet-accessibility" className="text-xs font-medium text-gray-700">{t('addToilet.accessibility')}</Label>
             <Select value={accessibility} onValueChange={(value: Accessibility) => setAccessibility(value)}>
-              <SelectTrigger id="toilet-accessibility" className="border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 h-9 text-sm">
+              <SelectTrigger id="toilet-accessibility" className="border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 h-9 text-sm w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="bg-white border border-gray-200 shadow-lg">
@@ -231,21 +304,21 @@ export const EditToiletModal = ({ isOpen, onClose, location, initialData, onConf
             </Select>
           </div>
           
-          <div className="flex space-x-2 pt-2">
+          <div className="flex space-x-2 pt-1.5 min-w-0">
             <Button
               type="button"
               variant="outline"
               onClick={handleCancel}
-              className="flex-1 border-gray-300 text-gray-700 hover:bg-gray-50 text-sm py-2"
+              className="flex-1 border-gray-300 text-gray-700 hover:bg-gray-50 text-sm py-2 min-w-0"
             >
-              {t('button.cancel')}
+              <span className="truncate">{t('button.cancel')}</span>
             </Button>
             <Button
               type="submit"
               onClick={() => haptics.medium()}
-              className="flex-1 bg-green-600 hover:bg-green-700 text-white shadow-sm text-sm py-2"
+              className="flex-1 bg-green-600 hover:bg-green-700 text-white shadow-sm text-sm py-2 min-w-0"
             >
-              {t('button.save')}
+              <span className="truncate">{t('button.save')}</span>
             </Button>
           </div>
         </form>

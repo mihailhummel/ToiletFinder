@@ -22,28 +22,27 @@ export const LanguageSwitch: React.FC<LanguageSwitchProps> = ({ className = '' }
 
   return (
     <div className={`flex items-center ${className}`} title={getTooltip()}>
-      {/* Globe icon - hidden on mobile and tablets */}
-      <Globe className="w-4 h-4 text-gray-500 hidden lg:block mr-1" />
+      {/* Globe icon - always visible */}
+      <Globe className="w-4 h-4 text-gray-500 mr-2" />
       
-      {/* Responsive toggle with better sizing */}
-      <div className="flex items-center bg-gray-100 rounded p-0.5 sm:p-1">
+      {/* Language toggle buttons - separate style to match original */}
+      <div className="flex items-center space-x-1">
         <button
           onClick={() => handleLanguageClick('bg')}
-          className={`language-toggle-btn px-1.5 py-0.5 sm:px-2 sm:py-1 text-xs font-medium rounded transition-all flex items-center justify-center min-w-[28px] sm:min-w-[32px] ${
+          className={`px-2 py-1 text-xs font-medium rounded transition-all ${
             language === 'bg' 
               ? 'bg-blue-600 text-white shadow-sm' 
-              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
+              : 'bg-gray-100 text-gray-600 hover:text-gray-900 hover:bg-gray-200'
           }`}
         >
           BG
         </button>
-        <span className="text-gray-400 mx-0.5 sm:mx-1 text-xs">|</span>
         <button
           onClick={() => handleLanguageClick('en')}
-          className={`language-toggle-btn px-1.5 py-0.5 sm:px-2 sm:py-1 text-xs font-medium rounded transition-all flex items-center justify-center min-w-[28px] sm:min-w-[32px] ${
+          className={`px-2 py-1 text-xs font-medium rounded transition-all ${
             language === 'en' 
               ? 'bg-blue-600 text-white shadow-sm' 
-              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
+              : 'bg-gray-100 text-gray-600 hover:text-gray-900 hover:bg-gray-200'
           }`}
         >
           EN

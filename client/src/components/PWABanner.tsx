@@ -44,7 +44,7 @@ export const PWABanner = () => {
   if (!showBanner) return null;
 
   return (
-    <div className={`fixed top-0 left-0 right-0 bg-primary text-white p-3 z-50 transform transition-transform duration-300 ${showBanner ? 'translate-y-0' : '-translate-y-full'}`}>
+    <div className={`fixed top-0 left-0 right-0 bg-primary text-white p-3 z-30 transform transition-transform duration-300 ${showBanner ? 'translate-y-0' : '-translate-y-full'}`}>
       <div className="flex items-center justify-between max-w-md mx-auto">
         <div className="flex items-center space-x-2">
           <Smartphone className="w-4 h-4" />

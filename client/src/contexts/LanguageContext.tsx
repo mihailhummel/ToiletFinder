@@ -63,6 +63,8 @@ interface Translations {
   'toiletType.restaurant': string;
   'toiletType.cafe': string;
   'toiletType.gasStation': string;
+  'toiletType.trainStation': string;
+  'toiletType.busStation': string;
   'toiletType.mall': string;
   'toiletType.other': string;
   
@@ -147,6 +149,11 @@ interface Translations {
   
   // Location Selection
   'location.selectOnMap': string;
+  'location.title': string;
+  'location.coordinates': string;
+  'location.changeOnMap': string;
+  'location.change': string;
+  'location.changeInstruction': string;
   'location.tapToSelect': string;
   
   // Report Modal
@@ -187,6 +194,7 @@ interface Translations {
   'popup.directions': string;
   'popup.report': string;
   'popup.delete': string;
+  'popup.edit': string;
   'popup.paidAccess': string;
   'popup.customersOnly': string;
   'popup.freeToUse': string;
@@ -195,6 +203,23 @@ interface Translations {
   'popup.unknown': string;
   'popup.wheelchairAccessible': string;
   'popup.notWheelchairAccessible': string;
+
+  // Welcome Modal
+  'welcome.title': string;
+  'welcome.subtitle': string;
+  'welcome.pinTypes': string;
+  'welcome.redPin': string;
+  'welcome.redPinDescription': string;
+  'welcome.bluePin': string;
+  'welcome.bluePinDescription': string;
+  'welcome.howToHelp': string;
+  'welcome.reportIncorrect': string;
+  'welcome.reportDescription': string;
+  'welcome.addNew': string;
+  'welcome.addDescription': string;
+  'welcome.leaveReviews': string;
+  'welcome.reviewDescription': string;
+  'welcome.gotIt': string;
 }
 
 const translations: Record<Language, Translations> = {
@@ -241,6 +266,8 @@ const translations: Record<Language, Translations> = {
     'toiletType.restaurant': 'Restaurant',
     'toiletType.cafe': 'Cafe',
     'toiletType.gasStation': 'Gas Station',
+    'toiletType.trainStation': 'Train Station',
+    'toiletType.busStation': 'Bus Station',
     'toiletType.mall': 'Mall',
     'toiletType.other': 'Other',
     
@@ -325,6 +352,11 @@ const translations: Record<Language, Translations> = {
     
     // Location Selection
     'location.selectOnMap': 'Select on Map',
+    'location.title': 'Location',
+    'location.coordinates': 'Coordinates',
+    'location.changeOnMap': 'Change on Map',
+    'location.change': 'Change',
+    'location.changeInstruction': 'Click "Change on Map" to select a new location by clicking on the map',
     'location.tapToSelect': 'Tap on the map to select location',
     
     // Report Modal
@@ -365,6 +397,7 @@ const translations: Record<Language, Translations> = {
     'popup.directions': 'Directions',
     'popup.report': 'Report',
     'popup.delete': 'Delete',
+    'popup.edit': 'Edit',
     'popup.paidAccess': 'Paid Access',
     'popup.customersOnly': 'Customers Only',
     'popup.freeToUse': 'Free to use',
@@ -373,6 +406,23 @@ const translations: Record<Language, Translations> = {
     'popup.unknown': 'Unknown',
     'popup.wheelchairAccessible': 'Wheelchair accessible',
     'popup.notWheelchairAccessible': 'Not wheelchair accessible',
+
+    // Welcome Modal
+    'welcome.title': 'Toilet Map Bulgaria',
+    'welcome.subtitle': 'Your guide to finding toilets across Bulgaria',
+    'welcome.pinTypes': 'Pin Types:',
+    'welcome.redPin': 'Auto-generated toilet location',
+    'welcome.redPinDescription': 'These locations are automatically imported and may not always be accurate or currently available.',
+    'welcome.bluePin': 'User-generated toilet location',
+    'welcome.bluePinDescription': 'These locations have been added and verified by our community members and are generally more reliable.',
+    'welcome.howToHelp': 'How You Can Help:',
+    'welcome.reportIncorrect': 'Report incorrect locations:',
+    'welcome.reportDescription': 'If a toilet location doesn\'t exist or is inaccurate, please report it.',
+    'welcome.addNew': 'Add new locations:',
+    'welcome.addDescription': 'Help expand our database by adding toilet locations you discover.',
+    'welcome.leaveReviews': 'Leave reviews:',
+    'welcome.reviewDescription': 'Share your experience and rate toilet facilities to help other users.',
+    'welcome.gotIt': 'Got it, let\'s go!',
   },
   bg: {
     // Header
@@ -417,6 +467,8 @@ const translations: Record<Language, Translations> = {
     'toiletType.restaurant': 'Ресторант',
     'toiletType.cafe': 'Кафене',
     'toiletType.gasStation': 'Бензиностанция',
+    'toiletType.trainStation': 'Жп. Гара / Метро',
+    'toiletType.busStation': 'Автогара',
     'toiletType.mall': 'Мол',
     'toiletType.other': 'Друго',
     
@@ -501,6 +553,11 @@ const translations: Record<Language, Translations> = {
     
     // Location Selection
     'location.selectOnMap': 'Избери от Картата',
+    'location.title': 'Местоположение',
+    'location.coordinates': 'Координати',
+    'location.changeOnMap': 'Промени от Картата',
+    'location.change': 'Промени',
+    'location.changeInstruction': 'Натиснете "Промени от Картата" за да изберете ново местоположение чрез кликване върху картата',
     'location.tapToSelect': 'Докоснете картата за избор на местоположение',
     
     // Report Modal
@@ -541,6 +598,7 @@ const translations: Record<Language, Translations> = {
     'popup.directions': 'Упътвания',
     'popup.report': 'Докладвай',
     'popup.delete': 'Изтрий',
+    'popup.edit': 'Промени',
     'popup.paidAccess': 'Платен Достъп',
     'popup.customersOnly': 'Само за Клиенти',
     'popup.freeToUse': 'Безплатна за ползване',
@@ -549,6 +607,23 @@ const translations: Record<Language, Translations> = {
     'popup.unknown': 'Неизвестно',
     'popup.wheelchairAccessible': 'Достъпна за инвалидни колички',
     'popup.notWheelchairAccessible': 'Недостъпна за инвалидни колички',
+
+    // Welcome Modal
+    'welcome.title': 'Toilet Map Bulgaria',
+    'welcome.subtitle': 'Вашият водач за намиране на тоалетни в България',
+    'welcome.pinTypes': 'Типове маркери:',
+    'welcome.redPin': 'Автоматично генерирана локация',
+    'welcome.redPinDescription': 'Тези локации са автоматично импортирани и може да не са винаги точни или налични в момента.',
+    'welcome.bluePin': 'Локация добавена от потребител',
+    'welcome.bluePinDescription': 'Тези локации са добавени от членове на нашата общност и обикновено са по-надеждни.',
+    'welcome.howToHelp': 'Как можете да помогнете:',
+    'welcome.reportIncorrect': 'Докладвайте неточни локации:',
+    'welcome.reportDescription': 'Ако локация за тоалетна не съществува или е неточна, моля докладвайте я.',
+    'welcome.addNew': 'Добавяйте нови локации:',
+    'welcome.addDescription': 'Помогнете за разширяването на нашата база данни, като добавяте открити от вас тоалетни.',
+    'welcome.leaveReviews': 'Оставяйте отзиви:',
+    'welcome.reviewDescription': 'Споделете впечатленията си и оценете тоалетните съоръжения, за да помогнете на други потребители.',
+    'welcome.gotIt': 'Разбрах, да започваме!',
   },
 };
 

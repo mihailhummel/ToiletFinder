@@ -1,12 +1,13 @@
 import React, { useState } from "react";
-import { X, MapPin, Navigation, Star, Flag, Info, Trash2 } from "lucide-react";
+import { X, MapPin, Navigation, Star, Flag, Info, Trash2, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { StarRating } from "./StarRating";
 import { AddReviewModal } from "./AddReviewModal";
 import { ReportModal } from "./ReportModal";
 import { LoginModal } from "./LoginModal";
-import { useToiletReviews, useDeleteToilet } from "@/hooks/useToilets";
+import { EditToiletModal } from "./EditToiletModal";
+import { useToiletReviews, useDeleteToilet, useUpdateToilet } from "@/hooks/useToilets";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import type { Toilet } from "@/types/toilet";
@@ -24,11 +25,45 @@ export const ToiletDetailsModal = ({ toilet, isOpen, onClose }: ToiletDetailsMod
   const [showReport, setShowReport] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showEditToilet, setShowEditToilet] = useState(false);
   
   const { user, isAdmin } = useAuth();
   const { data: reviews = [] } = useToiletReviews(toilet?.id || "");
   const deleteToiletMutation = useDeleteToilet();
+  const updateToiletMutation = useUpdateToilet();
   const { toast } = useToast();
+
+  const handleEditConfirm = async (updatedData: {
+    type: string;
+    title: string;
+    accessibility: string;
+    accessType: string;
+    coordinates?: { lat: number; lng: number };
+  }) => {
+    if (!toilet || !user) return;
+
+    try {
+      await updateToiletMutation.mutateAsync({
+        toiletId: toilet.id,
+        updateData: updatedData
+      });
+      
+      toast({
+        title: "Toilet updated",
+        description: "The toilet information has been updated successfully."
+      });
+      
+      setShowEditToilet(false);
+      onClose(); // Close the details modal too
+    } catch (error) {
+      console.error("❌ Edit toilet error:", error);
+      toast({
+        title: "Error",
+        description: `Failed to update toilet information: ${error.message || error}`,
+        variant: "destructive"
+      });
+    }
+  };
 
   // Debug logging to see toilet data
   React.useEffect(() => {
@@ -82,12 +117,42 @@ export const ToiletDetailsModal = ({ toilet, isOpen, onClose }: ToiletDetailsMod
     }
   };
 
-  const handleDeleteToilet = async () => {
-    haptics.strong();
-    if (!user || !isAdmin) {
+  const handleEditToilet = () => {
+    haptics.light();
+    if (!user) {
+      setShowLogin(true);
+      return;
+    }
+
+    // Check if user can edit (admin or creator)
+    if (!isAdmin && toilet?.userId !== user.uid) {
       toast({
         title: "Access denied",
-        description: "Only admins can delete toilet locations.",
+        description: "You can only edit toilet locations you have added.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setShowEditToilet(true);
+  };
+
+  const handleDeleteToilet = async () => {
+    haptics.strong();
+    if (!user) {
+      toast({
+        title: "Access denied",
+        description: "You must be logged in to delete toilet locations.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Check if user can delete (admin or creator)
+    if (!isAdmin && toilet?.userId !== user.uid) {
+      toast({
+        title: "Access denied", 
+        description: "You can only delete toilet locations you have added.",
         variant: "destructive"
       });
       return;
@@ -224,7 +289,11 @@ export const ToiletDetailsModal = ({ toilet, isOpen, onClose }: ToiletDetailsMod
             )}
             
             {/* Action Buttons */}
-            <div className={`grid gap-2 ${isAdmin ? 'grid-cols-4' : 'grid-cols-3'}`}>
+            <div className={`grid gap-2 ${
+              (isAdmin || (user && toilet?.userId === user.uid))
+                ? 'grid-cols-2 sm:grid-cols-4' 
+                : 'grid-cols-3'
+            }`}>
               <Button
                 variant="outline"
                 className="flex flex-col items-center space-y-1 h-auto py-2.5 text-xs"
@@ -255,7 +324,18 @@ export const ToiletDetailsModal = ({ toilet, isOpen, onClose }: ToiletDetailsMod
                 <span className="text-xs">Report</span>
               </Button>
 
-              {isAdmin && (
+              {(isAdmin || (user && toilet?.userId === user.uid)) && (
+                <Button
+                  variant="outline"
+                  className="flex flex-col items-center space-y-1 h-auto py-2.5 text-xs"
+                  onClick={handleEditToilet}
+                >
+                  <Edit className="w-3.5 h-3.5 text-green-600" />
+                  <span className="text-xs">Edit</span>
+                </Button>
+              )}
+
+              {(isAdmin || (user && toilet?.userId === user.uid)) && (
                 <Button
                   variant="outline"
                   className="flex flex-col items-center space-y-1 h-auto py-2.5 border-red-200 hover:bg-red-50 text-xs"
@@ -319,6 +399,22 @@ export const ToiletDetailsModal = ({ toilet, isOpen, onClose }: ToiletDetailsMod
         isOpen={showLogin}
         onClose={() => setShowLogin(false)}
       />
+
+      {/* Edit Toilet Modal */}
+      {toilet && (
+        <EditToiletModal
+          isOpen={showEditToilet}
+          onClose={() => setShowEditToilet(false)}
+          location={toilet.coordinates}
+          initialData={{
+            type: toilet.type as any,
+            title: toilet.title || '',
+            accessibility: toilet.accessibility as any,
+            accessType: toilet.accessType as any
+          }}
+          onConfirm={handleEditConfirm}
+        />
+      )}
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>

@@ -358,7 +358,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const reportCount = await storage.getToiletReportCount(id);
       // Silent for performance
       
-      if (reportCount >= 10) {
+      if (reportCount >= 5) {
         // Silent for performance
         await storage.removeToiletFromReports(id);
       }
@@ -375,45 +375,80 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.put("/api/toilets/:id", async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const updateData = req.body;
+      
+      console.log(`📝 PUT /api/toilets/${id} called with data:`, updateData);
+      
+      // Basic validation
+      if (!updateData.type) {
+        return res.status(400).json({ error: "Missing toilet type" });
+      }
+      
+      if (updateData.title === undefined) {
+        return res.status(400).json({ error: "Missing toilet title" });
+      }
+      
+      // Check if toilet exists
+      const toilets = await storage.getToilets();
+      const toilet = toilets.find(t => t.id === id);
+      
+      if (!toilet) {
+        return res.status(404).json({ error: "Toilet not found" });
+      }
+      
+      console.log(`📝 Updating toilet ${id}...`);
+      await storage.updateToilet(id, updateData);
+      
+      console.log(`✅ Toilet ${id} updated successfully`);
+      res.json({ message: "Toilet updated successfully", id });
+    } catch (error) {
+      console.error("❌ Error updating toilet:", error);
+      res.status(500).json({ error: "Failed to update toilet", details: error.message });
+    }
+  });
+
   app.delete("/api/toilets/:id", async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
       const { adminEmail, userId } = req.body;
       
-      // Silent for performance
-      
-      // Check if user is admin by verifying with Firebase
-      if (!adminEmail || !userId) {
-        // Silent for performance
-        return res.status(403).json({ error: "Admin access required" });
+      if (!userId) {
+        return res.status(403).json({ error: "User authentication required" });
       }
       
-      // Verify Firebase token and check custom claims
+      // Get the toilet to check ownership
+      const toilets = await storage.getToilets();
+      const toilet = toilets.find(t => t.id === id);
+      
+      if (!toilet) {
+        return res.status(404).json({ error: "Toilet not found" });
+      }
+      
+      // Verify Firebase token
+      let userRecord;
       try {
-              // Get the user from Firebase Admin SDK
-        const userRecord = await auth.getUser(userId);
-        
-        // Check if user has admin custom claim
-        if (!userRecord.customClaims?.admin) {
-          return res.status(403).json({ error: "Admin access required" });
-        }
-        
-        // Verify the email matches the user record
-        if (userRecord.email !== adminEmail) {
-          return res.status(403).json({ error: "Email mismatch" });
-        }
-        
+        userRecord = await auth.getUser(userId);
       } catch (firebaseError: any) {
         console.error("❌ Firebase verification error:", firebaseError);
-        console.error("❌ Error details:", {
-          code: firebaseError?.code,
-          message: firebaseError?.message,
-          stack: firebaseError?.stack
-        });
         return res.status(403).json({ error: "Invalid user credentials" });
       }
       
-      // Silent for performance
+      // Check if user is admin OR the creator of the toilet
+      const isAdmin = userRecord.customClaims?.admin === true;
+      const isCreator = toilet.userId === userId;
+      
+      if (!isAdmin && !isCreator) {
+        return res.status(403).json({ error: "You can only delete toilets you have created" });
+      }
+      
+      // If user claims to be admin, verify email matches
+      if (adminEmail && userRecord.email !== adminEmail) {
+        return res.status(403).json({ error: "Email mismatch" });
+      }
+      
       await storage.deleteToilet(id);
       
       res.json({ message: "Toilet deleted successfully" });

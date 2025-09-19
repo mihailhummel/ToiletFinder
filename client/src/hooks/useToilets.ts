@@ -305,6 +305,37 @@ export const useToilets = (location?: MapLocation) => {
   });
 };
 
+export const useUpdateToilet = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ toiletId, updateData }: { 
+      toiletId: string; 
+      updateData: { type: string; title: string; accessibility: string; accessType: string; notes?: string; coordinates?: { lat: number; lng: number } } 
+    }) => {
+      const response = await fetch(`/api/toilets/${toiletId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(updateData)
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to update toilet');
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      // Invalidate queries to refresh the data, but don't remove them
+      queryClient.invalidateQueries({ queryKey: ['toilets'] });
+      queryClient.invalidateQueries({ queryKey: ['all-toilets'] });
+      
+      console.log("🔄 Toilet cache invalidated after update");
+    },
+  });
+};
+
 export const useAddToilet = () => {
   const queryClient = useQueryClient();
   

@@ -9,8 +9,10 @@ import { PWABanner } from "./components/PWABanner";
 import { Map } from "./components/Map";
 import { FilterPanel, type FilterOptions } from "./components/FilterPanel";
 import { AddToiletModal } from "./components/AddToiletModal";
+import { EditToiletModal } from "./components/EditToiletModal";
 import { LoginModal } from "./components/LoginModal";
 import { LanguageSwitch } from "./components/LanguageSwitch";
+import { WelcomeModal } from "./components/WelcomeModal";
 import ErrorBoundary, { MapErrorBoundary } from "./components/ErrorBoundary";
 
 // Utils
@@ -115,10 +117,23 @@ function AppContent() {
   }, []);
 
   const [selectedToilet, setSelectedToilet] = useState<Toilet | null>(null);
+  const [editingToilet, setEditingToilet] = useState<Toilet | null>(null);
+  const [isEditingLocation, setIsEditingLocation] = useState(false);
+  const [editLocationData, setEditLocationData] = useState<{
+    type: string;
+    title: string;
+    accessibility: string;
+    accessType: string;
+    originalLocation: { lat: number; lng: number };
+    toiletId: string;
+    originalToilet: Toilet;
+  } | null>(null);
+  const [showEditModal, setShowEditModal] = useState(true);
   const [showAddToilet, setShowAddToilet] = useState(false);
   const [showFilter, setShowFilter] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showWelcomeModal, setShowWelcomeModal] = useState(false);
   const [isAddingToilet, setIsAddingToilet] = useState(false); // Track if user is in add toilet mode
   const [pendingToiletLocation, setPendingToiletLocation] = useState<MapLocation | undefined>(undefined);
   const [pendingToiletData, setPendingToiletData] = useState<{type: ToiletType; title: string; accessibility: Accessibility; accessType: AccessType} | null>(null);
@@ -132,6 +147,54 @@ function AppContent() {
   const { user, loading: authLoading, isAdmin, signInWithGoogle, signOut } = useAuth();
   const { location: userLocation, getCurrentLocation, loading: locationLoading } = useGeolocation();
   const { toast } = useToast();
+
+  const handleEditToiletConfirm = async (updatedData: {
+    type: string;
+    title: string;
+    accessibility: string;
+    accessType: string;
+    coordinates?: { lat: number; lng: number };
+  }) => {
+    if (!editingToilet || !user) return;
+
+    try {
+      const response = await fetch(`/api/toilets/${editingToilet.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(updatedData)
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update toilet');
+      }
+
+      toast({
+        title: "Toilet updated",
+        description: "The toilet information has been updated successfully."
+      });
+
+      setEditingToilet(null);
+
+      // Gently refresh toilet data without clearing everything
+      if (typeof window !== 'undefined') {
+        // Just refresh the toilet display, don't force reload everything
+        if (window.refreshToilets) {
+          console.log("🔄 Refreshing toilet display after edit...");
+          setTimeout(() => {
+            window.refreshToilets();
+          }, 50);
+        }
+      }
+    } catch (error) {
+      console.error("❌ App edit toilet error:", error);
+      toast({
+        title: "Error", 
+        description: `Failed to update toilet information: ${error.message || error}`,
+        variant: "destructive"
+      });
+    }
+  };
 
   // PWA Install functionality
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
@@ -147,9 +210,45 @@ function AppContent() {
     // Pending toilet data updated
   }, [pendingToiletData]);
 
+  // Check for first visit and show welcome modal when toilets load
+  useEffect(() => {
+    const hasVisitedBefore = localStorage.getItem('toilet-map-visited');
+    console.log('🎉 Welcome modal: First visit check', { hasVisitedBefore: !!hasVisitedBefore });
+    if (!hasVisitedBefore) {
+      let attempts = 0;
+      const maxAttempts = 10; // Maximum attempts to check for loaded state
+      
+      // Listen for toilet loading completion
+      const checkToiletsLoaded = () => {
+        attempts++;
+        // Check if toilets are loaded by looking for the global refresh function
+        // which indicates the map and toilet system is ready
+        if (typeof window !== 'undefined' && window.refreshToilets) {
+          console.log('🎉 Welcome modal: Toilets loaded, showing welcome modal');
+          setTimeout(() => {
+            setShowWelcomeModal(true);
+            localStorage.setItem('toilet-map-visited', 'true');
+          }, 1000); // Small delay to ensure everything is loaded
+        } else if (attempts < maxAttempts) {
+          // Retry in 500ms if not loaded yet
+          setTimeout(checkToiletsLoaded, 500);
+        } else {
+          // Fallback: show modal after timeout regardless
+          setTimeout(() => {
+            setShowWelcomeModal(true);
+            localStorage.setItem('toilet-map-visited', 'true');
+          }, 2000);
+        }
+      };
+      
+      // Start checking after initial load
+      setTimeout(checkToiletsLoaded, 1500);
+    }
+  }, []);
+
   // Add/remove modal-open class to body when modals are open
   useEffect(() => {
-    const isAnyModalOpen = showAddToilet || showFilter || showLogin || showUserMenu;
+    const isAnyModalOpen = showAddToilet || showFilter || showLogin || showUserMenu || showWelcomeModal;
     if (isAnyModalOpen) {
       document.body.classList.add('modal-open');
     } else {
@@ -159,33 +258,79 @@ function AppContent() {
     return () => {
       document.body.classList.remove('modal-open');
     };
-  }, [showAddToilet, showFilter, showLogin, showUserMenu]);
+  }, [showAddToilet, showFilter, showLogin, showUserMenu, showWelcomeModal]);
 
   // Get user location on mount
   useEffect(() => {
     getCurrentLocation();
   }, []);
 
-  // Cache management for development
+  // Listen for edit modal events from the map
   useEffect(() => {
-    // Add keyboard shortcut to clear cache (Ctrl+Shift+C)
+    const handleEditModal = (event: any) => {
+      const toilet = event.detail;
+      if (toilet && user) {
+        // Check if user can edit (admin or creator)
+        if (isAdmin || toilet.userId === user.uid) {
+          setEditingToilet(toilet);
+        } else {
+          toast({
+            title: "Access denied",
+            description: "You can only edit toilet locations you have added.",
+            variant: "destructive"
+          });
+        }
+      } else if (!user) {
+        setShowLogin(true);
+      }
+    };
+
+    window.addEventListener('openEditModal', handleEditModal);
+    return () => window.removeEventListener('openEditModal', handleEditModal);
+  }, [user, isAdmin, toast]);
+
+  // Cache management and development tools
+  useEffect(() => {
+    // Add keyboard shortcuts for development
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.ctrlKey && event.shiftKey && event.key === 'C') {
         event.preventDefault();
         clearToiletCache();
         queryClient.clear();
         toast({
-                  title: t('toast.cacheCleared'),
-        description: t('toast.cacheClearedMessage'),
+          title: t('toast.cacheCleared'),
+          description: t('toast.cacheClearedMessage'),
           duration: 3000,
         });
         // Cache cleared via keyboard shortcut
+      }
+      
+      // Add shortcut to show welcome modal for testing (Ctrl+Shift+W)
+      if (event.ctrlKey && event.shiftKey && event.key === 'W') {
+        event.preventDefault();
+        setShowWelcomeModal(true);
+        toast({
+          title: "Welcome modal opened",
+          description: "Development shortcut used (Ctrl+Shift+W)",
+          duration: 2000,
+        });
+      }
+      
+      // Add shortcut to reset first visit flag (Ctrl+Shift+R)
+      if (event.ctrlKey && event.shiftKey && event.key === 'R') {
+        event.preventDefault();
+        localStorage.removeItem('toilet-map-visited');
+        toast({
+          title: "First visit flag reset",
+          description: "Refresh the page to see welcome modal again",
+          duration: 3000,
+        });
       }
     };
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [toast]);
+  }, [toast, t]);
 
   const handleUserMenuClick = useCallback(() => {
     if (user) {
@@ -195,12 +340,31 @@ function AppContent() {
     }
   }, [user]);
 
-  const handleLocateUser = () => {
-    getCurrentLocation();
-    if (userLocation) {
+  const handleLocateUser = async () => {
+    try {
+      // Force new permission request - this will bypass cache and ask for fresh permission
+      await getCurrentLocation(true);
+      
+      // Show helpful message to user
       toast({
-        title: t('toast.locationFound'),
-        description: t('toast.locationFoundMessage')
+        title: "Requesting location",
+        description: "Please allow location access if prompted by your browser.",
+      });
+      
+      // Wait a bit for location to be set and then show success toast
+      setTimeout(() => {
+        if (userLocation) {
+          toast({
+            title: t('toast.locationFound'),
+            description: t('toast.locationFoundMessage')
+          });
+        }
+      }, 1000);
+    } catch (error) {
+      toast({
+        title: "Location access needed",
+        description: "Please click the location icon in your browser's address bar and allow location access, then try again.",
+        variant: "destructive"
       });
     }
   };
@@ -218,9 +382,50 @@ function AppContent() {
   }, [user]);
 
   const handleMapClick = useCallback((location: MapLocation) => {
-    // Map click processed
+    // Check if we're editing a location
+    if (isEditingLocation && editLocationData) {
+      // We're in edit location mode - update the editing toilet with new location
+      if (editingToilet) {
+        const updatedToilet = {
+          ...editingToilet,
+          coordinates: location
+        };
+        setEditingToilet(updatedToilet);
+        setIsEditingLocation(false);
+        setEditLocationData(null);
+        setShowEditModal(true); // Show modal again
+        
+        toast({
+          title: "Location updated",
+          description: "New location selected. You can now save your changes."
+        });
+      } else {
+        // Try to reconstruct the toilet from editLocationData
+        if (editLocationData.originalToilet) {
+          const updatedToilet = {
+            ...editLocationData.originalToilet,
+            coordinates: location
+          };
+          setEditingToilet(updatedToilet);
+          setIsEditingLocation(false);
+          setEditLocationData(null);
+          setShowEditModal(true); // Show modal again
+          
+          toast({
+            title: "Location updated",
+            description: "New location selected. You can now save your changes."
+          });
+        } else {
+          toast({
+            title: "Error",
+            description: "Lost toilet data during location editing. Please try again."
+          });
+        }
+      }
+      return;
+    }
     
-    // Check both React state and global state
+    // Check both React state and global state for adding new toilet
     const shouldProcessClick = (isAddingToilet && pendingToiletData) || (globalAddingState.isAdding && globalAddingState.pendingData);
     
     if (shouldProcessClick) {
@@ -239,7 +444,7 @@ function AppContent() {
     } else {
       // Map click ignored - not in adding mode
     }
-  }, [isAddingToilet, pendingToiletData]);
+  }, [isAddingToilet, pendingToiletData, isEditingLocation, editLocationData, editingToilet, toast]);
 
   const handleLocationSelectionRequest = useCallback((type: ToiletType, title: string, accessibility: Accessibility, accessType: AccessType) => {
     // Location selection requested
@@ -265,6 +470,34 @@ function AppContent() {
       description: "Tap on the map where you want to add the toilet"
     });
   }, [toast]);
+
+  const handleEditLocationSelectionRequest = useCallback((
+    type: string, 
+    title: string, 
+    accessibility: string, 
+    accessType: string, 
+    originalLocation: { lat: number; lng: number }
+  ) => {
+    // Store the edit data and switch to location selection mode
+    if (editingToilet) {
+      setEditLocationData({
+        type,
+        title,
+        accessibility,
+        accessType,
+        originalLocation,
+        toiletId: editingToilet.id,
+        originalToilet: editingToilet
+      });
+      setIsEditingLocation(true);
+      setShowEditModal(false); // Hide modal temporarily
+      
+      toast({
+        title: "Select new location",
+        description: "Click on the map to choose a new location for this toilet."
+      });
+    }
+  }, [toast, editingToilet]);
 
   const handleLoginClick = useCallback(() => {
     setShowLogin(true);
@@ -363,8 +596,8 @@ function AppContent() {
     <TooltipProvider>
       <QueryClientProvider client={queryClient}>
         <div className="h-screen flex flex-col bg-gray-50 overflow-hidden">
-          {/* PWA Banner */}
-          <PWABanner />
+          {/* PWA Banner - Only show on mobile */}
+          {isMobile && <PWABanner />}
 
           {/* Header */}
           <header className="app-header fixed top-0 left-0 right-0 bg-white shadow-lg z-40 border-b">
@@ -379,7 +612,7 @@ function AppContent() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <h1 className="text-base sm:text-lg font-bold text-gray-900 truncate">{t('header.title')}</h1>
-                  <p className="text-xs text-gray-600 hidden sm:block">Bulgaria</p>
+                  <p className="text-xs text-gray-600">Bulgaria</p>
                 </div>
               </div>
               
@@ -403,12 +636,20 @@ function AppContent() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={getCurrentLocation}
+                      onClick={handleLocateUser}
                       className="text-xs text-gray-600 hover:text-blue-600 h-6 px-2"
+                      title="Click to find your location"
                     >
                       <MapPin className="w-4 h-4 mr-1" />
                       <span>{t('header.findLocation')}</span>
                     </Button>
+                  )}
+                  
+                  {/* Show location error if any */}
+                  {locationLoading === false && !userLocation && (
+                    <div className="hidden md:block text-xs text-red-600 max-w-xs">
+                      <span>Unable to get location</span>
+                    </div>
                   )}
                 </div>
                 
@@ -442,21 +683,35 @@ function AppContent() {
                 onLoginClick={handleLoginClick}
                 isAdmin={isAdmin}
                 currentUser={user}
-                isAddingToilet={isAddingToilet}
+                isAddingToilet={isAddingToilet || isEditingLocation}
               />
             </MapErrorBoundary>
+            
             
             {/* Floating Action Button with Attention Animation */}
             <Button
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                handleAddToilet();
+                if (isEditingLocation) {
+                  // Cancel location editing and return to edit modal
+                  setIsEditingLocation(false);
+                  setEditLocationData(null);
+                  setShowEditModal(true);
+                  toast({
+                    title: "Location editing cancelled",
+                    description: "Returned to edit mode."
+                  });
+                } else {
+                  handleAddToilet();
+                }
               }}
               className={`rounded-full shadow-lg pointer-events-auto floating-button transition-all duration-300 ${
-                isAddingToilet 
-                  ? 'bg-green-600 hover:bg-green-700 slow-pulse-with-ring' 
-                  : 'bg-blue-600 hover:bg-blue-700 add-toilet-attention'
+                isEditingLocation
+                  ? 'bg-orange-600 hover:bg-orange-700 slow-pulse-with-ring'
+                  : isAddingToilet 
+                    ? 'bg-green-600 hover:bg-green-700 slow-pulse-with-ring' 
+                    : 'bg-blue-600 hover:bg-blue-700 add-toilet-attention'
               }`}
               size="icon"
               style={{ 
@@ -469,7 +724,7 @@ function AppContent() {
               }}
             >
               <Plus className={`w-6 h-6 text-white transition-transform duration-300 ${
-                isAddingToilet ? 'rotate-45' : 'rotate-0'
+                isEditingLocation ? 'rotate-180' : isAddingToilet ? 'rotate-45' : 'rotate-0'
               }`} />
             </Button>
           </main>
@@ -510,10 +765,37 @@ function AppContent() {
             onClose={() => setShowLogin(false)}
           />
 
+          <WelcomeModal
+            isOpen={showWelcomeModal}
+            onClose={() => setShowWelcomeModal(false)}
+          />
+
+          {/* Edit Toilet Modal */}
+          {editingToilet && (
+            <EditToiletModal
+              isOpen={showEditModal}
+              onClose={() => {
+                setEditingToilet(null);
+                setIsEditingLocation(false);
+                setEditLocationData(null);
+                setShowEditModal(true);
+              }}
+              location={editingToilet.coordinates}
+              initialData={{
+                type: editingToilet.type as any,
+                title: editingToilet.title || '',
+                accessibility: editingToilet.accessibility as any,
+                accessType: editingToilet.accessType as any
+              }}
+              onConfirm={handleEditToiletConfirm}
+              onRequestLocationSelection={handleEditLocationSelectionRequest}
+            />
+          )}
+
           {/* User Menu Modal */}
           <Dialog open={showUserMenu} onOpenChange={setShowUserMenu}>
             <DialogContent 
-              className="sm:max-w-md z-[60000] bg-white shadow-xl border-0"
+              className="sm:max-w-md z-30 bg-white shadow-xl border-0"
               style={{
                 borderRadius: '24px',
                 margin: '0',
@@ -561,7 +843,7 @@ function AppContent() {
                 
                 {/* Action buttons */}
                 <div className="flex flex-col space-y-3">
-                  {/* Download App button - show on mobile and when PWA not already installed */}
+                  {/* Download App button - Only show on mobile and when PWA not already installed */}
                   {isMobile && !window.matchMedia('(display-mode: standalone)').matches && (
                     <Button
                       variant="default"

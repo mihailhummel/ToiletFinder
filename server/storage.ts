@@ -36,7 +36,13 @@ export interface IStorage {
   removeToiletFromReports(toiletId: string): Promise<void>;
   
   // Admin operations
+  updateToilet(toiletId: string, updateData: Partial<InsertToilet>): Promise<void>;
   deleteToilet(toiletId: string): Promise<void>;
+  
+  // User activity operations
+  getUserToilets(userId: string): Promise<Toilet[]>;
+  getUserReviews(userId: string): Promise<Review[]>;
+  deleteReview(reviewId: string): Promise<void>;
 
   queueChange(type: 'add' | 'report' | 'delete', data: any): Promise<void>;
 }

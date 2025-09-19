@@ -83,6 +83,240 @@
             margin-bottom: 30px;
         }
         
+        .activity-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            margin: 2px;
+        }
+        
+        .activity-toilets {
+            background: #e3f2fd;
+            color: #1565c0;
+        }
+        
+        .activity-reviews {
+            background: #f3e5f5;
+            color: #7b1fa2;
+        }
+        
+        .activity-preview {
+            display: none;
+            position: absolute;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            box-shadow: 0 12px 48px rgba(0,0,0,0.15);
+            max-width: 480px;
+            max-height: 550px;
+            z-index: 1000;
+            padding: 18px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.8);
+        }
+        
+        .activity-preview::before {
+            content: '';
+            position: absolute;
+            top: -10px;
+            left: 20px;
+            width: 0;
+            height: 0;
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-bottom: 10px solid white;
+            filter: drop-shadow(0 -2px 2px rgba(0,0,0,0.1));
+        }
+        
+        .preview-item {
+            padding: 12px;
+            border-bottom: 1px solid #e8e8e8;
+            background: #fafafa;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            transition: background-color 0.2s;
+        }
+        
+        .preview-item:hover {
+            background: #f0f8ff;
+        }
+        
+        .preview-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+        
+        .preview-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+        
+        .preview-title {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 0.95rem;
+            flex: 1;
+        }
+        
+        .preview-id {
+            font-size: 0.75rem;
+            color: #888;
+            background: #e9ecef;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: monospace;
+            margin-left: 8px;
+        }
+        
+        .preview-details {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 6px;
+            flex-wrap: wrap;
+        }
+        
+        .detail-badge {
+            font-size: 0.8rem;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-weight: 500;
+        }
+        
+        .detail-type {
+            background: #e3f2fd;
+            color: #1565c0;
+        }
+        
+        .detail-date {
+            background: #f3e5f5;
+            color: #7b1fa2;
+        }
+        
+        .preview-notes {
+            font-size: 0.85rem;
+            color: #555;
+            font-style: italic;
+            background: #fff3cd;
+            padding: 6px 8px;
+            border-radius: 4px;
+            border-left: 3px solid #ffc107;
+            margin-bottom: 6px;
+        }
+        
+        .preview-toilet-info {
+            margin-bottom: 8px;
+        }
+        
+        .toilet-name {
+            font-size: 0.9rem;
+            color: #2c3e50;
+            font-weight: 600;
+            margin-bottom: 4px;
+            padding: 4px 8px;
+            background: #e8f4fd;
+            border-radius: 4px;
+            border-left: 3px solid #1565c0;
+        }
+        
+        .toilet-reference {
+            font-size: 0.75rem;
+            color: #495057;
+            background: #e2e3e5;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: monospace;
+            border: 1px solid #d3d3d4;
+            display: inline-block;
+        }
+        
+        .preview-review-text {
+            font-size: 0.9rem;
+            color: #333;
+            background: white;
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #e9ecef;
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+        
+        .preview-review-text.no-comment {
+            color: #999;
+            font-style: italic;
+            text-align: center;
+        }
+        
+        .preview-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        
+        .btn-mini {
+            padding: 4px 8px;
+            font-size: 0.75rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-mini-delete {
+            background: #ffebee;
+            color: #c62828;
+            border: 1px solid #ffcdd2;
+            padding: 6px 12px;
+            font-weight: 500;
+        }
+        
+        .btn-mini-delete:hover {
+            background: #ffcdd2;
+            border-color: #ef9a9a;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(198, 40, 40, 0.2);
+        }
+        
+        .activity-count {
+            background: rgba(255,255,255,0.8);
+            border-radius: 10px;
+            padding: 2px 6px;
+            font-weight: bold;
+        }
+        
+        .preview-scrollable {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #f0f0f0;
+            border-radius: 4px;
+            padding: 5px;
+            scroll-behavior: smooth;
+            overscroll-behavior: contain;
+        }
+        
+        .preview-scrollable::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .preview-scrollable::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+        
+        .preview-scrollable::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 3px;
+        }
+        
+        .preview-scrollable::-webkit-scrollbar-thumb:hover {
+            background: #a1a1a1;
+        }
+        
         .stat-card {
             background: linear-gradient(45deg, #f093fb, #f5576c);
             color: white;
@@ -333,10 +567,12 @@
     </div>
     
     <div id="notification" class="notification"></div>
+    <div id="activityPreview" class="activity-preview"></div>
     
     <script>
         let users = [];
         let filteredUsers = [];
+        let userActivities = {};
         
         async function loadUsers() {
             try {
@@ -345,10 +581,37 @@
                 
                 users = await response.json();
                 filteredUsers = [...users];
+                
+                // Load activity data for all users
+                await loadUserActivities();
+                
                 renderUsers();
                 updateStats();
             } catch (error) {
                 showNotification('Error loading users: ' + error.message, 'error');
+            }
+        }
+        
+        async function loadUserActivities() {
+            try {
+                const promises = users.map(async (user) => {
+                    try {
+                        const response = await fetch(`/api/users/${user.uid}/activity`);
+                        if (response.ok) {
+                            const activity = await response.json();
+                            userActivities[user.uid] = activity;
+                        } else {
+                            userActivities[user.uid] = { toilets: [], reviews: [] };
+                        }
+                    } catch (error) {
+                        console.warn(`Failed to load activity for user ${user.uid}:`, error);
+                        userActivities[user.uid] = { toilets: [], reviews: [] };
+                    }
+                });
+                
+                await Promise.all(promises);
+            } catch (error) {
+                console.error('Error loading user activities:', error);
             }
         }
         
@@ -371,6 +634,24 @@
             }
             
             container.innerHTML = filteredUsers.map(user => {
+                const activity = userActivities[user.uid] || { toilets: [], reviews: [] };
+                const toiletCount = activity.toilets.length;
+                const reviewCount = activity.reviews.length;
+                
+                const activityIndicators = (toiletCount > 0 || reviewCount > 0) ? 
+                    '<div style="margin-top: 4px;">' +
+                        (toiletCount > 0 ? 
+                            '<span class="activity-indicator activity-toilets" ' +
+                            'onmouseenter="showActivityPreview(event, \'' + user.uid + '\', \'toilets\')" ' +
+                            'onmouseleave="scheduleHidePreview()">' +
+                            '🚽 <span class="activity-count">' + toiletCount + '</span></span>' : '') +
+                        (reviewCount > 0 ? 
+                            '<span class="activity-indicator activity-reviews" ' +
+                            'onmouseenter="showActivityPreview(event, \'' + user.uid + '\', \'reviews\')" ' +
+                            'onmouseleave="scheduleHidePreview()">' +
+                            '⭐ <span class="activity-count">' + reviewCount + '</span></span>' : '') +
+                    '</div>' : '';
+                
                 return '<div class="user-row ' + (user.isAdmin ? 'admin' : '') + '">' +
                     '<div class="user-info">' +
                         (user.photoURL ? 
@@ -380,6 +661,7 @@
                         '<div class="user-details">' +
                             '<h4>' + (user.displayName || 'No Name') + '</h4>' +
                             '<p>' + user.email + '</p>' +
+                            activityIndicators +
                         '</div>' +
                     '</div>' +
                     '<div>' +
@@ -494,6 +776,225 @@
                 (user.email && user.email.toLowerCase().includes(searchTerm))
             );
             renderUsers();
+        });
+        
+        let currentPreview = null;
+        let previewTimeout = null;
+        let isHoveringPreview = false;
+        let scrollTimeout = null;
+        
+        function showActivityPreview(event, userId, type) {
+            // Clear any existing timeout
+            if (previewTimeout) {
+                clearTimeout(previewTimeout);
+                previewTimeout = null;
+            }
+            
+            hideActivityPreview();
+            
+            const activity = userActivities[userId];
+            if (!activity) return;
+            
+            const items = activity[type] || [];
+            if (items.length === 0) return;
+            
+            const preview = document.createElement('div');
+            preview.className = 'activity-preview';
+            preview.style.display = 'block';
+            
+            const title = type === 'toilets' ? 'Toilet Locations Added' : 'Reviews Left';
+            
+            preview.innerHTML = `
+                <h4 style="margin: 0 0 10px 0; color: #2c3e50;">${title} (${items.length})</h4>
+                <div class="preview-scrollable">
+                    ${items.map(item => {
+                        if (type === 'toilets') {
+                            return `
+                                <div class="preview-item">
+                                    <div class="preview-header">
+                                        <div class="preview-title">🚽 ${item.title || 'Untitled Toilet'}</div>
+                                        <div class="preview-id">ID: ${item.id}</div>
+                                    </div>
+                                    <div class="preview-details">
+                                        <span class="detail-badge detail-type">${item.type}</span>
+                                        <span class="detail-badge detail-date">${new Date(item.createdAt).toLocaleDateString()}</span>
+                                    </div>
+                                    ${item.notes ? `<div class="preview-notes">"${item.notes}"</div>` : ''}
+                                    <div class="preview-actions">
+                                        <button class="btn-mini btn-mini-delete" onclick="deleteToiletFromPreview('${item.id}', '${userId}')">🗑️ Delete</button>
+                                    </div>
+                                </div>
+                            `;
+                        } else {
+                            const toiletInfo = item.toilet ? 
+                                `${item.toilet.title || 'Untitled Toilet'} (${item.toilet.type})` : 
+                                'Unknown Toilet';
+                            
+                            return `
+                                <div class="preview-item">
+                                    <div class="preview-header">
+                                        <div class="preview-title">⭐ ${item.rating}/5 stars</div>
+                                        <div class="preview-id">Review ID: ${item.id}</div>
+                                    </div>
+                                    <div class="preview-toilet-info">
+                                        <div class="toilet-name">🚽 ${toiletInfo}</div>
+                                        <div class="toilet-reference">Toilet ID: ${item.toiletId}</div>
+                                    </div>
+                                    ${item.text ? `<div class="preview-review-text">"${item.text}"</div>` : '<div class="preview-review-text no-comment">No comment</div>'}
+                                    <div class="preview-details">
+                                        <span class="detail-badge detail-date">${new Date(item.createdAt).toLocaleDateString()}</span>
+                                    </div>
+                                    <div class="preview-actions">
+                                        <button class="btn-mini btn-mini-delete" onclick="deleteReviewFromPreview('${item.id}', '${userId}')">🗑️ Delete</button>
+                                    </div>
+                                </div>
+                            `;
+                        }
+                    }).join('')}
+                </div>
+            `;
+            
+            // Add mouse events to the preview itself
+            preview.addEventListener('mouseenter', () => {
+                isHoveringPreview = true;
+                if (previewTimeout) {
+                    clearTimeout(previewTimeout);
+                    previewTimeout = null;
+                }
+                if (scrollTimeout) {
+                    clearTimeout(scrollTimeout);
+                    scrollTimeout = null;
+                }
+            });
+            
+            preview.addEventListener('mouseleave', (e) => {
+                // Only hide if we're actually leaving the preview area
+                const rect = preview.getBoundingClientRect();
+                const { clientX, clientY } = e;
+                
+                if (clientX < rect.left || clientX > rect.right || 
+                    clientY < rect.top || clientY > rect.bottom) {
+                    isHoveringPreview = false;
+                    scheduleHidePreview();
+                }
+            });
+            
+            // Prevent scroll events inside the preview from hiding it
+            preview.addEventListener('scroll', (e) => {
+                e.stopPropagation();
+            });
+            
+            document.body.appendChild(preview);
+            
+            // Position preview with some margin to make it easier to reach
+            const rect = event.target.getBoundingClientRect();
+            preview.style.left = (rect.left + window.scrollX) + 'px';
+            preview.style.top = (rect.bottom + window.scrollY + 5) + 'px';
+            
+            currentPreview = preview;
+        }
+        
+        function scheduleHidePreview() {
+            // Add a small delay before hiding
+            previewTimeout = setTimeout(() => {
+                if (!isHoveringPreview) {
+                    hideActivityPreview();
+                }
+            }, 300); // 300ms delay
+        }
+        
+        function hideActivityPreview() {
+            if (currentPreview) {
+                currentPreview.remove();
+                currentPreview = null;
+            }
+            isHoveringPreview = false;
+            if (previewTimeout) {
+                clearTimeout(previewTimeout);
+                previewTimeout = null;
+            }
+            if (scrollTimeout) {
+                clearTimeout(scrollTimeout);
+                scrollTimeout = null;
+            }
+        }
+        
+        async function deleteToiletFromPreview(toiletId, userId) {
+            if (!confirm('Delete this toilet location? This action cannot be undone.')) return;
+            
+            try {
+                const response = await fetch(`/api/toilets/${toiletId}`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ adminEmail: 'admin@example.com' })
+                });
+                
+                if (!response.ok) throw new Error('Failed to delete toilet');
+                
+                showNotification('Toilet deleted successfully');
+                
+                // Update local data
+                if (userActivities[userId]) {
+                    userActivities[userId].toilets = userActivities[userId].toilets.filter(t => t.id !== toiletId);
+                }
+                
+                hideActivityPreview();
+                renderUsers();
+            } catch (error) {
+                showNotification('Error deleting toilet: ' + error.message, 'error');
+            }
+        }
+        
+        async function deleteReviewFromPreview(reviewId, userId) {
+            if (!confirm('Delete this review? This action cannot be undone.')) return;
+            
+            try {
+                const response = await fetch(`/api/reviews/${reviewId}`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ adminEmail: 'admin@example.com' })
+                });
+                
+                if (!response.ok) throw new Error('Failed to delete review');
+                
+                showNotification('Review deleted successfully');
+                
+                // Update local data
+                if (userActivities[userId]) {
+                    userActivities[userId].reviews = userActivities[userId].reviews.filter(r => r.id !== reviewId);
+                }
+                
+                hideActivityPreview();
+                renderUsers();
+            } catch (error) {
+                showNotification('Error deleting review: ' + error.message, 'error');
+            }
+        }
+        
+        // Close preview when clicking outside
+        document.addEventListener('click', (event) => {
+            if (currentPreview && 
+                !currentPreview.contains(event.target) && 
+                !event.target.closest('.activity-indicator')) {
+                hideActivityPreview();
+            }
+        });
+        
+        // Close preview when scrolling (with delay)
+        document.addEventListener('scroll', () => {
+            if (currentPreview && !isHoveringPreview) {
+                // Clear any existing scroll timeout
+                if (scrollTimeout) {
+                    clearTimeout(scrollTimeout);
+                }
+                
+                // Add a delay before hiding on scroll
+                scrollTimeout = setTimeout(() => {
+                    if (currentPreview && !isHoveringPreview) {
+                        hideActivityPreview();
+                    }
+                }, 1000); // 1 second delay as requested
+            }
         });
         
         // Load data on page load

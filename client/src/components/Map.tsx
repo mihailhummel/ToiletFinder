@@ -40,27 +40,71 @@ declare global {
     getCurrentUser: () => any;
     currentRating?: { toiletId: string; rating: number };
     reportToiletNotExists: (toiletId: string) => void;
+    editToilet: (toiletId: string) => void;
     deleteToilet: (toiletId: string) => void;
     refreshMapData: () => void;
     testAPI: () => Promise<any>;
     forceRefreshToilets: () => void;
     refreshToilets: () => void;
     clearToiletCache: () => void;
+    currentEditingToilet?: any;
   }
 }
 
 const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, currentUser, isAddingToilet }: MapProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const { t } = useLanguage();
+  
+  // Function to translate toilet types from backend tags to proper translations
+  const translateToiletType = (type: string): string => {
+    const typeMap: Record<string, string> = {
+      'public': t('toiletType.public'),
+      'restaurant': t('toiletType.restaurant'),
+      'cafe': t('toiletType.cafe'),
+      'gas_station': t('toiletType.gasStation'),
+      'gasStation': t('toiletType.gasStation'),
+      'train_station': t('toiletType.trainStation'),
+      'trainStation': t('toiletType.trainStation'),
+      'bus_station': t('toiletType.busStation'),
+      'busStation': t('toiletType.busStation'),
+      'mall': t('toiletType.mall'),
+      'other': t('toiletType.other')
+    };
+    
+    return typeMap[type] || typeMap[type.replace('-', '_')] || type.replace('-', ' ');
+  };
   const map = useRef<any>(null);
   const markersLayer = useRef<any>(null);
   const userMarker = useRef<any>(null);
+  
   const userRingMarker = useRef<any>(null);
   const toiletMarkers = useRef<Array<{ toiletId: string; marker: any }>>([]);
   const [leafletLoaded, setLeafletLoaded] = useState(false);
   const [isAwayFromUser, setIsAwayFromUser] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [mapBounds, setMapBounds] = useState<any>(null);
+  
+  // Update map cursor and re-register click handler when isAddingToilet changes
+  useEffect(() => {
+    if (map.current) {
+      const mapElement = map.current.getContainer();
+      if (mapElement) {
+        mapElement.style.cursor = isAddingToilet ? 'crosshair' : 'grab';
+      }
+      
+      // Re-register the click handler with updated props
+      const handleMapClick = (e: any) => {
+        const { lat, lng } = e.latlng;
+        onAddToiletClick({ lat, lng });
+      };
+      
+      // Remove old click handler and add new one
+      map.current.off('click');
+      map.current.on('click', handleMapClick);
+      
+      console.log("🗺️ Map click handler updated, isAddingToilet:", isAddingToilet);
+    }
+  }, [isAddingToilet, onAddToiletClick]);
   const openPopupToiletIdRef = useRef<string | null>(null);
   const manuallyClosedPopupRef = useRef<boolean>(false);
   const isReopeningPopupRef = useRef<boolean>(false);
@@ -547,9 +591,9 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
                 (reportButton as any).disabled = true;
               }
               
-              // Check if toilet should be removed (10+ reports)
-              if (result.reportCount >= 10) {
-                alert('This toilet has been reported by 10+ users and will be removed from the map.');
+              // Check if toilet should be removed (5+ reports)
+              if (result.reportCount >= 5) {
+                alert('This toilet has been reported by 5+ users and will be removed from the map.');
                 
                 // Remove the marker from the map
                 const markers = toiletMarkers.current;
@@ -565,7 +609,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
                   (popup as any).remove();
                 }
               } else {
-                alert(`Toilet reported. ${10 - result.reportCount} more reports needed for automatic removal.`);
+                alert(`Toilet reported. ${5 - result.reportCount} more reports needed for automatic removal.`);
               }
             } else {
               const errorData = await response.json().catch(() => ({}));
@@ -578,9 +622,58 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
           }
         };
 
+      window.editToilet = async (toiletId) => {
+        haptics.light();
+        if (!user) {
+          onLoginClick();
+          return;
+        }
+        
+        // Find the toilet data
+        const toilet = toilets.find(t => t.id === toiletId);
+        if (!toilet) {
+          alert('Toilet not found');
+          return;
+        }
+        
+        // Check if user can edit (admin or creator)
+        if (!isAdmin && toilet.userId !== user.uid) {
+          alert('You can only edit toilets you have added');
+          return;
+        }
+        
+        // Close the popup
+        const popup = document.querySelector('.leaflet-popup');
+        if (popup) {
+          (popup as any).remove();
+        }
+        
+        // Trigger edit mode by setting global edit state
+        if (typeof window !== 'undefined') {
+          window.currentEditingToilet = toilet;
+          window.dispatchEvent(new CustomEvent('openEditModal', { detail: toilet }));
+        }
+      };
+
       window.deleteToilet = async (toiletId) => {
         haptics.warning();
-        if (!user?.email || !isAdmin) return;
+        if (!user) {
+          onLoginClick();
+          return;
+        }
+        
+        // Find the toilet to check permissions
+        const toilet = toilets.find(t => t.id === toiletId);
+        if (!toilet) {
+          alert('Toilet not found');
+          return;
+        }
+        
+        // Check if user can delete (admin or creator)
+        if (!isAdmin && toilet.userId !== user.uid) {
+          alert('You can only delete toilets you have added');
+          return;
+        }
         
         if (confirm('Are you sure you want to delete this toilet?')) {
           try {
@@ -593,8 +686,12 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
             if (popup) {
               (popup as any).remove();
             }
+            
+            // Show success message
+            alert('Toilet deleted successfully');
           } catch (error) {
             console.error('Error deleting toilet:', error);
+            alert('Failed to delete toilet. Please try again.');
           }
         }
       };
@@ -711,24 +808,35 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
     const initialBounds = map.current.getBounds();
     setMapBounds(initialBounds);
     
-    // Force immediate toilet fetch on map load
-    setTimeout(() => {
+    // Force immediate toilet fetch on map load with more aggressive mobile loading
+    const triggerToiletLoad = () => {
       if (map.current) {
         const bounds = map.current.getBounds();
         setMapBounds(bounds);
-        // Trigger immediate map bounds update to load toilets
-        const updatedBounds = map.current.getBounds();
-        setMapBounds(updatedBounds);
       }
-    }, 100); // Reduced timeout for faster loading
+    };
     
-    // Additional trigger after a short delay to ensure data loads
+    // Immediate trigger
+    triggerToiletLoad();
+    
+    // Quick follow-up for mobile
     setTimeout(() => {
-      if (map.current) {
-        const bounds = map.current.getBounds();
-        setMapBounds(bounds);
-      }
+      triggerToiletLoad();
+    }, 50);
+    
+    // Additional triggers for mobile reliability
+    setTimeout(() => {
+      triggerToiletLoad();
+    }, 200);
+    
+    setTimeout(() => {
+      triggerToiletLoad();
     }, 500);
+    
+    // Final trigger for stubborn mobile cases
+    setTimeout(() => {
+      triggerToiletLoad();
+    }, 1000);
 
     return () => {
       // Clear any pending timeouts
@@ -800,18 +908,31 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
       userLocationSet.current = true;
       
       // Immediate bounds update to trigger toilet fetch around user location
-      setTimeout(() => {
+      const triggerLocationBasedLoad = () => {
         if (map.current) {
           const bounds = map.current.getBounds();
           setMapBounds(bounds);
-          // Force another update to ensure data loads
-          setTimeout(() => {
-            if (map.current) {
-              setMapBounds(map.current.getBounds());
-            }
-          }, 100);
         }
-      }, 100); // Small delay to ensure map bounds are updated
+      };
+      
+      // Multiple triggers for reliable mobile loading
+      triggerLocationBasedLoad();
+      
+      setTimeout(() => {
+        triggerLocationBasedLoad();
+      }, 50);
+      
+      setTimeout(() => {
+        triggerLocationBasedLoad();
+      }, 150);
+      
+      setTimeout(() => {
+        triggerLocationBasedLoad();
+      }, 300);
+      
+      setTimeout(() => {
+        triggerLocationBasedLoad();
+      }, 500);
     }
   }, [stableUserLocation, leafletLoaded]);
 
@@ -1215,9 +1336,16 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
     return `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; min-width: 280px; max-width: 350px; padding: 16px; background: white; border-radius: 12px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);">
         <!-- 1. Title -->
-        <h3 style="margin: 0 0 10px 0; font-size: 18px; font-weight: 700; color: #1f2937; line-height: 1.3;">
+        <h3 style="margin: 0 0 6px 0; font-size: 18px; font-weight: 700; color: #1f2937; line-height: 1.3;">
           ${properTitle}
         </h3>
+        
+        <!-- Toilet Type -->
+        <div style="margin-bottom: 10px;">
+          <span style="background: #3b82f6; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 500; text-transform: uppercase;">
+            ${translateToiletType(toilet.type)}
+          </span>
+        </div>
         
         <!-- Added by information for user-added toilets -->
         ${toilet.source === 'user' && toilet.addedByUserName ? `
@@ -1309,7 +1437,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
         </div>
         
         <!-- 7. Action Buttons Row -->
-        <div style="display: flex; gap: 8px;">
+        <div style="display: flex; gap: 8px; margin-bottom: 8px;">
           <button 
             onclick="window.getDirections(${toilet.coordinates.lat}, ${toilet.coordinates.lng})"
             style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 12px; background: #3b82f6; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background-color 0.2s;"
@@ -1328,7 +1456,21 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
             <span style="font-size: 16px;">⚠️</span>
             ${t('popup.report')}
           </button>
-          ${isAdmin ? `
+        </div>
+        
+        <!-- 8. Edit/Delete Buttons Row (for admins and creators) -->
+        ${(isAdmin || (currentUser && currentUser.uid === toilet.userId)) ? `
+        <div style="display: flex; gap: 8px;">
+          <button 
+            onclick="window.editToilet('${toilet.id}')" 
+            style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 12px; background: #059669; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background-color 0.2s;"
+            onmouseover="this.style.background='#047857'"
+            onmouseout="this.style.background='#059669'"
+          >
+            <span style="font-size: 16px;">✏️</span>
+            ${t('popup.edit')}
+          </button>
+          ${(isAdmin || (currentUser && currentUser.uid === toilet.userId)) ? `
             <button 
               onclick="window.deleteToilet('${toilet.id}')" 
               style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 12px; background: #991b1b; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background-color 0.2s;"
@@ -1340,6 +1482,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
             </button>
           ` : ''}
         </div>
+        ` : ''}
       </div>
     `;
   };

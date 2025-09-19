@@ -3,6 +3,8 @@ import { auth } from './firebase-admin-config.js';
 import { writeFileSync, appendFileSync, readFileSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { exec } from 'child_process';
+import { supabaseStorage } from './supabase-storage.js';
 
 // Get current directory for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -195,6 +197,55 @@ class AdminManager {
         res.status(500).json({ error: error.message });
       }
     });
+
+    // Get user activity data (toilets and reviews)
+    this.app.get('/api/users/:uid/activity', async (req, res) => {
+      try {
+        const { uid } = req.params;
+        
+        const [toilets, reviews] = await Promise.all([
+          supabaseStorage.getUserToilets(uid),
+          supabaseStorage.getUserReviews(uid)
+        ]);
+        
+        res.json({ toilets, reviews });
+      } catch (error) {
+        console.error('Error fetching user activity:', error);
+        res.status(500).json({ error: error.message });
+      }
+    });
+
+    // Delete user's toilet
+    this.app.delete('/api/toilets/:toiletId', async (req, res) => {
+      try {
+        const { toiletId } = req.params;
+        const { adminEmail } = req.body;
+        
+        await supabaseStorage.deleteToilet(toiletId);
+        this.log('DELETE_TOILET', { toiletId, adminEmail });
+        
+        res.json({ success: true, message: `Toilet ${toiletId} has been deleted` });
+      } catch (error) {
+        console.error('Error deleting toilet:', error);
+        res.status(500).json({ error: error.message });
+      }
+    });
+
+    // Delete user's review
+    this.app.delete('/api/reviews/:reviewId', async (req, res) => {
+      try {
+        const { reviewId } = req.params;
+        const { adminEmail } = req.body;
+        
+        await supabaseStorage.deleteReview(reviewId);
+        this.log('DELETE_REVIEW', { reviewId, adminEmail });
+        
+        res.json({ success: true, message: `Review ${reviewId} has been deleted` });
+      } catch (error) {
+        console.error('Error deleting review:', error);
+        res.status(500).json({ error: error.message });
+      }
+    });
   }
 
   start() {
@@ -212,6 +263,25 @@ class AdminManager {
       `);
       
       this.log('ADMIN_MANAGER_STARTED', { port: this.port, timestamp: new Date().toISOString() });
+      
+      // Open browser after a short delay
+      setTimeout(() => {
+        console.log('🌐 Opening browser...');
+        const url = `http://localhost:${this.port}`;
+        
+        // Cross-platform browser opening
+        const command = process.platform === 'win32' ? `start "" "${url}"` : 
+                       process.platform === 'darwin' ? `open "${url}"` : 
+                       `xdg-open "${url}"`;
+        
+        exec(command, (error) => {
+          if (error) {
+            console.log(`⚠️  Could not open browser automatically. Please visit: ${url}`);
+          } else {
+            console.log(`✅ Browser opened: ${url}`);
+          }
+        });
+      }, 2000);
     });
   }
 }
