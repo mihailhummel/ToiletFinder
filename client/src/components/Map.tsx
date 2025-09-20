@@ -857,53 +857,37 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
   const userLocationSet = useRef(false);
   const lastUserLocation = useRef<{lat: number, lng: number} | null>(null);
 
-  // Update user location marker only (separate from map centering)
+  // Initialize map and handle FIRST location only
   useEffect(() => {
-    if (!map.current || !stableUserLocation || !leafletLoaded) {
+    if (!map.current || !leafletLoaded) {
       return;
     }
 
-    // Check if location actually changed to prevent duplicate updates
-    // Use a larger threshold (about 10 meters) to prevent excessive updates for small GPS jitter
-    if (lastUserLocation.current && 
-        Math.abs(lastUserLocation.current.lat - stableUserLocation.lat) < 0.0001 && 
-        Math.abs(lastUserLocation.current.lng - stableUserLocation.lng) < 0.0001) {
-      return;
-    }
+    // Only run this effect once when we first get a location and map is ready
+    if (stableUserLocation && !userLocationSet.current) {
+      // Create the initial user location marker
+      const combinedIcon = L.divIcon({
+        className: 'user-location-combined',
+        html: `
+          <div class="pulse-ring"></div>
+          <div class="user-dot"></div>
+        `,
+        iconSize: [60, 60],
+        iconAnchor: [30, 30]
+      });
 
-    // If marker exists, just update its position for smooth movement - NO MAP REFRESH
-    if (userMarker.current) {
-      userMarker.current.setLatLng([stableUserLocation.lat, stableUserLocation.lng]);
-      lastUserLocation.current = { lat: stableUserLocation.lat, lng: stableUserLocation.lng };
-      return; // CRITICAL: Return here to prevent any map refresh
-    }
+      userMarker.current = L.marker([stableUserLocation.lat, stableUserLocation.lng], { 
+        icon: combinedIcon,
+        interactive: false,
+        zIndexOffset: 1000
+      }).addTo(map.current);
 
-    // Create single combined marker with pulse animation (only on first location)
-    const combinedIcon = L.divIcon({
-      className: 'user-location-combined',
-      html: `
-        <div class="pulse-ring"></div>
-        <div class="user-dot"></div>
-      `,
-      iconSize: [60, 60],
-      iconAnchor: [30, 30]
-    });
-
-    userMarker.current = L.marker([stableUserLocation.lat, stableUserLocation.lng], { 
-      icon: combinedIcon,
-      interactive: false,
-      zIndexOffset: 1000
-    }).addTo(map.current);
-
-    // Update location reference
-    lastUserLocation.current = { lat: stableUserLocation.lat, lng: stableUserLocation.lng };
-
-    // Center map on FIRST location only and trigger initial toilet fetch
-    if (!userLocationSet.current) {
+      // Center map on first location and trigger initial toilet fetch
       map.current.setView([stableUserLocation.lat, stableUserLocation.lng], 16);
       userLocationSet.current = true;
+      lastUserLocation.current = { lat: stableUserLocation.lat, lng: stableUserLocation.lng };
       
-      // Single bounds update for initial load - no multiple triggers needed
+      // Single bounds update for initial load
       setTimeout(() => {
         if (map.current) {
           const bounds = map.current.getBounds();
@@ -911,7 +895,26 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
         }
       }, 100);
     }
-  }, [stableUserLocation, leafletLoaded]);
+  }, [leafletLoaded, stableUserLocation ? !!stableUserLocation : false]); // Only depend on whether we HAVE a location, not the location itself
+
+  // Separate effect ONLY for updating location marker position - NO map operations
+  useEffect(() => {
+    // This effect ONLY updates the marker position - nothing else
+    if (!userMarker.current || !stableUserLocation || !userLocationSet.current) {
+      return;
+    }
+
+    // Check if location actually changed to prevent duplicate updates
+    if (lastUserLocation.current && 
+        Math.abs(lastUserLocation.current.lat - stableUserLocation.lat) < 0.0001 && 
+        Math.abs(lastUserLocation.current.lng - stableUserLocation.lng) < 0.0001) {
+      return;
+    }
+
+    // ONLY update marker position - NO map centering, NO bounds updates, NO re-rendering
+    userMarker.current.setLatLng([stableUserLocation.lat, stableUserLocation.lng]);
+    lastUserLocation.current = { lat: stableUserLocation.lat, lng: stableUserLocation.lng };
+  }, [stableUserLocation?.lat, stableUserLocation?.lng]); // Only depend on the actual coordinates
 
   // Efficient toilet marker rendering with clustering and viewport optimization
   useEffect(() => {
@@ -1596,6 +1599,47 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
         .leaflet-container {
           transform: translateZ(0);
           will-change: transform;
+        }
+        /* User location indicator - optimized for smooth updates */
+        .user-location-combined {
+          transform: translate3d(0,0,0);
+          will-change: transform;
+          backface-visibility: hidden;
+          z-index: 1000 !important;
+        }
+        .pulse-ring {
+          width: 60px;
+          height: 60px;
+          border: 3px solid #3b82f6;
+          border-radius: 50%;
+          background: rgba(59, 130, 246, 0.1);
+          position: absolute;
+          top: 0;
+          left: 0;
+          animation: pulse 2s ease-out infinite;
+          transform: translate3d(0,0,0);
+        }
+        .user-dot {
+          width: 16px;
+          height: 16px;
+          background: #3b82f6;
+          border: 3px solid white;
+          border-radius: 50%;
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%) translate3d(0,0,0);
+          box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+        @keyframes pulse {
+          0% {
+            transform: scale(0.3);
+            opacity: 1;
+          }
+          100% {
+            transform: scale(1);
+            opacity: 0;
+          }
         }
         .toilet-marker-simple {
           transform: translate3d(0,0,0);
