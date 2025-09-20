@@ -1,0 +1,13 @@
+node_modules
+client/node_modules
+client/dist
+.git
+.gitignore
+admin-manager
+*.log
+.env*
+!.env.template
+README.md
+*.md
+.DS_Store
+Thumbs.db
