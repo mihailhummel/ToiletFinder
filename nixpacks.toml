@@ -5,10 +5,7 @@ NPM_CONFIG_PRODUCTION = 'false'
 nixPkgs = ['nodejs_20', 'npm-9_x']
 
 [phases.install]
-cmds = [
-  'npm install',
-  'cd client && npm install'
-]
+cmds = ['npm run install:all']
 
 [phases.build]
 cmds = ['npm run build']
