@@ -2,20 +2,13 @@ import { createClient } from '@supabase/supabase-js';
 import { IStorage } from './storage';
 import type { Toilet, Review, Report, ToiletReport, InsertToilet, InsertReview, InsertReport, InsertToiletReport } from '@shared/schema';
 
-const supabaseUrl = process.env.SUPABASE_URL;
-if (!supabaseUrl) {
-  throw new Error('SUPABASE_URL environment variable is required');
-}
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY;
-if (!supabaseServiceKey) {
-  throw new Error('SUPABASE_SERVICE_KEY environment variable is required');
-}
+const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || 'https://fvohytokcumrauwplnwo.supabase.co';
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2b2h5dG9rY3VtcmF1d3BsbndvIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTg5MDczOCwiZXhwIjoyMDY3NDY2NzM4fQ.nJIBMdMfRd7BB38zS43g40zfLTLGisXVvaKH6SZDvXw';
 
 // Environment check for production
-if (process.env.NODE_ENV === 'production' && !process.env.SUPABASE_SERVICE_KEY) {
-  console.error('🚨 CRITICAL: SUPABASE_SERVICE_KEY environment variable is required in production');
-  console.error('Please set your Supabase service key in the .env file');
-  process.exit(1);
+if (process.env.NODE_ENV === 'production' && (!process.env.SUPABASE_URL && !process.env.VITE_SUPABASE_URL)) {
+  console.error('🚨 CRITICAL: Supabase URL environment variable is required in production');
+  console.error('Please set SUPABASE_URL or VITE_SUPABASE_URL in your .env file');
 }
 
 // Use service key for server-side operations
