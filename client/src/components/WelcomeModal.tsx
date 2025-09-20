@@ -163,21 +163,21 @@ export const WelcomeModal = ({ isOpen, onClose }: WelcomeModalProps) => {
               <div className="flex items-start space-x-2">
                 <Flag className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" />
                 <div className="text-xs text-green-700">
-                  <span className="font-medium">{t('welcome.reportIncorrect')}</span> {t('welcome.reportDescription')}
+                  <span className="font-medium">{t('welcome.reportIncorrect')}</span>{/*{t('welcome.reportDescription')}*/}
                 </div>
               </div>
               
               <div className="flex items-start space-x-2">
                 <Plus className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
                 <div className="text-xs text-green-700">
-                  <span className="font-medium">{t('welcome.addNew')}</span> {t('welcome.addDescription')}
+                  <span className="font-medium">{t('welcome.addNew')}</span>{/*{t('welcome.addDescription')}*/}
                 </div>
               </div>
               
               <div className="flex items-start space-x-2">
                 <Star className="w-4 h-4 text-yellow-500 mt-0.5 flex-shrink-0" />
                 <div className="text-xs text-green-700">
-                  <span className="font-medium">{t('welcome.leaveReviews')}</span> {t('welcome.reviewDescription')}
+                  <span className="font-medium">{t('welcome.leaveReviews')}</span>{/*{t('welcome.reviewDescription')}*/}
                 </div>
               </div>
             </div>

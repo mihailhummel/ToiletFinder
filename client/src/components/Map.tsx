@@ -195,12 +195,13 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
     getCurrentLocation();
   }, []);
 
-  // Preload toilets for user's region when location is available
+  // Preload toilets for user's region when location is available - ONLY ONCE
   useEffect(() => {
-    if (stableUserLocation) {
+    if (stableUserLocation && !userLocationSet.current) {
       preloadToiletsForRegion(stableUserLocation.lat, stableUserLocation.lng, 30);
+      userLocationSet.current = true; // Mark that we've handled the first location
     }
-  }, [stableUserLocation]);
+  }, [stableUserLocation ? 'has-location' : 'no-location']); // Only run when we first get a location
 
   // Load Leaflet CSS and JS (simplified without external clustering)
   useEffect(() => {
@@ -716,6 +717,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
       return;
     }
 
+    // Start with user location if available, otherwise Sofia center
     const initialCenter = stableUserLocation || { lat: 42.6977, lng: 23.3219 };
 
     map.current = L.map(mapContainer.current).setView(
@@ -850,57 +852,24 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
         map.current.off('click', handleMapClick);
         map.current.remove();
         map.current = null;
+        
+        // CRITICAL: Clear marker references when map is removed
+        userMarker.current = null;
+        userRingMarker.current = null;
+        markersLayer.current = null;
+        toiletMarkers.current = [];
+        lastUserLocation.current = null;
+        userLocationSet.current = false; // Reset location set flag
       }
     };
-  }, [leafletLoaded, stableUserLocation]);
+  }, [leafletLoaded, stableUserLocation ? 'has-location' : 'no-location']); // Only re-init if location availability changes
 
   const userLocationSet = useRef(false);
   const lastUserLocation = useRef<{lat: number, lng: number} | null>(null);
 
-  // Initialize map and handle FIRST location only
+  // Create and manage user location indicator - COMPLETELY INDEPENDENT
   useEffect(() => {
-    if (!map.current || !leafletLoaded) {
-      return;
-    }
-
-    // Only run this effect once when we first get a location and map is ready
-    if (stableUserLocation && !userLocationSet.current) {
-      // Create the initial user location marker
-      const combinedIcon = L.divIcon({
-        className: 'user-location-combined',
-        html: `
-          <div class="pulse-ring"></div>
-          <div class="user-dot"></div>
-        `,
-        iconSize: [60, 60],
-        iconAnchor: [30, 30]
-      });
-
-      userMarker.current = L.marker([stableUserLocation.lat, stableUserLocation.lng], { 
-        icon: combinedIcon,
-        interactive: false,
-        zIndexOffset: 1000
-      }).addTo(map.current);
-
-      // Center map on first location and trigger initial toilet fetch
-      map.current.setView([stableUserLocation.lat, stableUserLocation.lng], 16);
-      userLocationSet.current = true;
-      lastUserLocation.current = { lat: stableUserLocation.lat, lng: stableUserLocation.lng };
-      
-      // Single bounds update for initial load
-      setTimeout(() => {
-        if (map.current) {
-          const bounds = map.current.getBounds();
-          setMapBounds(bounds);
-        }
-      }, 100);
-    }
-  }, [leafletLoaded, stableUserLocation ? !!stableUserLocation : false]); // Only depend on whether we HAVE a location, not the location itself
-
-  // Separate effect ONLY for updating location marker position - NO map operations
-  useEffect(() => {
-    // This effect ONLY updates the marker position - nothing else
-    if (!userMarker.current || !stableUserLocation || !userLocationSet.current) {
+    if (!map.current || !leafletLoaded || !stableUserLocation) {
       return;
     }
 
@@ -911,10 +880,40 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
       return;
     }
 
-    // ONLY update marker position - NO map centering, NO bounds updates, NO re-rendering
-    userMarker.current.setLatLng([stableUserLocation.lat, stableUserLocation.lng]);
+    // If marker exists and is still valid, just update its position smoothly
+    if (userMarker.current) {
+      try {
+        // Check if marker is still valid (hasn't been removed from map)
+        userMarker.current.setLatLng([stableUserLocation.lat, stableUserLocation.lng]);
+        lastUserLocation.current = { lat: stableUserLocation.lat, lng: stableUserLocation.lng };
+        return;
+      } catch (error) {
+        // Marker was removed, clear reference and recreate below
+        console.log('📍 User marker was invalidated, recreating...');
+        userMarker.current = null;
+      }
+    }
+
+    // Create or recreate the location indicator
+    console.log('📍 Creating user location indicator');
+    const combinedIcon = L.divIcon({
+      className: 'user-location-combined',
+      html: `
+        <div class="pulse-ring"></div>
+        <div class="user-dot"></div>
+      `,
+      iconSize: [60, 60],
+      iconAnchor: [30, 30]
+    });
+
+    userMarker.current = L.marker([stableUserLocation.lat, stableUserLocation.lng], { 
+      icon: combinedIcon,
+      interactive: false,
+      zIndexOffset: 1000
+    }).addTo(map.current);
+
     lastUserLocation.current = { lat: stableUserLocation.lat, lng: stableUserLocation.lng };
-  }, [stableUserLocation?.lat, stableUserLocation?.lng]); // Only depend on the actual coordinates
+  }, [stableUserLocation?.lat, stableUserLocation?.lng, leafletLoaded]); // Independent location indicator
 
   // Efficient toilet marker rendering with clustering and viewport optimization
   useEffect(() => {
