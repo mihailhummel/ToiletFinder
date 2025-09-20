@@ -1,7 +1,13 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://fvohytokcumrauwplnwo.supabase.co';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2b2h5dG9rY3VtcmF1d3BsbndvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE4OTA3MzgsImV4cCI6MjA2NzQ2NjczOH0.nJZx7uUcM0U1Uj8eL8P1eR97OQLhfS3jUinT6K74utk';
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+if (!supabaseUrl) {
+  throw new Error('VITE_SUPABASE_URL environment variable is required');
+}
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+if (!supabaseAnonKey) {
+  throw new Error('VITE_SUPABASE_ANON_KEY environment variable is required');
+}
 
 // Environment check for production builds
 if (import.meta.env.PROD && (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY)) {

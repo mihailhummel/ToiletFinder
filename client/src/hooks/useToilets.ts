@@ -249,11 +249,9 @@ export const useToilets = (location?: MapLocation) => {
   return useQuery({
     queryKey: ["toilets", "legacy-v2", location?.lat, location?.lng],
     queryFn: async () => {
-      console.log('⚠️ Legacy useToilets called - consider switching to useToiletsInViewport');
       
       if (!location) {
         // Return empty for now to avoid loading all toilets
-        console.log('🚫 No location provided, returning empty array to prevent full DB load');
         return [];
       }
       
@@ -264,7 +262,6 @@ export const useToilets = (location?: MapLocation) => {
       if (cached.chunks[chunkKey]) {
         const age = Date.now() - cached.chunks[chunkKey].timestamp;
         if (age < CACHE_EXPIRY_HOURS * 60 * 60 * 1000) {
-          console.log('✅ Serving from legacy cache');
           return cached.chunks[chunkKey].toilets.filter(toilet => !toilet.isRemoved);
         }
       }
@@ -331,7 +328,6 @@ export const useUpdateToilet = () => {
       queryClient.invalidateQueries({ queryKey: ['toilets'] });
       queryClient.invalidateQueries({ queryKey: ['all-toilets'] });
       
-      console.log("🔄 Toilet cache invalidated after update");
     },
   });
 };
@@ -419,10 +415,8 @@ export const useDeleteToilet = () => {
   
   return useMutation({
     mutationFn: async ({ toiletId, adminEmail, userId }: { toiletId: string; adminEmail: string; userId: string }): Promise<void> => {
-      console.log("🗑️ Attempting to delete toilet:", { toiletId, adminEmail, userId });
       
       const requestBody = { adminEmail, userId };
-      console.log("📤 Request body:", requestBody);
       
       const response = await fetch(`/api/toilets/${toiletId}`, {
         method: 'DELETE',
@@ -430,7 +424,6 @@ export const useDeleteToilet = () => {
         body: JSON.stringify(requestBody),
       });
       
-      console.log("📡 Delete response status:", response.status);
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -438,7 +431,6 @@ export const useDeleteToilet = () => {
         throw new Error(errorData.error || 'Failed to delete toilet');
       }
       
-      console.log("✅ Delete request successful");
     },
     onSuccess: () => {
       // Invalidate and refetch toilet queries
@@ -448,7 +440,6 @@ export const useDeleteToilet = () => {
       // Clear cache to ensure deleted toilet doesn't show up
       clearToiletCache();
       
-      console.log("✅ Toilet deleted successfully");
     },
     onError: (error) => {
       console.error("❌ Failed to delete toilet:", error);
@@ -460,7 +451,6 @@ export const useDeleteToilet = () => {
 export const clearToiletCache = () => {
   try {
     localStorage.removeItem(CACHE_KEY);
-    console.log('🗑️ Toilet cache cleared');
   } catch (error) {
     console.warn('Failed to clear toilet cache:', error);
   }
@@ -475,12 +465,10 @@ export const preloadToiletsForRegion = async (lat: number, lng: number, radiusKm
   if (cached.chunks[chunkKey]) {
     const age = Date.now() - cached.chunks[chunkKey].timestamp;
     if (age < 60 * 60 * 1000) { // 1 hour
-      console.log('✅ Region already cached, skipping preload');
       return;
     }
   }
   
-  console.log('🔄 Preloading region data...');
   
   try {
     const params = new URLSearchParams({
@@ -509,7 +497,6 @@ export const preloadToiletsForRegion = async (lat: number, lng: number, radiusKm
     };
     setCachedData(cached);
     
-    console.log(`💾 Preloaded ${toilets.length} toilets for region`);
   } catch (error) {
     console.error('Failed to preload region:', error);
   }

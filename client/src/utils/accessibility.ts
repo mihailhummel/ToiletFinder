@@ -339,6 +339,4 @@ export const initAccessibility = () => {
     }
   `
   document.head.appendChild(style)
-  
-  console.log('♿ Accessibility features initialized')
 }

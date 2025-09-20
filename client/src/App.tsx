@@ -213,7 +213,6 @@ function AppContent() {
   // Check for first visit and show welcome modal when toilets load
   useEffect(() => {
     const hasVisitedBefore = localStorage.getItem('toilet-map-visited');
-    console.log('🎉 Welcome modal: First visit check', { hasVisitedBefore: !!hasVisitedBefore });
     if (!hasVisitedBefore) {
       let attempts = 0;
       const maxAttempts = 10; // Maximum attempts to check for loaded state
@@ -224,7 +223,6 @@ function AppContent() {
         // Check if toilets are loaded by looking for the global refresh function
         // which indicates the map and toilet system is ready
         if (typeof window !== 'undefined' && window.refreshToilets) {
-          console.log('🎉 Welcome modal: Toilets loaded, showing welcome modal');
           setTimeout(() => {
             setShowWelcomeModal(true);
             localStorage.setItem('toilet-map-visited', 'true');

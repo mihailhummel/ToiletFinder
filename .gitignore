@@ -58,6 +58,16 @@ vite.config.ts.*
 # Firebase
 server/findwc-2be85-firebase-adminsdk-fbsvc-a1b97ea513.json
 firebase-service-account-key.json
+firebase-admin-config.js
+firebase-admin-config.d.ts
 
 # Supabase
 .supabase
+
+# Admin Manager (local only - contains sensitive logs and configs)
+admin-manager/
+
+# Environment and secrets
+.env*
+!.env.example
+!.env.template

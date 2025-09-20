@@ -870,19 +870,14 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
       return;
     }
 
-    // Always remove existing markers first
+    // If marker exists, just update its position for smooth movement
     if (userMarker.current) {
-      map.current.removeLayer(userMarker.current);
-      userMarker.current = null;
-    }
-    if (userRingMarker.current) {
-      map.current.removeLayer(userRingMarker.current);
-      userRingMarker.current = null;
+      userMarker.current.setLatLng([stableUserLocation.lat, stableUserLocation.lng]);
+      lastUserLocation.current = { lat: stableUserLocation.lat, lng: stableUserLocation.lng };
+      return;
     }
 
-            // Silent for performance
-
-    // Create single combined marker with pulse animation
+    // Create single combined marker with pulse animation (only on first location)
     const combinedIcon = L.divIcon({
       className: 'user-location-combined',
       html: `

@@ -1,5 +1,5 @@
 import admin from 'firebase-admin';
-import { readFileSync } from 'fs';
+import { readFileSync, existsSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 
@@ -30,24 +30,34 @@ if (process.env.FIREBASE_PRIVATE_KEY) {
   // Fallback to local file for development
   try {
     const serviceAccountPath = join(__dirname, 'firebase-service-account-key.json');
-    serviceAccount = JSON.parse(readFileSync(serviceAccountPath, 'utf8'));
-    console.log('🔑 Firebase Admin initialized with local service account file');
+    if (existsSync(serviceAccountPath)) {
+      serviceAccount = JSON.parse(readFileSync(serviceAccountPath, 'utf8'));
+      console.log('🔑 Firebase Admin initialized with local service account file');
+    } else {
+      console.warn('⚠️  firebase-service-account-key.json not found. Using environment variables only.');
+      console.warn('   For development, add firebase-service-account-key.json file');
+      console.warn('   For production, set FIREBASE_* environment variables');
+      // Don't exit, let the app continue without Firebase admin
+      serviceAccount = null;
+    }
   } catch (error) {
-    console.error('⚠️  Firebase configuration not found. For production, set environment variables:');
+    console.error('⚠️  Error reading Firebase configuration:', error.message);
+    console.error('   For production, set environment variables:');
     console.error('   FIREBASE_PRIVATE_KEY, FIREBASE_CLIENT_EMAIL, etc.');
     console.error('   For development, add firebase-service-account-key.json file');
-    process.exit(1);
+    serviceAccount = null;
   }
 }
 
-if (!admin.apps.length) {
+if (!admin.apps.length && serviceAccount) {
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
-    projectId: 'findwc-2be85'
+    projectId: process.env.FIREBASE_PROJECT_ID || 'findwc-2be85'
   });
 }
 
-const auth = admin.auth();
+// Only export auth if Firebase is properly initialized
+const auth = admin.apps.length > 0 ? admin.auth() : null;
 
 export { admin, auth };
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import type { MapLocation } from "@/types/toilet";
 
 interface GeolocationState {
@@ -14,14 +14,67 @@ export const useGeolocation = () => {
     loading: false
   });
 
+  const watchIdRef = useRef<number | null>(null);
+  const isWatchingRef = useRef(false);
+
+  // Start continuous location tracking
+  const startLocationTracking = () => {
+    if (!navigator.geolocation || isWatchingRef.current) {
+      return;
+    }
+
+    isWatchingRef.current = true;
+    setState(prev => ({ ...prev, loading: true, error: null }));
+
+    const options = {
+      enableHighAccuracy: true,
+      timeout: 10000,
+      maximumAge: 1000 // Update every second for smooth movement
+    };
+
+    watchIdRef.current = navigator.geolocation.watchPosition(
+      (position) => {
+        const location = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude
+        };
+        
+        setState({
+          location,
+          error: null,
+          loading: false
+        });
+      },
+      (error) => {
+        console.error("Location tracking error:", error.message);
+        setState(prev => ({
+          ...prev,
+          error: "Location tracking failed",
+          loading: false
+        }));
+        stopLocationTracking();
+      },
+      options
+    );
+  };
+
+  // Stop continuous location tracking
+  const stopLocationTracking = () => {
+    if (watchIdRef.current !== null) {
+      navigator.geolocation.clearWatch(watchIdRef.current);
+      watchIdRef.current = null;
+      isWatchingRef.current = false;
+    }
+  };
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      stopLocationTracking();
+    };
+  }, []);
+
   const getCurrentLocation = (forceNewPermission = false) => {
-    console.log("🌍 Starting location request...");
-    console.log("🔍 Browser info:", {
-      isSecureContext: window.isSecureContext,
-      protocol: window.location.protocol,
-      hostname: window.location.hostname,
-      userAgent: navigator.userAgent.substring(0, 100)
-    });
 
     if (!navigator.geolocation) {
       const errorMsg = "Geolocation is not supported by your browser";
@@ -42,29 +95,20 @@ export const useGeolocation = () => {
     
     // If forcing new permission, try to reset the permission state
     if (forceNewPermission && 'permissions' in navigator) {
-      console.log("🔄 Attempting to reset location permission...");
       // Note: We can't actually reset permissions, but we can check current state
       navigator.permissions.query({ name: 'geolocation' }).then(result => {
-        console.log("📍 Current permission state:", result.state);
         if (result.state === 'denied') {
-          console.log("❌ Location permission is denied. User needs to manually enable it.");
+          console.warn("Location permission is denied. User needs to manually enable it.");
         }
-      }).catch(err => {
-        console.log("⚠️ Permission API not available:", err);
+      }).catch(() => {
+        // Permission API not available
       });
     }
     
     return new Promise((resolve, reject) => {
-      console.log("📍 Calling navigator.geolocation.getCurrentPosition...");
-      
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const accuracy = position.coords.accuracy;
-          console.log("✅ Location obtained successfully:", {
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-            accuracy: accuracy
-          });
           
           const location = {
             lat: position.coords.latitude,
@@ -76,17 +120,14 @@ export const useGeolocation = () => {
             error: null,
             loading: false
           });
+
+          // Start continuous tracking after getting initial location
+          startLocationTracking();
           
           resolve(location);
         },
         (error) => {
-          console.error("🚫 Geolocation error details:", {
-            code: error.code,
-            message: error.message,
-            PERMISSION_DENIED: error.PERMISSION_DENIED,
-            POSITION_UNAVAILABLE: error.POSITION_UNAVAILABLE,
-            TIMEOUT: error.TIMEOUT
-          });
+          console.error("Geolocation error:", error.message);
           
           let errorMessage = "Unable to get your location";
           let userInstructions = "";
@@ -131,6 +172,8 @@ export const useGeolocation = () => {
 
   return {
     ...state,
-    getCurrentLocation
+    getCurrentLocation,
+    startLocationTracking,
+    stopLocationTracking
   };
 };

@@ -18,6 +18,7 @@
     "check-quota": "node check_firebase_quota.mjs",
     "test": "cd client && npm test",
     "test:e2e": "cd client && npm run test:e2e",
+    "test:production": "node scripts/test-production-mode.js",
     "lint": "cd client && npm run lint",
     "lint:fix": "cd client && npm run lint:fix",
     "preview": "cd client && npm run preview",
