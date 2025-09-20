@@ -29,7 +29,7 @@ export const useGeolocation = () => {
     const options = {
       enableHighAccuracy: true,
       timeout: 10000,
-      maximumAge: 1000 // Update every second for smooth movement
+      maximumAge: 5000 // Update every 5 seconds - more reasonable for walking speed
     };
 
     watchIdRef.current = navigator.geolocation.watchPosition(

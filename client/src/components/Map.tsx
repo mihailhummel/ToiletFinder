@@ -857,24 +857,25 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
   const userLocationSet = useRef(false);
   const lastUserLocation = useRef<{lat: number, lng: number} | null>(null);
 
-  // Update user location and center map
+  // Update user location marker only (separate from map centering)
   useEffect(() => {
     if (!map.current || !stableUserLocation || !leafletLoaded) {
       return;
     }
 
-    // Check if location actually changed to prevent duplicate markers
+    // Check if location actually changed to prevent duplicate updates
+    // Use a larger threshold (about 10 meters) to prevent excessive updates for small GPS jitter
     if (lastUserLocation.current && 
         Math.abs(lastUserLocation.current.lat - stableUserLocation.lat) < 0.0001 && 
         Math.abs(lastUserLocation.current.lng - stableUserLocation.lng) < 0.0001) {
       return;
     }
 
-    // If marker exists, just update its position for smooth movement
+    // If marker exists, just update its position for smooth movement - NO MAP REFRESH
     if (userMarker.current) {
       userMarker.current.setLatLng([stableUserLocation.lat, stableUserLocation.lng]);
       lastUserLocation.current = { lat: stableUserLocation.lat, lng: stableUserLocation.lng };
-      return;
+      return; // CRITICAL: Return here to prevent any map refresh
     }
 
     // Create single combined marker with pulse animation (only on first location)
@@ -897,37 +898,18 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
     // Update location reference
     lastUserLocation.current = { lat: stableUserLocation.lat, lng: stableUserLocation.lng };
 
-    // Center map on first location and trigger toilet fetch
+    // Center map on FIRST location only and trigger initial toilet fetch
     if (!userLocationSet.current) {
       map.current.setView([stableUserLocation.lat, stableUserLocation.lng], 16);
       userLocationSet.current = true;
       
-      // Immediate bounds update to trigger toilet fetch around user location
-      const triggerLocationBasedLoad = () => {
+      // Single bounds update for initial load - no multiple triggers needed
+      setTimeout(() => {
         if (map.current) {
           const bounds = map.current.getBounds();
           setMapBounds(bounds);
         }
-      };
-      
-      // Multiple triggers for reliable mobile loading
-      triggerLocationBasedLoad();
-      
-      setTimeout(() => {
-        triggerLocationBasedLoad();
-      }, 50);
-      
-      setTimeout(() => {
-        triggerLocationBasedLoad();
-      }, 150);
-      
-      setTimeout(() => {
-        triggerLocationBasedLoad();
-      }, 300);
-      
-      setTimeout(() => {
-        triggerLocationBasedLoad();
-      }, 500);
+      }, 100);
     }
   }, [stableUserLocation, leafletLoaded]);
 
