@@ -18,6 +18,8 @@ export const ToiletMarker = ({ type, onClick, className = "" }: ToiletMarkerProp
         return <Coffee className="w-4 h-4 text-white" />;
       case "mall":
         return <Building className="w-4 h-4 text-white" />;
+      case "EKOTOI":
+        return <MapPin className="w-4 h-4 text-white" />;
       default:
         return <MapPin className="w-4 h-4 text-white" />;
     }
@@ -33,6 +35,8 @@ export const ToiletMarker = ({ type, onClick, className = "" }: ToiletMarkerProp
         return "bg-purple-500";
       case "mall":
         return "bg-blue-600";
+      case "EKOTOI":
+        return "bg-green-500";
       default:
         return "bg-green-500";
     }

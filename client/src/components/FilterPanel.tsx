@@ -18,6 +18,7 @@ export interface FilterOptions {
 
 const toiletTypes: { value: ToiletType; label: string }[] = [
   { value: "public", label: "Public" },
+  { value: "EKOTOI", label: "EKOTOI" },
   { value: "restaurant", label: "Restaurant" },
   { value: "gas-station", label: "Gas Station" },
   { value: "cafe", label: "Cafe" },

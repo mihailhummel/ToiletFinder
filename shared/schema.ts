@@ -4,6 +4,7 @@ import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 
 export const toiletTypeSchema = z.enum([
   "public",
+  "EKOTOI",
   "restaurant", 
   "cafe",
   "gas-station",
@@ -26,6 +27,7 @@ export const accessTypeSchema = z.enum([
 
 export const reportReasonSchema = z.enum([
   "doesnt-exist",
+  "wrong-details",
   "inaccessible", 
   "closed",
   "other"

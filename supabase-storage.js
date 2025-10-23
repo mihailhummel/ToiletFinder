@@ -81,6 +81,34 @@ export class SupabaseStorage {
     }
   }
 
+  async getUserReports(userId) {
+    try {
+      const { data, error } = await supabase
+        .from('reports')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('❌ Error fetching user reports:', error);
+        throw error;
+      }
+
+      return data.map(report => ({
+        id: report.id,
+        toiletId: report.toilet_id,
+        userId: report.user_id,
+        userName: report.user_name,
+        reason: report.reason,
+        comment: report.comment || null,
+        createdAt: new Date(report.created_at)
+      }));
+    } catch (error) {
+      console.error('❌ Failed to fetch user reports:', error);
+      throw error;
+    }
+  }
+
   async deleteReview(reviewId) {
     try {
       const { error } = await supabase
@@ -94,6 +122,23 @@ export class SupabaseStorage {
       }
     } catch (error) {
       console.error('❌ Failed to delete review:', error);
+      throw error;
+    }
+  }
+
+  async deleteReport(reportId) {
+    try {
+      const { error } = await supabase
+        .from('reports')
+        .delete()
+        .eq('id', reportId);
+
+      if (error) {
+        console.error('❌ Error deleting report:', error);
+        throw error;
+      }
+    } catch (error) {
+      console.error('❌ Failed to delete report:', error);
       throw error;
     }
   }

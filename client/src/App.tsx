@@ -11,6 +11,7 @@ import { FilterPanel, type FilterOptions } from "./components/FilterPanel";
 import { AddToiletModal } from "./components/AddToiletModal";
 import { EditToiletModal } from "./components/EditToiletModal";
 import { LoginModal } from "./components/LoginModal";
+import { ReportModal } from "./components/ReportModal";
 import { LanguageSwitch } from "./components/LanguageSwitch";
 import { WelcomeModal } from "./components/WelcomeModal";
 import ErrorBoundary, { MapErrorBoundary } from "./components/ErrorBoundary";
@@ -134,13 +135,17 @@ function AppContent() {
   const [showLogin, setShowLogin] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
+  const [showReport, setShowReport] = useState(false);
+  const [reportToilet, setReportToilet] = useState<Toilet | null>(null);
   const [isAddingToilet, setIsAddingToilet] = useState(false); // Track if user is in add toilet mode
+  const [searchToiletId, setSearchToiletId] = useState('');
+  const [flyToToiletFn, setFlyToToiletFn] = useState<((toiletId: string) => boolean) | null>(null);
   const [pendingToiletLocation, setPendingToiletLocation] = useState<MapLocation | undefined>(undefined);
   const [pendingToiletData, setPendingToiletData] = useState<{type: ToiletType; title: string; accessibility: Accessibility; accessType: AccessType} | null>(null);
   const [isTransitioningToLocationMode, setIsTransitioningToLocationMode] = useState(false);
   const [mapCenter, setMapCenter] = useState<MapLocation>({ lat: 42.6977, lng: 23.3219 });
   const [filters, setFilters] = useState<FilterOptions>({
-    types: ["public", "restaurant", "cafe", "gas-station", "mall", "other"],
+    types: ["public", "EKOTOI", "restaurant", "cafe", "gas-station", "mall", "other"],
     minRating: 1
   });
 
@@ -501,6 +506,35 @@ function AppContent() {
     setShowLogin(true);
   }, []);
 
+  const handleReportClick = useCallback((toilet: Toilet) => {
+    setReportToilet(toilet);
+    setShowReport(true);
+  }, []);
+
+  const handleToiletSearch = useCallback((e: React.FormEvent) => {
+    e.preventDefault();
+    if (!searchToiletId.trim() || !flyToToiletFn) return;
+
+    const found = flyToToiletFn(searchToiletId.trim());
+    if (found) {
+      toast({
+        title: t('admin.toiletFound'),
+        description: `ID: ${searchToiletId}`
+      });
+      setSearchToiletId(''); // Clear search after success
+    } else {
+      toast({
+        title: t('admin.toiletNotFound'),
+        description: `ID: ${searchToiletId}`,
+        variant: "destructive"
+      });
+    }
+  }, [searchToiletId, flyToToiletFn, toast, t]);
+
+  const handleMapReady = useCallback((flyTo: (toiletId: string) => boolean) => {
+    setFlyToToiletFn(() => flyTo);
+  }, []);
+
   const handleToiletClick = useCallback((toilet: Toilet) => {
     setSelectedToilet(toilet);
   }, []);
@@ -613,6 +647,22 @@ function AppContent() {
                   <p className="text-xs text-gray-600">Bulgaria</p>
                 </div>
               </div>
+
+              {/* Admin Search Bar - Desktop Only */}
+              {isAdmin && (
+                <form onSubmit={handleToiletSearch} className="hidden lg:flex items-center mx-4 flex-1 max-w-md">
+                  <div className="relative w-full">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <Input
+                      type="text"
+                      value={searchToiletId}
+                      onChange={(e) => setSearchToiletId(e.target.value)}
+                      placeholder={t('admin.searchPlaceholder')}
+                      className="pl-10 pr-4 h-9 text-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                    />
+                  </div>
+                </form>
+              )}
               
               <div className="flex items-center space-x-2 sm:space-x-3 flex-shrink-0">
                 {/* Language Switch */}
@@ -679,6 +729,8 @@ function AppContent() {
                 onToiletClick={handleToiletClick}
                 onAddToiletClick={handleMapClick}
                 onLoginClick={handleLoginClick}
+                onReportClick={handleReportClick}
+                onMapReady={handleMapReady}
                 isAdmin={isAdmin}
                 currentUser={user}
                 isAddingToilet={isAddingToilet || isEditingLocation}
@@ -762,6 +814,17 @@ function AppContent() {
             isOpen={showLogin}
             onClose={() => setShowLogin(false)}
           />
+
+          {reportToilet && (
+            <ReportModal
+              toilet={reportToilet}
+              isOpen={showReport}
+              onClose={() => {
+                setShowReport(false);
+                setReportToilet(null);
+              }}
+            />
+          )}
 
           <WelcomeModal
             isOpen={showWelcomeModal}

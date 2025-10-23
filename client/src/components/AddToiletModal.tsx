@@ -27,6 +27,7 @@ interface AddToiletModalProps {
 // Toilet type templates for automatic assignment
 const TOILET_TYPE_TEMPLATES: Record<ToiletType, { accessibility: Accessibility; accessType: AccessType }> = {
   "public": { accessibility: "unknown", accessType: "free" },
+  "EKOTOI": { accessibility: "unknown", accessType: "free" },
   "restaurant": { accessibility: "accessible", accessType: "customers-only" },
   "cafe": { accessibility: "accessible", accessType: "customers-only" },
   "gas-station": { accessibility: "accessible", accessType: "customers-only" },
@@ -51,6 +52,7 @@ export const AddToiletModal = ({ isOpen, onClose, location, onRequestLocationSel
   // Dynamic toilet types with translations
   const toiletTypes: { value: ToiletType; label: string }[] = [
     { value: "public", label: t('toiletType.public') },
+    { value: "EKOTOI", label: t('toiletType.EKOTOI') },
     { value: "restaurant", label: t('toiletType.restaurant') },
     { value: "cafe", label: t('toiletType.cafe') },
     { value: "gas-station", label: t('toiletType.gasStation') },

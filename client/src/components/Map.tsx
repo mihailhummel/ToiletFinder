@@ -6,6 +6,7 @@ import { useToiletCache } from '@/hooks/useToiletCache';
 import { useDeleteToilet, useAddReview, preloadToiletsForRegion } from '@/hooks/useToilets';
 import { useAuth } from '@/hooks/useAuth';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useQueryClient } from '@tanstack/react-query';
 import type { Toilet, MapLocation } from '@/types/toilet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -19,6 +20,8 @@ interface MapProps {
   onToiletClick: (toilet: Toilet) => void;
   onAddToiletClick: (location: MapLocation) => void;
   onLoginClick: () => void;
+  onReportClick?: (toilet: Toilet) => void;
+  onMapReady?: (flyToToilet: (toiletId: string) => boolean) => void;
   isAdmin?: boolean;
   currentUser?: any;
   isAddingToilet?: boolean;
@@ -51,9 +54,10 @@ declare global {
   }
 }
 
-const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, currentUser, isAddingToilet }: MapProps) => {
+const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, onReportClick, onMapReady, isAdmin, currentUser, isAddingToilet }: MapProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const { t } = useLanguage();
+  const queryClient = useQueryClient();
   
   // Function to translate toilet types from backend tags to proper translations
   const translateToiletType = (type: string): string => {
@@ -565,61 +569,16 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
             return;
           }
           
-          try {
-            // Silent for performance
-            
-            const response = await fetch(`/api/toilets/${toiletId}/report-not-exists`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              credentials: 'include',
-              body: JSON.stringify({
-                toiletId,
-                userId: user.uid
-              })
-            });
-            
-            // Silent for performance
-            
-            if (response.ok) {
-              const result = await response.json();
-              
-              // Update button to show reported status
-              const reportButton = document.querySelector(`button[onclick="window.reportToiletNotExists('${toiletId}')"]`) as HTMLElement;
-              if (reportButton) {
-                reportButton.innerHTML = '✓ Reported';
-                reportButton.style.background = '#10b981';
-                reportButton.style.color = 'white';
-                (reportButton as any).disabled = true;
-              }
-              
-              // Check if toilet should be removed (5+ reports)
-              if (result.reportCount >= 5) {
-                alert('This toilet has been reported by 5+ users and will be removed from the map.');
-                
-                // Remove the marker from the map
-                const markers = toiletMarkers.current;
-                const marker = markers.find(m => m.toiletId === toiletId);
-                if (marker && marker.marker) {
-                  map.current?.removeLayer(marker.marker);
-                  toiletMarkers.current = toiletMarkers.current.filter(m => m.toiletId !== toiletId);
-                }
-                
-                // Close popup
-                const popup = document.querySelector('.leaflet-popup');
-                if (popup) {
-                  (popup as any).remove();
-                }
-              } else {
-                alert(`Toilet reported. ${5 - result.reportCount} more reports needed for automatic removal.`);
-              }
-            } else {
-              const errorData = await response.json().catch(() => ({}));
-              console.error('Report submission failed:', errorData);
-              alert(`Failed to report toilet: ${errorData.error || 'Unknown error'}`);
-            }
-          } catch (error) {
-            console.error('Error reporting toilet:', error);
-            alert('Error reporting toilet. Please try again.');
+          // Find the toilet object
+          const toilet = toilets.find(t => t.id === toiletId);
+          if (!toilet) {
+            console.error('Toilet not found:', toiletId);
+            return;
+          }
+          
+          // Use the callback to open the report modal
+          if (onReportClick) {
+            onReportClick(toilet);
           }
         };
 
@@ -864,6 +823,52 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
     };
   }, [leafletLoaded, stableUserLocation ? 'has-location' : 'no-location']); // Only re-init if location availability changes
 
+  // Expose flyToToilet function to parent component (for admin search)
+  useEffect(() => {
+    if (!map.current || !leafletLoaded || !onMapReady) return;
+
+    const flyToToilet = (toiletId: string): boolean => {
+      // Search in the FULL cache, not just visible toilets
+      const allToiletsCache = queryClient.getQueryData<Toilet[]>(['all-toilets']) || [];
+      const toilet = allToiletsCache.find(t => t.id === toiletId);
+      
+      if (!toilet) {
+        console.log('🔍 Toilet not found in cache. ID:', toiletId);
+        console.log('📊 Total toilets in cache:', allToiletsCache.length);
+        return false;
+      }
+
+      console.log('✅ Toilet found! Flying to:', toilet.title, toilet.coordinates);
+
+      // Fly to the toilet location
+      map.current?.flyTo(
+        [toilet.coordinates.lat, toilet.coordinates.lng],
+        17, // Zoom level
+        {
+          duration: 1.5,
+          easeLinearity: 0.25
+        }
+      );
+
+      // Wait for animation, then try to open popup
+      // Note: The marker might not exist yet if toilet is outside viewport
+      setTimeout(() => {
+        const marker = toiletMarkers.current.find(m => m.toiletId === toiletId);
+        if (marker && marker.marker) {
+          console.log('🎪 Opening popup for toilet');
+          marker.marker.openPopup();
+        } else {
+          console.log('⏳ Marker not yet created (will appear when map loads the area)');
+        }
+      }, 1600);
+
+      return true;
+    };
+
+    // Call the callback to expose the function
+    onMapReady(flyToToilet);
+  }, [map.current, leafletLoaded, onMapReady, queryClient]);
+
   const userLocationSet = useRef(false);
   const lastUserLocation = useRef<{lat: number, lng: number} | null>(null);
 
@@ -1066,8 +1071,8 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, isAdmin, 
           coordinates = { lat: item.lat, lng: item.lng };
           toiletData = toilet;
           
-          // Set marker color: blue for user-added toilets, red for OSM and Geoapify toilets
-          const markerColor = toilet.source === 'user' ? '#2563EB' : '#FF3131';
+          // Set marker color: green for EKOTOI, blue for user-added toilets, red for OSM and Geoapify toilets
+          const markerColor = toilet.type === 'EKOTOI' ? '#00A859' : (toilet.source === 'user' ? '#2563EB' : '#FF3131');
           
           // Performance optimization: simpler markers at lower zoom levels
           const useSimpleMarker = currentZoom < 13;

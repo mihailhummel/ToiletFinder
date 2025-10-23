@@ -26,6 +26,8 @@ function getDefaultTitle(type: string): string {
   switch (type) {
     case 'public':
       return 'Public Toilet';
+    case 'EKOTOI':
+      return 'EKOTOI';
     case 'restaurant':
       return 'Restaurant Toilet';
     case 'cafe':
@@ -333,7 +335,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const report = insertReportSchema.parse(req.body);
       await storage.createReport(report);
-      res.json({ message: "Report submitted successfully" });
+      
+      // If report is "doesnt-exist", also increment the toilet removal counter
+      if (report.reason === 'doesnt-exist') {
+        const toiletReport = {
+          toiletId: report.toiletId,
+          userId: report.userId,
+          userName: report.userName,
+          reason: report.reason,
+          comment: report.comment
+        };
+        
+        await storage.reportToiletNotExists(toiletReport);
+        
+        // Check if toilet should be removed (5 reports threshold)
+        const reportCount = await storage.getToiletReportCount(report.toiletId);
+        
+        if (reportCount >= 5) {
+          await storage.removeToiletFromReports(report.toiletId);
+        }
+        
+        res.json({ message: "Report submitted successfully", reportCount });
+      } else {
+        // For other report types (wrong-details, inaccessible, etc.), just store the report
+        res.json({ message: "Report submitted successfully" });
+      }
     } catch (error) {
       if (error instanceof z.ZodError) {
         res.status(400).json({ error: "Invalid report data", details: error.errors });

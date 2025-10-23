@@ -67,6 +67,7 @@ interface Translations {
   'toiletType.busStation': string;
   'toiletType.mall': string;
   'toiletType.other': string;
+  'toiletType.EKOTOI': string;
   
   // Accessibility
   'accessibility.accessible': string;
@@ -162,11 +163,25 @@ interface Translations {
   'report.comment': string;
   'report.submit': string;
   'report.success': string;
+  'report.description': string;
+  'report.issueType': string;
+  'report.reasonDoesntExist': string;
+  'report.reasonWrongDetails': string;
+  'report.reasonInaccessible': string;
+  'report.reasonClosed': string;
+  'report.reasonOther': string;
+  'report.detailsPlaceholder': string;
+  'report.detailsLabel': string;
   
   // Language Switch
   'language.switch': string;
   'language.english': string;
   'language.bulgarian': string;
+
+  // Admin Search
+  'admin.searchPlaceholder': string;
+  'admin.toiletNotFound': string;
+  'admin.toiletFound': string;
 
   // Descriptions
   'description.editToilet': string;
@@ -270,6 +285,7 @@ const translations: Record<Language, Translations> = {
     'toiletType.busStation': 'Bus Station',
     'toiletType.mall': 'Mall',
     'toiletType.other': 'Other',
+    'toiletType.EKOTOI': 'EKOTOI',
     
     // Accessibility
     'accessibility.accessible': 'Wheelchair Accessible',
@@ -365,11 +381,25 @@ const translations: Record<Language, Translations> = {
     'report.comment': 'Comment',
     'report.submit': 'Submit Report',
     'report.success': 'Report Submitted Successfully',
+    'report.description': 'Report problems with this toilet location to help maintain accurate information',
+    'report.issueType': 'Issue Type',
+    'report.reasonDoesntExist': "Toilet doesn't exist",
+    'report.reasonWrongDetails': 'Wrong or incomplete details',
+    'report.reasonInaccessible': 'Inaccessible',
+    'report.reasonClosed': 'Closed permanently',
+    'report.reasonOther': 'Other',
+    'report.detailsPlaceholder': 'Please describe what information is incorrect...',
+    'report.detailsLabel': 'What details are wrong? (Required)',
     
     // Language Switch
     'language.switch': 'Language',
     'language.english': 'English',
     'language.bulgarian': 'Български',
+
+    // Admin Search
+    'admin.searchPlaceholder': 'Search by Toilet ID...',
+    'admin.toiletNotFound': 'Toilet not found',
+    'admin.toiletFound': 'Toilet found!',
 
     // Descriptions
     'description.editToilet': 'Make changes to the toilet details.',
@@ -471,6 +501,7 @@ const translations: Record<Language, Translations> = {
     'toiletType.busStation': 'Автогара',
     'toiletType.mall': 'Мол',
     'toiletType.other': 'Друго',
+    'toiletType.EKOTOI': 'EKOTOI',
     
     // Accessibility
     'accessibility.accessible': 'Достъпна за инв. колични',
@@ -566,11 +597,25 @@ const translations: Record<Language, Translations> = {
     'report.comment': 'Коментар',
     'report.submit': 'Изпрати Доклад',
     'report.success': 'Докладът е Изпратен Успешно',
+    'report.description': 'Докладвайте проблеми с тази локация, за да помогнете за поддържането на точна информация',
+    'report.issueType': 'Тип Проблем',
+    'report.reasonDoesntExist': 'Тоалетната не съществува',
+    'report.reasonWrongDetails': 'Грешни или непълни детайли',
+    'report.reasonInaccessible': 'Недостъпна',
+    'report.reasonClosed': 'Затворена трайно',
+    'report.reasonOther': 'Друго',
+    'report.detailsPlaceholder': 'Моля, опишете каква информация е неправилна...',
+    'report.detailsLabel': 'Какви детайли са грешни? (Задължително)',
     
     // Language Switch
     'language.switch': 'Език',
     'language.english': 'English',
     'language.bulgarian': 'Български',
+
+    // Admin Search
+    'admin.searchPlaceholder': 'Търси по ID на тоалетна...',
+    'admin.toiletNotFound': 'Тоалетната не е намерена',
+    'admin.toiletFound': 'Тоалетната е намерена!',
 
     // Descriptions
     'description.editToilet': 'Направи промени в детайлите на тоалетната.',
@@ -617,11 +662,11 @@ const translations: Record<Language, Translations> = {
     'welcome.bluePin': 'Локация добавена от потребител',
     'welcome.bluePinDescription': 'Тези локации са добавени от членове на нашата общност и обикновено са по-надеждни.',
     'welcome.howToHelp': 'Как можете да помогнете:',
-    'welcome.reportIncorrect': 'Докладвайте неточни локации:',
+    'welcome.reportIncorrect': 'Докладвайте несъществуващите локации',
     'welcome.reportDescription': 'Ако локация за тоалетна не съществува или е неточна, моля докладвайте я.',
-    'welcome.addNew': 'Добавяйте нови локации:',
+    'welcome.addNew': 'Добавяйте нови локации',
     'welcome.addDescription': 'Помогнете за разширяването на нашата база данни, като добавяте открити от вас тоалетни.',
-    'welcome.leaveReviews': 'Оставяйте отзиви:',
+    'welcome.leaveReviews': 'Оставяйте отзиви',
     'welcome.reviewDescription': 'Споделете впечатленията си и оценете тоалетните съоръжения, за да помогнете на други потребители.',
     'welcome.gotIt': 'Разбрах, да започваме!',
   },
