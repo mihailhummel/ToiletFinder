@@ -26,6 +26,8 @@ export class SupabaseStorage implements IStorage {
       // Generate a unique ID for the toilet
       const toiletId = `toilet_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       
+      console.log('🚽 Storage: Creating toilet with hasBabyChanging =', toilet.hasBabyChanging);
+      
       const toiletData = {
         id: toiletId,
         coordinates: toilet.coordinates,
@@ -35,6 +37,7 @@ export class SupabaseStorage implements IStorage {
         notes: toilet.notes || null,
         accessibility: toilet.accessibility || 'unknown',
         access_type: toilet.accessType || 'unknown',
+        has_baby_changing: toilet.hasBabyChanging || false,
         user_id: toilet.userId,
         added_by_user_name: toilet.addedByUserName || null,
         is_removed: false,
@@ -42,6 +45,8 @@ export class SupabaseStorage implements IStorage {
         updated_at: new Date().toISOString(),
         review_count: 0
       };
+      
+      console.log('🚽 Storage: Database payload has_baby_changing =', toiletData.has_baby_changing);
 
       const { data, error } = await supabase
         .from('toilets')
@@ -387,6 +392,7 @@ export class SupabaseStorage implements IStorage {
       if (updateData.title !== undefined) updatePayload.title = updateData.title;
       if (updateData.accessibility) updatePayload.accessibility = updateData.accessibility;
       if (updateData.accessType) updatePayload.access_type = updateData.accessType;
+      if (updateData.hasBabyChanging !== undefined) updatePayload.has_baby_changing = updateData.hasBabyChanging;
       if (updateData.notes !== undefined) updatePayload.notes = updateData.notes;
       if (updateData.coordinates) updatePayload.coordinates = updateData.coordinates;
       
@@ -598,6 +604,7 @@ export class SupabaseStorage implements IStorage {
       notes: data.notes,
       accessibility: data.accessibility || 'unknown',
       accessType: data.access_type || 'unknown',
+      hasBabyChanging: data.has_baby_changing || false,
       userId: data.user_id || 'unknown',
       addedByUserName: data.added_by_user_name,
       osmId: data.osm_id || null,
@@ -609,7 +616,10 @@ export class SupabaseStorage implements IStorage {
       reviewCount: data.review_count || 0
     };
     
-    // No logging for performance
+    // Debug logging for baby changing
+    if (data.has_baby_changing) {
+      console.log('🚽 Transform: Found toilet with baby changing:', data.id, 'has_baby_changing =', data.has_baby_changing);
+    }
     
     return transformed;
   }

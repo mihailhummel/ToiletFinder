@@ -1071,8 +1071,10 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, onReportC
           coordinates = { lat: item.lat, lng: item.lng };
           toiletData = toilet;
           
-          // Set marker color: green for EKOTOI, blue for user-added toilets, red for OSM and Geoapify toilets
-          const markerColor = toilet.type === 'EKOTOI' ? '#00A859' : (toilet.source === 'user' ? '#2563EB' : '#FF3131');
+          // Set marker color: pink for baby changing facility, green for EKOTOI, blue for user-added toilets, red for OSM and Geoapify toilets
+          const markerColor = toilet.hasBabyChanging ? '#f472b6' : 
+                              toilet.type === 'EKOTOI' ? '#00A859' : 
+                              (toilet.source === 'user' ? '#2563EB' : '#FF3131');
           
           // Performance optimization: simpler markers at lower zoom levels
           const useSimpleMarker = currentZoom < 13;
@@ -1219,6 +1221,9 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, onReportC
   };
 
   const createToiletMarkerHTML = (toilet: any, markerColor: string, useSimpleMarker = false) => {
+    // Determine the emoji based on baby changing facility
+    const markerEmoji = toilet.hasBabyChanging ? '👶' : '🚽';
+    
     // Simple marker for performance at low zoom levels
     if (useSimpleMarker) {
       return `
@@ -1259,7 +1264,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, onReportC
           color: white;
           font-weight: bold;
         ">
-          🚽
+          ${markerEmoji}
         </div>
         <div style="
           position: absolute;
@@ -1324,11 +1329,16 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, onReportC
           ${properTitle}
         </h3>
         
-        <!-- Toilet Type -->
-        <div style="margin-bottom: 10px;">
+        <!-- Toilet Type and Baby Changing Badge -->
+        <div style="margin-bottom: 10px; display: flex; gap: 6px; align-items: center;">
           <span style="background: #3b82f6; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 500; text-transform: uppercase;">
             ${translateToiletType(toilet.type)}
           </span>
+          ${toilet.hasBabyChanging ? `
+          <span style="background: #fce7f3; color: #ec4899; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 500; display: flex; align-items: center; gap: 2px;">
+            👶 ${t('toiletType.hasBabyChangingBadge')}
+          </span>
+          ` : ''}
         </div>
         
         <!-- Added by information for user-added toilets -->

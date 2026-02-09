@@ -51,6 +51,7 @@ interface Translations {
   'addToilet.titlePlaceholder': string;
   'addToilet.accessibility': string;
   'addToilet.accessType': string;
+  'addToilet.hasBabyChanging': string;
   'addToilet.requestLocation': string;
   'addToilet.templateHint': string;
   'addToilet.success': string;
@@ -225,8 +226,12 @@ interface Translations {
   'welcome.pinTypes': string;
   'welcome.redPin': string;
   'welcome.redPinDescription': string;
+  'welcome.greenPin': string;
+  'welcome.greenPinDescription': string;
   'welcome.bluePin': string;
   'welcome.bluePinDescription': string;
+  'welcome.pinkPin': string;
+  'welcome.pinkPinDescription': string;
   'welcome.howToHelp': string;
   'welcome.reportIncorrect': string;
   'welcome.reportDescription': string;
@@ -269,6 +274,7 @@ const translations: Record<Language, Translations> = {
     'addToilet.titlePlaceholder': 'e.g., "Near the station"',
     'addToilet.accessibility': 'Accessibility',
     'addToilet.accessType': 'Access',
+    'addToilet.hasBabyChanging': 'Has baby changing facility',
     'addToilet.requestLocation': 'Request Location',
     'addToilet.templateHint': 'Accessibility and access type will be automatically set based on your selection',
     'addToilet.success': 'Toilet Added Successfully!',
@@ -286,6 +292,7 @@ const translations: Record<Language, Translations> = {
     'toiletType.mall': 'Mall',
     'toiletType.other': 'Other',
     'toiletType.EKOTOI': 'EKOTOI',
+    'toiletType.hasBabyChangingBadge': 'Baby Changing Facility',
     
     // Accessibility
     'accessibility.accessible': 'Wheelchair Accessible',
@@ -443,8 +450,12 @@ const translations: Record<Language, Translations> = {
     'welcome.pinTypes': 'Pin Types:',
     'welcome.redPin': 'Auto-generated toilet location',
     'welcome.redPinDescription': 'These locations are automatically imported and may not always be accurate or currently available.',
+    'welcome.greenPin': 'EkoToi toilet',
+    'welcome.greenPinDescription': 'Ecological portable toilets provided by EkoToi.',
     'welcome.bluePin': 'User-generated toilet location',
     'welcome.bluePinDescription': 'These locations have been added and verified by our community members and are generally more reliable.',
+    'welcome.pinkPin': 'Baby changing facility',
+    'welcome.pinkPinDescription': 'Locations with facilities for changing baby diapers.',
     'welcome.howToHelp': 'How You Can Help:',
     'welcome.reportIncorrect': 'Report incorrect locations:',
     'welcome.reportDescription': 'If a toilet location doesn\'t exist or is inaccurate, please report it.',
@@ -485,6 +496,7 @@ const translations: Record<Language, Translations> = {
     'addToilet.titlePlaceholder': 'напр. "EKOTOI"',
     'addToilet.accessibility': 'Достъпност',
     'addToilet.accessType': 'Достъп',
+    'addToilet.hasBabyChanging': 'Място за повиване/смяна на пелени',
     'addToilet.requestLocation': 'Заяви Локация',
     'addToilet.templateHint': 'Достъпността и типът достъп ще бъдат автоматично зададени според вашия избор',
     'addToilet.success': 'Тоалетната е Добавена Успешно!',
@@ -502,6 +514,7 @@ const translations: Record<Language, Translations> = {
     'toiletType.mall': 'Мол',
     'toiletType.other': 'Друго',
     'toiletType.EKOTOI': 'EKOTOI',
+    'toiletType.hasBabyChangingBadge': 'Място за смяна на пелени',
     
     // Accessibility
     'accessibility.accessible': 'Достъпна за инв. колични',
@@ -659,8 +672,12 @@ const translations: Record<Language, Translations> = {
     'welcome.pinTypes': 'Типове маркери:',
     'welcome.redPin': 'Автоматично генерирана локация',
     'welcome.redPinDescription': 'Тези локации са автоматично импортирани и може да не са винаги точни или налични в момента.',
+    'welcome.greenPin': 'ЕкоТой тоалетна',
+    'welcome.greenPinDescription': 'Екологични преносими тоалетни предоставени от ЕкоТой.',
     'welcome.bluePin': 'Локация добавена от потребител',
     'welcome.bluePinDescription': 'Тези локации са добавени от членове на нашата общност и обикновено са по-надеждни.',
+    'welcome.pinkPin': 'Място за повиване на бебета',
+    'welcome.pinkPinDescription': 'Локации с удобства за смяна на бебешки пелени.',
     'welcome.howToHelp': 'Как можете да помогнете:',
     'welcome.reportIncorrect': 'Докладвайте несъществуващите локации',
     'welcome.reportDescription': 'Ако локация за тоалетна не съществува или е неточна, моля докладвайте я.',

@@ -125,6 +125,7 @@ function AppContent() {
     title: string;
     accessibility: string;
     accessType: string;
+    hasBabyChanging: boolean;
     originalLocation: { lat: number; lng: number };
     toiletId: string;
     originalToilet: Toilet;
@@ -141,7 +142,7 @@ function AppContent() {
   const [searchToiletId, setSearchToiletId] = useState('');
   const [flyToToiletFn, setFlyToToiletFn] = useState<((toiletId: string) => boolean) | null>(null);
   const [pendingToiletLocation, setPendingToiletLocation] = useState<MapLocation | undefined>(undefined);
-  const [pendingToiletData, setPendingToiletData] = useState<{type: ToiletType; title: string; accessibility: Accessibility; accessType: AccessType} | null>(null);
+  const [pendingToiletData, setPendingToiletData] = useState<{type: ToiletType; title: string; accessibility: Accessibility; accessType: AccessType; hasBabyChanging: boolean} | null>(null);
   const [isTransitioningToLocationMode, setIsTransitioningToLocationMode] = useState(false);
   const [mapCenter, setMapCenter] = useState<MapLocation>({ lat: 42.6977, lng: 23.3219 });
   const [filters, setFilters] = useState<FilterOptions>({
@@ -158,6 +159,7 @@ function AppContent() {
     title: string;
     accessibility: string;
     accessType: string;
+    hasBabyChanging: boolean;
     coordinates?: { lat: number; lng: number };
   }) => {
     if (!editingToilet || !user) return;
@@ -440,6 +442,7 @@ function AppContent() {
       globalAddingState.pendingData = null;
       
       // Set location and show confirmation modal
+      console.log('🚽 App.tsx: Map clicked, setting location and data:', { location, dataToUse });
       setPendingToiletLocation(location);
       setPendingToiletData(dataToUse);
       setIsAddingToilet(false);
@@ -449,16 +452,17 @@ function AppContent() {
     }
   }, [isAddingToilet, pendingToiletData, isEditingLocation, editLocationData, editingToilet, toast]);
 
-  const handleLocationSelectionRequest = useCallback((type: ToiletType, title: string, accessibility: Accessibility, accessType: AccessType) => {
+  const handleLocationSelectionRequest = useCallback((type: ToiletType, title: string, accessibility: Accessibility, accessType: AccessType, hasBabyChanging: boolean) => {
     // Location selection requested
+    console.log('🚽 App.tsx: Location selection requested with hasBabyChanging =', hasBabyChanging);
     
     // Set global state immediately
     globalAddingState.isAdding = true;
-    globalAddingState.pendingData = { type, title, accessibility, accessType };
+    globalAddingState.pendingData = { type, title, accessibility, accessType, hasBabyChanging };
     
     // Set React states
     setIsTransitioningToLocationMode(true);
-    setPendingToiletData({ type, title, accessibility, accessType });
+    setPendingToiletData({ type, title, accessibility, accessType, hasBabyChanging });
     setIsAddingToilet(true);
     setPendingToiletLocation(undefined);
     setShowAddToilet(false);
@@ -478,7 +482,8 @@ function AppContent() {
     type: string, 
     title: string, 
     accessibility: string, 
-    accessType: string, 
+    accessType: string,
+    hasBabyChanging: boolean,
     originalLocation: { lat: number; lng: number }
   ) => {
     // Store the edit data and switch to location selection mode
@@ -488,6 +493,7 @@ function AppContent() {
         title,
         accessibility,
         accessType,
+        hasBabyChanging,
         originalLocation,
         toiletId: editingToilet.id,
         originalToilet: editingToilet
@@ -800,6 +806,7 @@ function AppContent() {
               setIsAddingToilet(false);
             }}
             location={pendingToiletLocation}
+            initialData={pendingToiletData || undefined}
             onRequestLocationSelection={handleLocationSelectionRequest}
             onToiletAdded={(toilet) => {
               // Toilet added successfully
@@ -846,7 +853,8 @@ function AppContent() {
                 type: editingToilet.type as any,
                 title: editingToilet.title || '',
                 accessibility: editingToilet.accessibility as any,
-                accessType: editingToilet.accessType as any
+                accessType: editingToilet.accessType as any,
+                hasBabyChanging: editingToilet.hasBabyChanging || false
               }}
               onConfirm={handleEditToiletConfirm}
               onRequestLocationSelection={handleEditLocationSelectionRequest}

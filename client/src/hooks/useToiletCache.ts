@@ -17,6 +17,7 @@ interface NewToiletData {
   type: string;
   accessibility?: string;
   accessType?: string;
+  hasBabyChanging?: boolean;
   userId: string;
   source?: string;
   addedByUserName?: string;
@@ -58,12 +59,14 @@ async function addToilet(toiletData: NewToiletData): Promise<Toilet> {
     },
     accessibility: toiletData.accessibility || 'unknown',
     accessType: toiletData.accessType || 'unknown',
+    hasBabyChanging: toiletData.hasBabyChanging || false,
     userId: toiletData.userId,
     source: toiletData.source || 'user',
     addedByUserName: toiletData.addedByUserName
   };
   
   // Sending toilet data to server
+  console.log('🚽 useToiletCache: Sending to server with hasBabyChanging =', serverData.hasBabyChanging, 'Full serverData:', serverData);
   
   const response = await fetch('/api/toilets', {
     method: 'POST',
@@ -182,6 +185,7 @@ export function useAddToiletOptimized() {
         type: toiletData.type as any,
         accessibility: toiletData.accessibility || 'unknown',
         accessType: toiletData.accessType || 'unknown',
+        hasBabyChanging: toiletData.hasBabyChanging || false,
         userId: toiletData.userId,
         source: 'user',
         addedByUserName: toiletData.addedByUserName,

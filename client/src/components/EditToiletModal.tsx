@@ -3,6 +3,7 @@ import { X, Check, MapPin, Edit3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
@@ -19,15 +20,17 @@ interface EditToiletModalProps {
     title: string;
     accessibility: Accessibility;
     accessType: AccessType;
+    hasBabyChanging: boolean;
   };
   onConfirm: (data: {
     type: ToiletType;
     title: string;
     accessibility: Accessibility;
     accessType: AccessType;
+    hasBabyChanging: boolean;
     coordinates?: MapLocation;
   }) => void;
-  onRequestLocationSelection?: (type: ToiletType, title: string, accessibility: Accessibility, accessType: AccessType, originalLocation: MapLocation) => void;
+  onRequestLocationSelection?: (type: ToiletType, title: string, accessibility: Accessibility, accessType: AccessType, hasBabyChanging: boolean, originalLocation: MapLocation) => void;
 }
 
 // Toilet type templates for automatic assignment (same as AddToiletModal)
@@ -46,6 +49,7 @@ export const EditToiletModal = ({ isOpen, onClose, location, initialData, onConf
   const [title, setTitle] = useState(initialData.title);
   const [accessibility, setAccessibility] = useState<Accessibility>(initialData.accessibility);
   const [accessType, setAccessType] = useState<AccessType>(initialData.accessType);
+  const [hasBabyChanging, setHasBabyChanging] = useState(initialData.hasBabyChanging);
   const [editableLocation, setEditableLocation] = useState(location || { lat: 0, lng: 0 });
   
   const { toast } = useToast();
@@ -92,6 +96,7 @@ export const EditToiletModal = ({ isOpen, onClose, location, initialData, onConf
       setTitle(initialData.title);
       setAccessibility(initialData.accessibility);
       setAccessType(initialData.accessType);
+      setHasBabyChanging(initialData.hasBabyChanging);
       if (location) {
         setEditableLocation(location);
       }
@@ -120,6 +125,7 @@ export const EditToiletModal = ({ isOpen, onClose, location, initialData, onConf
       title,
       accessibility,
       accessType,
+      hasBabyChanging,
       coordinates: editableLocation
     });
     
@@ -187,7 +193,7 @@ export const EditToiletModal = ({ isOpen, onClose, location, initialData, onConf
                 size="sm"
                 onClick={() => {
                   if (onRequestLocationSelection) {
-                    onRequestLocationSelection(type, title, accessibility, accessType, editableLocation);
+                    onRequestLocationSelection(type, title, accessibility, accessType, hasBabyChanging, editableLocation);
                   }
                 }}
                 className="h-7 px-3 text-xs text-blue-600 border-blue-300 hover:bg-blue-100"
@@ -227,7 +233,7 @@ export const EditToiletModal = ({ isOpen, onClose, location, initialData, onConf
                   size="sm"
                   onClick={() => {
                     if (onRequestLocationSelection) {
-                      onRequestLocationSelection(type, title, accessibility, accessType, editableLocation);
+                      onRequestLocationSelection(type, title, accessibility, accessType, hasBabyChanging, editableLocation);
                     }
                   }}
                   className="h-8 px-2 text-xs text-blue-600 border-blue-300 hover:bg-blue-100 whitespace-nowrap"
@@ -256,6 +262,22 @@ export const EditToiletModal = ({ isOpen, onClose, location, initialData, onConf
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          <div className="flex items-center md:space-x-2 md:pt-1">
+            <span className="inline-flex shrink-0 scale-[0.5] md:scale-100 md:origin-left" aria-hidden>
+              <Checkbox
+                id="baby-changing-edit"
+                checked={hasBabyChanging}
+                onCheckedChange={(checked) => setHasBabyChanging(!!checked)}
+              />
+            </span>
+            <Label 
+              htmlFor="baby-changing-edit" 
+              className="text-xs font-medium text-gray-700 cursor-pointer"
+            >
+              {t('addToilet.hasBabyChanging')}
+            </Label>
           </div>
 
           <div className="min-w-0">

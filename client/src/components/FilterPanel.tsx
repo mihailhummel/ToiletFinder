@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
 import type { ToiletType } from "@/types/toilet";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface FilterPanelProps {
   isOpen: boolean;
@@ -16,17 +17,19 @@ export interface FilterOptions {
   minRating: number;
 }
 
-const toiletTypes: { value: ToiletType; label: string }[] = [
-  { value: "public", label: "Public" },
-  { value: "EKOTOI", label: "EKOTOI" },
-  { value: "restaurant", label: "Restaurant" },
-  { value: "gas-station", label: "Gas Station" },
-  { value: "cafe", label: "Cafe" },
-  { value: "mall", label: "Mall" },
-  { value: "other", label: "Other" },
-];
-
 export const FilterPanel = ({ isOpen, onClose, onFiltersChange }: FilterPanelProps) => {
+  const { t } = useLanguage();
+  
+  const toiletTypes: { value: ToiletType; label: string }[] = [
+    { value: "public", label: t('toiletType.public') },
+    { value: "EKOTOI", label: t('toiletType.EKOTOI') },
+    { value: "restaurant", label: t('toiletType.restaurant') },
+    { value: "gas-station", label: t('toiletType.gasStation') },
+    { value: "cafe", label: t('toiletType.cafe') },
+    { value: "mall", label: t('toiletType.mall') },
+    { value: "other", label: t('toiletType.other') },
+  ];
+  
   const [selectedTypes, setSelectedTypes] = useState<ToiletType[]>(toiletTypes.map(t => t.value));
   const [minRating, setMinRating] = useState([1]);
 

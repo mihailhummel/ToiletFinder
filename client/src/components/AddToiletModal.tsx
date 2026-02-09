@@ -3,6 +3,7 @@ import { X, MapPin, Check, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { EditToiletModal } from "./EditToiletModal";
 
 import { Input } from "@/components/ui/input";
@@ -19,7 +20,14 @@ interface AddToiletModalProps {
   isOpen: boolean;
   onClose: () => void;
   location?: MapLocation;
-  onRequestLocationSelection?: (type: ToiletType, title: string, accessibility: Accessibility, accessType: AccessType) => void;
+  initialData?: {
+    type: ToiletType;
+    title: string;
+    accessibility: Accessibility;
+    accessType: AccessType;
+    hasBabyChanging: boolean;
+  };
+  onRequestLocationSelection?: (type: ToiletType, title: string, accessibility: Accessibility, accessType: AccessType, hasBabyChanging: boolean) => void;
   onCloseForLocationSelection?: () => void;
   onToiletAdded?: (toilet: any) => void;
 }
@@ -35,11 +43,12 @@ const TOILET_TYPE_TEMPLATES: Record<ToiletType, { accessibility: Accessibility; 
   "other": { accessibility: "unknown", accessType: "unknown" }
 };
 
-export const AddToiletModal = ({ isOpen, onClose, location, onRequestLocationSelection, onCloseForLocationSelection, onToiletAdded }: AddToiletModalProps) => {
-  const [type, setType] = useState<ToiletType>("public");
-  const [title, setTitle] = useState("");
-  const [accessibility, setAccessibility] = useState<Accessibility>("unknown");
-  const [accessType, setAccessType] = useState<AccessType>("unknown");
+export const AddToiletModal = ({ isOpen, onClose, location, initialData, onRequestLocationSelection, onCloseForLocationSelection, onToiletAdded }: AddToiletModalProps) => {
+  const [type, setType] = useState<ToiletType>(initialData?.type || "public");
+  const [title, setTitle] = useState(initialData?.title || "");
+  const [accessibility, setAccessibility] = useState<Accessibility>(initialData?.accessibility || "unknown");
+  const [accessType, setAccessType] = useState<AccessType>(initialData?.accessType || "unknown");
+  const [hasBabyChanging, setHasBabyChanging] = useState(initialData?.hasBabyChanging || false);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -83,6 +92,18 @@ export const AddToiletModal = ({ isOpen, onClose, location, onRequestLocationSel
     setAccessType(template.accessType);
   };
 
+  // Update state when initialData changes (when modal reopens with pending data)
+  useEffect(() => {
+    if (isOpen && initialData) {
+      setType(initialData.type);
+      setTitle(initialData.title);
+      setAccessibility(initialData.accessibility);
+      setAccessType(initialData.accessType);
+      setHasBabyChanging(initialData.hasBabyChanging);
+      console.log('🚽 AddToiletModal: Restored state from initialData, hasBabyChanging =', initialData.hasBabyChanging);
+    }
+  }, [isOpen, initialData]);
+
   // Auto-show confirmation when location is provided (but not when editing)
   useEffect(() => {
     if (location && !showConfirmation && !isEditing) {
@@ -109,10 +130,11 @@ export const AddToiletModal = ({ isOpen, onClose, location, onRequestLocationSel
     if (!location) {
       // Request location selection
       if (onRequestLocationSelection) {
+        console.log('🚽 AddToiletModal: Requesting location selection with hasBabyChanging =', hasBabyChanging);
         // Close the modal first, then request location selection
         onClose();
         setTimeout(() => {
-          onRequestLocationSelection(type, title, accessibility, accessType);
+          onRequestLocationSelection(type, title, accessibility, accessType, hasBabyChanging);
         }, 100);
       }
       return;
@@ -127,12 +149,14 @@ export const AddToiletModal = ({ isOpen, onClose, location, onRequestLocationSel
         title: title.trim() || '',
         accessibility,
         accessType,
+        hasBabyChanging,
         userId: user.uid,
         source: 'user' as const,
         addedByUserName: user.displayName || 'Anonymous User'
       };
       
       // Sending toilet data to server
+      console.log('🚽 AddToiletModal: Submitting toilet with hasBabyChanging =', hasBabyChanging, 'Full data:', toiletData);
       
       // Use optimized mutation with automatic cache updates
       addToiletMutation.mutate(toiletData, {
@@ -182,12 +206,14 @@ export const AddToiletModal = ({ isOpen, onClose, location, onRequestLocationSel
     title: string;
     accessibility: Accessibility;
     accessType: AccessType;
+    hasBabyChanging: boolean;
   }) => {
     // Update the form data with the edited values
     setType(data.type);
     setTitle(data.title);
     setAccessibility(data.accessibility);
     setAccessType(data.accessType);
+    setHasBabyChanging(data.hasBabyChanging);
     
     // Close the edit modal
     setShowEditModal(false);
@@ -198,6 +224,7 @@ export const AddToiletModal = ({ isOpen, onClose, location, onRequestLocationSel
     setTitle("");
     setAccessibility("unknown");
     setAccessType("unknown");
+    setHasBabyChanging(false);
     setShowConfirmation(false);
     setIsEditing(false);
     onClose();
@@ -226,7 +253,8 @@ export const AddToiletModal = ({ isOpen, onClose, location, onRequestLocationSel
           type,
           title,
           accessibility,
-          accessType
+          accessType,
+          hasBabyChanging
         }}
         onConfirm={handleEditConfirm}
       />
@@ -253,7 +281,7 @@ export const AddToiletModal = ({ isOpen, onClose, location, onRequestLocationSel
           <DialogTitle className="text-lg font-semibold text-gray-900">
             {showConfirmation ? t('addToilet.selectLocation') : t('addToilet.title')}
           </DialogTitle>
-          <DialogDescription className="text-gray-600 text-xs leading-relaxed">
+          <DialogDescription className="hidden md:block text-gray-600 text-xs leading-relaxed">
             {showConfirmation ? t('description.reviewDetails') : t('description.fillDetails')}
           </DialogDescription>
         </DialogHeader>
@@ -307,6 +335,14 @@ export const AddToiletModal = ({ isOpen, onClose, location, onRequestLocationSel
                 </span>
               </div>
               
+              {hasBabyChanging && (
+                <div className="flex justify-between items-center">
+                  <span className="text-xs font-medium text-gray-700">{t('addToilet.hasBabyChanging')}:</span>
+                  <span className="text-xs px-2 py-1 rounded-full font-medium bg-pink-100 text-pink-800">
+                    ✓ {t('addToilet.hasBabyChanging')}
+                  </span>
+                </div>
+              )}
 
             </div>
 
@@ -353,6 +389,26 @@ export const AddToiletModal = ({ isOpen, onClose, location, onRequestLocationSel
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="flex items-center md:space-x-2 md:pt-1">
+              <span className="inline-flex shrink-0 scale-[0.5] md:scale-100 md:origin-left" aria-hidden>
+                <Checkbox
+                  id="baby-changing"
+                  checked={hasBabyChanging}
+                  onCheckedChange={(checked) => {
+                    const newValue = !!checked;
+                    setHasBabyChanging(newValue);
+                    console.log('🚽 AddToiletModal: Baby changing checkbox changed to:', newValue);
+                  }}
+                />
+              </span>
+              <Label 
+                htmlFor="baby-changing" 
+                className="text-xs font-medium text-gray-700 cursor-pointer"
+              >
+                {t('addToilet.hasBabyChanging')}
+              </Label>
             </div>
 
             <div>

@@ -253,7 +253,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/toilets", async (req: Request, res: Response) => {
     try {
+      console.log('🚽 Server: Received POST /api/toilets with body:', req.body);
+      console.log('🚽 Server: hasBabyChanging from request:', req.body.hasBabyChanging);
+      
       const toilet = insertToiletSchema.parse(req.body);
+      
+      console.log('🚽 Server: After schema parse, hasBabyChanging:', toilet.hasBabyChanging);
       
       // Set default title if title is null, undefined, or empty
       if (!toilet.title || toilet.title.trim() === '') {

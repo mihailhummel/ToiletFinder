@@ -107,8 +107,8 @@ export const WelcomeModal = ({ isOpen, onClose }: WelcomeModalProps) => {
               </div>
             </div>
 
-            {/* Blue pin explanation */}
-            <div className="flex items-center space-x-2 p-2 bg-blue-50 border border-blue-200 rounded-lg">
+ {/* Blue pin explanation */}
+ <div className="flex items-center space-x-2 p-2 bg-blue-50 border border-blue-200 rounded-lg">
               <div className="flex-shrink-0 mb-4">
                 {/* Actual blue pin design from map */}
                 <div style={{
@@ -154,34 +154,132 @@ export const WelcomeModal = ({ isOpen, onClose }: WelcomeModalProps) => {
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* User contribution section */}
-          <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-            <h3 className="font-semibold text-green-800 text-sm mb-2.5">{t('welcome.howToHelp')}</h3>
-            <div className="space-y-2.5">
-              <div className="flex items-start space-x-2">
-                <Flag className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" />
-                <div className="text-xs text-green-700">
-                  <span className="font-medium">{t('welcome.reportIncorrect')}</span>{/*{t('welcome.reportDescription')}*/}
+            {/* Green pin explanation */}
+            <div className="flex items-center space-x-2 p-2 bg-green-50 border border-green-200 rounded-lg">
+              <div className="flex-shrink-0 mb-4">
+                {/* Actual green pin design from map */}
+                <div style={{
+                  position: 'relative',
+                  width: '32px',
+                  height: '40px'
+                }}>
+                  <div style={{
+                    position: 'absolute',
+                    bottom: '0',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    width: '28px',
+                    height: '28px',
+                    background: '#22C55E',
+                    border: '2px solid white',
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
+                    fontSize: '14px'
+                  }}>
+                    🚽
+                  </div>
+                  <div style={{
+                    position: 'absolute',
+                    bottom: '-6px',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    width: '0',
+                    height: '0',
+                    borderLeft: '5px solid transparent',
+                    borderRight: '5px solid transparent',
+                    borderTop: '6px solid #22C55E'
+                  }}></div>
                 </div>
               </div>
-              
-              <div className="flex items-start space-x-2">
-                <Plus className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
-                <div className="text-xs text-green-700">
-                  <span className="font-medium">{t('welcome.addNew')}</span>{/*{t('welcome.addDescription')}*/}
+              <div className="flex-1">
+                <div className="font-medium text-green-800 text-sm">{t('welcome.greenPin')}</div>
+                <div className="text-xs text-green-700 mt-1">
+                  {t('welcome.greenPinDescription')}
                 </div>
               </div>
-              
-              <div className="flex items-start space-x-2">
-                <Star className="w-4 h-4 text-yellow-500 mt-0.5 flex-shrink-0" />
-                <div className="text-xs text-green-700">
-                  <span className="font-medium">{t('welcome.leaveReviews')}</span>{/*{t('welcome.reviewDescription')}*/}
+            </div>
+
+            {/* Pink pin explanation */}
+            <div className="flex items-center space-x-2 p-2 bg-pink-50 border border-pink-200 rounded-lg">
+              <div className="flex-shrink-0 mb-4">
+                {/* Actual pink pin design from map */}
+                <div style={{
+                  position: 'relative',
+                  width: '32px',
+                  height: '40px'
+                }}>
+                  <div style={{
+                    position: 'absolute',
+                    bottom: '0',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    width: '28px',
+                    height: '28px',
+                    background: '#f472b6',
+                    border: '2px solid white',
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
+                    fontSize: '14px'
+                  }}>
+                    👶
+                  </div>
+                  <div style={{
+                    position: 'absolute',
+                    bottom: '-6px',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    width: '0',
+                    height: '0',
+                    borderLeft: '5px solid transparent',
+                    borderRight: '5px solid transparent',
+                    borderTop: '6px solid #f472b6'
+                  }}></div>
+                </div>
+              </div>
+              <div className="flex-1">
+                <div className="font-medium text-pink-800 text-sm">{t('welcome.pinkPin')}</div>
+                <div className="text-xs text-pink-700 mt-1">
+                  {t('welcome.pinkPinDescription')}
                 </div>
               </div>
             </div>
           </div>
+
+          {/* User contribution section */}
+          {/*
+              <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                <h3 className="font-semibold text-green-800 text-sm mb-2.5">{t('welcome.howToHelp')}</h3>
+                <div className="space-y-2.5">
+                  <div className="flex items-start space-x-2">
+                    <Flag className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" />
+                    <div className="text-xs text-green-700">
+                      <span className="font-medium">{t('welcome.reportIncorrect')}</span>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start space-x-2">
+                    <Plus className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
+                    <div className="text-xs text-green-700">
+                      <span className="font-medium">{t('welcome.addNew')}</span>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start space-x-2">
+                    <Star className="w-4 h-4 text-yellow-500 mt-0.5 flex-shrink-0" />
+                    <div className="text-xs text-green-700">
+                      <span className="font-medium">{t('welcome.leaveReviews')}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+          */}
 
           {/* Close button */}
           <div className="pt-1">
