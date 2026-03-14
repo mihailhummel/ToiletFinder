@@ -240,6 +240,7 @@ interface Translations {
   'welcome.leaveReviews': string;
   'welcome.reviewDescription': string;
   'welcome.gotIt': string;
+  'welcome.contactMe': string;
 }
 
 const translations: Record<Language, Translations> = {
@@ -464,6 +465,7 @@ const translations: Record<Language, Translations> = {
     'welcome.leaveReviews': 'Leave reviews:',
     'welcome.reviewDescription': 'Share your experience and rate toilet facilities to help other users.',
     'welcome.gotIt': 'Got it, let\'s go!',
+    'welcome.contactMe': 'Contact us at:',
   },
   bg: {
     // Header
@@ -686,6 +688,7 @@ const translations: Record<Language, Translations> = {
     'welcome.leaveReviews': 'Оставяйте отзиви',
     'welcome.reviewDescription': 'Споделете впечатленията си и оценете тоалетните съоръжения, за да помогнете на други потребители.',
     'welcome.gotIt': 'Разбрах, да започваме!',
+    'welcome.contactMe': 'Пишете ни на:',
   },
 };
 

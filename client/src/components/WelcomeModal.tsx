@@ -49,7 +49,7 @@ export const WelcomeModal = ({ isOpen, onClose }: WelcomeModalProps) => {
             </div>
             <div>
               <div className="font-semibold text-lg text-gray-900">{t('welcome.title')}</div>
-              <div className="text-sm text-gray-600 font-normal">{t('welcome.subtitle')}</div>
+              <div className="text-sm text-gray-600 font-normal lg:block hidden">{t('welcome.subtitle')}</div>
             </div>
           </DialogTitle>
         </DialogHeader>
@@ -281,6 +281,12 @@ export const WelcomeModal = ({ isOpen, onClose }: WelcomeModalProps) => {
               </div>
           */}
 
+            {/* Contact me section */}
+            <div className="flex items-center justify-center text-sm text-gray-600 font-normal">
+              <span className="text-center">
+                {t('welcome.contactMe')} <a href="mailto:contact@toaletna.com" className="font-bold text-blue-500 hover:text-blue-600">contact@toaletna.com</a>
+              </span>
+            </div>
           {/* Close button */}
           <div className="pt-1">
             <Button

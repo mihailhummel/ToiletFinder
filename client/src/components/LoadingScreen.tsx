@@ -26,14 +26,15 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({ isLoading, toiletC
           </div>
           
           {/* Loading Text */}
-          <h2 className="text-xl font-semibold text-gray-800 mb-2">
+          <h2 className="text-xl font-semibold text-gray-800">
             {t('loading.toilets')}
           </h2>
           
+          {/*
           <p className="text-gray-600 mb-4">
             {t('loading.message')}
           </p>
-          
+          */}
           {/* {toiletCount && toiletCount > 0 && (
             <div className="bg-blue-50 rounded-lg p-4 inline-block">
               <p className="text-blue-700 font-medium">
