@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import express, { type Request, Response, NextFunction } from "express";
+import { createProxyMiddleware } from "http-proxy-middleware";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import path from "path";
@@ -55,6 +56,28 @@ app.use((req, res, next) => {
     res.status(status).json({ message });
     throw err;
   });
+
+  // Proxy /blog/* to the blog service
+  // Set BLOG_SERVICE_URL in Railway env vars to the blog service's internal URL
+  const blogServiceUrl = process.env.BLOG_SERVICE_URL;
+  if (blogServiceUrl) {
+    app.use(
+      "/blog",
+      createProxyMiddleware({
+        target: blogServiceUrl,
+        changeOrigin: true,
+        on: {
+          error: (err, req, res: any) => {
+            log(`Blog proxy error: ${err.message}`);
+            res.status(502).json({ error: "Blog service unavailable" });
+          },
+        },
+      })
+    );
+    log(`Blog proxy active → ${blogServiceUrl}`);
+  } else {
+    log("BLOG_SERVICE_URL not set — /blog proxy disabled");
+  }
 
   // Serve static files - prefer dist if available, otherwise client
   const clientDistPath = path.resolve(__dirname, "..", "client", "dist");
