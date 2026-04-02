@@ -46,17 +46,17 @@ export default function Home() {
         
         {/* Left Ad Banner */}
         <aside className="hidden lg:block w-[160px] xl:w-[10%] sticky top-24 shrink-0">
-          <Ad1 className="h-[calc(100vh-9rem)]" />
+          <Ad1 className="h-[calc(100vh-8em)]" />
         </aside>
 
         {/* Main Content */}
         <main className="w-full max-w-5xl">
           {/* Hero Carousel */}
           {recommended.length > 0 && (
-            <section className="relative bg-gray-900 rounded-3xl overflow-hidden shadow-xl mb-16">
+            <section className="relative bg-gray-100 rounded-3xl overflow-hidden shadow-xl mb-8">
               <div className="absolute inset-0 bg-black/40 z-10" />
               
-              <div className="relative h-[75vh] md:h-[450px] w-full">
+              <div className="relative h-[60vh] md:h-[450px] w-full">
                 <AnimatePresence mode="wait">
                   <motion.div
                     key={currentIndex}
@@ -66,7 +66,7 @@ export default function Home() {
                     transition={{ duration: 0.5 }}
                     className="absolute inset-0"
                   >
-                    <Link to={`/post/${recommended[currentIndex].id}`} className="block w-full h-full">
+                    <Link to={`/${recommended[currentIndex].slug}`} className="block w-full h-full">
                       <img src={recommended[currentIndex].thumbnail} alt={recommended[currentIndex].title} className="w-full h-full object-cover" />
                       <div className="absolute inset-0 bg-gradient-to-t from-gray-900/80 via-gray-900/40 to-transparent z-20" />
                       
@@ -112,7 +112,7 @@ export default function Home() {
             <div className="flex items-center justify-between mb-10">
               <h2 className="text-3xl font-bold text-gray-900">Последни Публикации</h2>
               <div className="h-1 flex-1 bg-gray-200 ml-6 rounded-full hidden sm:block">
-                <div className="h-full w-24 bg-blue-600 rounded-full" />
+                {/* <div className="h-full w-24 bg-blue-600 rounded-full" /> */}
               </div>
             </div>
 
@@ -125,13 +125,13 @@ export default function Home() {
                     viewport={{ once: true }}
                     className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 group flex flex-col md:hover:-translate-y-2"
                   >
-                    <Link to={`/post/${post.id}`} className="flex flex-col h-full w-full">
+                    <Link to={`/${post.slug}`} className="flex flex-col h-full w-full">
                       <div className="block relative aspect-[16/10] overflow-hidden">
                         <img src={post.thumbnail} alt={post.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                         <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors duration-300" />
                       </div>
                       
-                      <div className="p-6 flex flex-col flex-1">
+                      <div className="p-4 flex flex-col flex-1">
                         <div className="flex items-center flex-wrap gap-2 text-sm text-gray-500 mb-3">
                           <div className="flex items-center gap-1">
                             <Calendar size={14} />
@@ -150,12 +150,12 @@ export default function Home() {
                           {post.title}
                         </h3>
                         
-                        <p className="text-gray-600 mb-6 line-clamp-3 flex-1">
+                        <p className="text-gray-600 mb-3 line-clamp-3 flex-1">
                           {post.subtitle}
                         </p>
                         
-                        <div className="mt-auto pt-4 border-t border-gray-100">
-                          <div className="w-full flex items-center justify-center gap-2 bg-gray-50 group-hover:bg-blue-50 text-blue-600 px-4 py-3 rounded-xl font-semibold transition-colors">
+                        <div className="mt-auto pt-3 border-t border-gray-100">
+                          <div className="flex items-center justify-center gap-2 text-blue-600 group-hover:text-blue-400 font-semibold transition-colors">
                             Прочети статията <ArrowRight size={18} />
                           </div>
                         </div>
@@ -194,7 +194,7 @@ export default function Home() {
 
         {/* Right Ad Banner */}
         <aside className="hidden lg:block w-[160px] xl:w-[10%] sticky top-24 shrink-0">
-          <Ad2 className="h-[calc(100vh-9rem)]" />
+          <Ad2 className="h-[calc(100vh-8rem)]" />
         </aside>
         
       </div>

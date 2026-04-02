@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Lock, LogIn } from "lucide-react";
+import { LogIn } from "lucide-react";
 import { loginAdmin, checkAdminSession } from "../store";
 
 export default function Login() {
@@ -31,12 +31,10 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-[80vh] flex items-center justify-center bg-gray-50 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
         <div className="flex flex-col items-center mb-8">
-          <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mb-4">
-            <Lock size={32} />
-          </div>
+          <img src="/blog-logo.png" alt="Toaletna.com logo" className="w-16 h-16 rounded-full object-cover mb-4" />
           <h1 className="text-2xl font-bold text-gray-900">Админ Вход</h1>
           <p className="text-gray-500 text-center mt-2">
             Въведете данните за достъп до контролния панел на блога.

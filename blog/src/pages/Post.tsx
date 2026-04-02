@@ -4,11 +4,12 @@ import Markdown from "react-markdown";
 import { format } from "date-fns";
 import { bg } from "date-fns/locale";
 import { ArrowLeft, Calendar, User, Clock, MapPin, ChevronLeft, ChevronRight } from "lucide-react";
-import { getPost, getPosts, BlogPost } from "../store";
+import { getPostBySlug, getPosts, BlogPost } from "../store";
 import { Ad1, Ad2 } from "../components/Ads";
+import PostSEO from "../components/PostSEO";
 
 export default function Post() {
-  const { id } = useParams<{ id: string }>();
+  const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const [post, setPost] = useState<BlogPost | null>(null);
   const [similarPosts, setSimilarPosts] = useState<BlogPost[]>([]);
@@ -16,21 +17,21 @@ export default function Post() {
   const carouselRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!id) return;
+    if (!slug) return;
 
     const load = async () => {
-      const foundPost = await getPost(id);
+      const foundPost = await getPostBySlug(slug);
       if (foundPost) {
         setPost(foundPost);
         const allPosts = await getPosts();
-        setSimilarPosts(allPosts.filter((p) => p.id !== id).slice(0, 6));
+        setSimilarPosts(allPosts.filter((p) => p.id !== foundPost.id).slice(0, 6));
       } else {
         navigate("/");
       }
       setLoading(false);
     };
     load();
-  }, [id, navigate]);
+  }, [slug, navigate]);
 
   const scrollCarousel = (direction: "left" | "right") => {
     if (carouselRef.current) {
@@ -77,11 +78,12 @@ export default function Post() {
 
   return (
     <div className="w-full min-h-screen pb-20">
+      <PostSEO post={post} />
       <div className="w-full px-4 xl:px-8 mt-8 flex items-start justify-between gap-8">
         
         {/* Left Ad Banner */}
         <aside className="hidden lg:block w-[160px] xl:w-[10%] sticky top-24 shrink-0">
-          <Ad1 className="h-[calc(100vh-9rem)]" />
+          <Ad1 className="h-[calc(100vh-8rem)]" />
         </aside>
 
         {/* Article Content */}
@@ -162,7 +164,7 @@ export default function Post() {
                 >
                   {similarPosts.map((sp) => (
                     <div key={sp.id} className="w-[calc(50%-0.5rem)] lg:w-[calc(33.333%-0.66rem)] shrink-0 snap-start">
-                      <Link to={`/post/${sp.id}`} className="block bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-md hover:shadow-xl transition-all h-full flex flex-col group/card">
+                      <Link to={`/${sp.slug}`} className="block bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-md hover:shadow-xl transition-all h-full flex flex-col group/card">
                         <div className="aspect-[16/10] overflow-hidden relative">
                           <img src={sp.thumbnail} alt={sp.title} className="w-full h-full object-cover group-hover/card:scale-105 transition-transform duration-500" />
                           <div className="absolute inset-0 bg-black/10 group-hover/card:bg-transparent transition-colors" />
@@ -199,7 +201,7 @@ export default function Post() {
 
         {/* Right Ad Banner */}
         <aside className="hidden lg:block w-[160px] xl:w-[10%] sticky top-24 shrink-0">
-          <Ad2 className="h-[calc(100vh-9rem)]" />
+          <Ad2 className="h-[calc(100vh-8rem)]" />
         </aside>
         
       </div>

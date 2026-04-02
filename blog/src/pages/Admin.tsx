@@ -17,6 +17,7 @@ import {
   Link as LinkIcon,
   List,
   Heading,
+  Tag,
 } from "lucide-react";
 import Markdown from "react-markdown";
 import {
@@ -27,6 +28,10 @@ import {
   logoutAdmin,
   BlogPost,
 } from "../store";
+import { generateSlug } from "../lib/slugify";
+
+const siteUrl = import.meta.env.VITE_SITE_URL || "https://toaletna.com";
+const basePath = import.meta.env.VITE_BASE_PATH || "/blog";
 
 export default function Admin() {
   const navigate = useNavigate();
@@ -34,6 +39,7 @@ export default function Admin() {
   const [isEditing, setIsEditing] = useState(false);
   const [isPreview, setIsPreview] = useState(false);
   const [currentPost, setCurrentPost] = useState<Partial<BlogPost>>({});
+  const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
   const [loading, setLoading] = useState(true);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -77,6 +83,7 @@ export default function Admin() {
 
   const handleEdit = (post: BlogPost) => {
     setCurrentPost(post);
+    setSlugManuallyEdited(true);
     setIsEditing(true);
   };
 
@@ -114,12 +121,13 @@ export default function Admin() {
     await savePost({
       id: currentPost.id,
       title: currentPost.title,
-      slug: currentPost.slug,
+      slug: currentPost.slug || generateSlug(currentPost.title),
       subtitle: currentPost.subtitle || "",
       thumbnail: currentPost.thumbnail || "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&q=80&w=1000",
       content: currentPost.content,
       meta_description: currentPost.meta_description || currentPost.subtitle || "",
       author: currentPost.author,
+      tags: currentPost.tags ?? [],
       is_recommended: currentPost.is_recommended || false,
       is_published: currentPost.is_published ?? true,
     });
@@ -127,6 +135,7 @@ export default function Admin() {
     await refreshPosts();
     setIsEditing(false);
     setIsPreview(false);
+    setSlugManuallyEdited(false);
     setCurrentPost({});
   };
 
@@ -235,12 +244,25 @@ export default function Admin() {
 
         <form onSubmit={handleSave} className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Title with char counter */}
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">Заглавие *</label>
+              <label className="block text-sm font-medium text-gray-700 flex justify-between">
+                <span>Заглавие *</span>
+                <span className={`text-xs ${(currentPost.title?.length || 0) > 60 ? "text-red-500" : (currentPost.title?.length || 0) >= 50 ? "text-green-600" : "text-gray-400"}`}>
+                  {currentPost.title?.length || 0}/60
+                </span>
+              </label>
               <input
                 type="text"
                 value={currentPost.title || ""}
-                onChange={(e) => setCurrentPost({ ...currentPost, title: e.target.value })}
+                onChange={(e) => {
+                  const title = e.target.value;
+                  const updated: Partial<BlogPost> = { ...currentPost, title };
+                  if (!slugManuallyEdited) {
+                    updated.slug = generateSlug(title);
+                  }
+                  setCurrentPost(updated);
+                }}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                 required
               />
@@ -264,17 +286,81 @@ export default function Admin() {
                 required
               />
             </div>
+
+            {/* Meta description with char counter */}
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">Meta Description (SEO)</label>
+              <label className="block text-sm font-medium text-gray-700 flex justify-between">
+                <span>Meta Description (SEO) *</span>
+                <span className={`text-xs ${(currentPost.meta_description?.length || 0) > 160 ? "text-red-500" : (currentPost.meta_description?.length || 0) >= 150 ? "text-green-600" : "text-gray-400"}`}>
+                  {currentPost.meta_description?.length || 0}/160
+                </span>
+              </label>
               <input
                 type="text"
                 value={currentPost.meta_description || ""}
                 onChange={(e) => setCurrentPost({ ...currentPost, meta_description: e.target.value })}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                placeholder="Описание за търсачки (до 160 символа)"
+                placeholder="Описание за търсачки (150–160 символа)"
                 maxLength={160}
               />
             </div>
+
+            {/* Slug preview */}
+            <div className="space-y-2 md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700">URL Slug</label>
+              <div className="flex items-stretch gap-2">
+                <span className="inline-flex items-center px-3 bg-gray-50 border border-r-0 border-gray-300 rounded-l-lg text-sm text-gray-500 shrink-0">
+                  {siteUrl}{basePath}/
+                </span>
+                <input
+                  type="text"
+                  value={currentPost.slug || ""}
+                  onChange={(e) => {
+                    setSlugManuallyEdited(true);
+                    setCurrentPost({ ...currentPost, slug: e.target.value });
+                  }}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-r-lg focus:ring-2 focus:ring-blue-500 outline-none font-mono text-sm"
+                  placeholder="auto-generated-from-title"
+                />
+              </div>
+              {currentPost.slug && (
+                <p className="text-xs text-gray-400">
+                  Финален URL: {siteUrl}{basePath}/{currentPost.slug}
+                </p>
+              )}
+            </div>
+
+            {/* Tags */}
+            <div className="space-y-2 md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
+                <Tag size={14} />
+                Тагове (разделени със запетая)
+              </label>
+              <input
+                type="text"
+                value={(currentPost.tags ?? []).join(", ")}
+                onChange={(e) => {
+                  const tags = e.target.value
+                    .split(",")
+                    .map((t) => t.trim())
+                    .filter(Boolean);
+                  setCurrentPost({ ...currentPost, tags });
+                }}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                placeholder="SEO, здраве, тоалетни, хигиена..."
+              />
+              {(currentPost.tags ?? []).length > 0 && (
+                <div className="flex flex-wrap gap-2 pt-1">
+                  {(currentPost.tags ?? []).map((tag, i) => (
+                    <span key={i} className="bg-blue-50 text-blue-700 text-xs font-medium px-2.5 py-1 rounded-full border border-blue-200">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Thumbnail */}
             <div className="space-y-2 md:col-span-2">
               <label className="block text-sm font-medium text-gray-700">Снимка (Thumbnail) *</label>
               <div className="flex flex-col gap-3">
@@ -411,7 +497,8 @@ export default function Admin() {
         <div className="flex items-center gap-4">
           <button
             onClick={() => {
-              setCurrentPost({ author: "Екипът на Toaletna.com", is_published: true });
+              setCurrentPost({ author: "Екипът на Toaletna.com", is_published: true, tags: [] });
+              setSlugManuallyEdited(false);
               setIsEditing(true);
             }}
             className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-medium flex items-center gap-2 transition-colors shadow-sm"

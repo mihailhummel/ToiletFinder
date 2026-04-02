@@ -1,4 +1,5 @@
 import { supabase } from './lib/supabase';
+import { generateSlug } from './lib/slugify';
 
 export interface BlogPost {
   id: string;
@@ -11,11 +12,33 @@ export interface BlogPost {
   date: string;
   last_edit_date?: string;
   author: string;
+  tags: string[];
   is_recommended: boolean;
   is_published: boolean;
 }
 
 const AUTH_KEY = 'toaletna_blog_admin_auth';
+
+function normalizePost(raw: Record<string, unknown>): BlogPost {
+  const post = raw as unknown as BlogPost;
+  if (!post.tags) post.tags = [];
+  if (!post.last_edit_date) post.last_edit_date = post.date;
+  return post;
+}
+
+const REQUIRED_FIELDS: (keyof BlogPost)[] = [
+  'title', 'meta_description', 'slug', 'thumbnail', 'author', 'date', 'tags',
+];
+
+export function validatePostMetadata(post: Partial<BlogPost>, label?: string): void {
+  if (import.meta.env.MODE !== 'development') return;
+  const ctx = label ? ` (post: "${label}")` : '';
+  for (const field of REQUIRED_FIELDS) {
+    if (post[field] === undefined || post[field] === null || post[field] === '') {
+      throw new Error(`[BlogPost] Missing required field "${field}"${ctx}`);
+    }
+  }
+}
 
 // ── Public read operations (use anon key, governed by RLS) ──
 
@@ -30,7 +53,7 @@ export const getPosts = async (): Promise<BlogPost[]> => {
     console.error('Failed to fetch posts:', error.message);
     return [];
   }
-  return data ?? [];
+  return (data ?? []).map((d) => normalizePost(d as Record<string, unknown>));
 };
 
 export const getPost = async (id: string): Promise<BlogPost | null> => {
@@ -42,7 +65,7 @@ export const getPost = async (id: string): Promise<BlogPost | null> => {
     .single();
 
   if (error) return null;
-  return data;
+  return normalizePost(data as Record<string, unknown>);
 };
 
 export const getPostBySlug = async (slug: string): Promise<BlogPost | null> => {
@@ -54,7 +77,7 @@ export const getPostBySlug = async (slug: string): Promise<BlogPost | null> => {
     .single();
 
   if (error) return null;
-  return data;
+  return normalizePost(data as Record<string, unknown>);
 };
 
 // ── Admin operations (require Supabase auth session) ──
@@ -69,32 +92,30 @@ export const getAllPostsAdmin = async (): Promise<BlogPost[]> => {
     console.error('Failed to fetch admin posts:', error.message);
     return [];
   }
-  return data ?? [];
+  return (data ?? []).map((d) => normalizePost(d as Record<string, unknown>));
 };
 
 export const savePost = async (post: Partial<BlogPost> & { title: string; content: string; author: string }): Promise<BlogPost | null> => {
-  const slug = post.slug || post.title
-    .toLowerCase()
-    .replace(/[^a-zа-яёіїєґ0-9\s-]/gi, '')
-    .replace(/\s+/g, '-')
-    .replace(/-+/g, '-')
-    .trim();
+  const slug = post.slug || generateSlug(post.title);
+  const tags = post.tags ?? [];
+
+  const payload = {
+    title: post.title,
+    slug,
+    subtitle: post.subtitle || '',
+    thumbnail: post.thumbnail || '',
+    content: post.content,
+    meta_description: post.meta_description || post.subtitle || '',
+    author: post.author,
+    tags,
+    is_recommended: post.is_recommended ?? false,
+    is_published: post.is_published ?? true,
+  };
 
   if (post.id) {
     const { data, error } = await supabase
       .from('blog_posts')
-      .update({
-        title: post.title,
-        slug,
-        subtitle: post.subtitle || '',
-        thumbnail: post.thumbnail || '',
-        content: post.content,
-        meta_description: post.meta_description || post.subtitle || '',
-        author: post.author,
-        is_recommended: post.is_recommended ?? false,
-        is_published: post.is_published ?? true,
-        last_edit_date: new Date().toISOString(),
-      })
+      .update({ ...payload, last_edit_date: new Date().toISOString() })
       .eq('id', post.id)
       .select()
       .single();
@@ -103,23 +124,12 @@ export const savePost = async (post: Partial<BlogPost> & { title: string; conten
       console.error('Failed to update post:', error.message);
       return null;
     }
-    return data;
+    return normalizePost(data as Record<string, unknown>);
   }
 
   const { data, error } = await supabase
     .from('blog_posts')
-    .insert({
-      title: post.title,
-      slug,
-      subtitle: post.subtitle || '',
-      thumbnail: post.thumbnail || '',
-      content: post.content,
-      meta_description: post.meta_description || post.subtitle || '',
-      author: post.author,
-      is_recommended: post.is_recommended ?? false,
-      is_published: post.is_published ?? true,
-      date: new Date().toISOString(),
-    })
+    .insert({ ...payload, date: new Date().toISOString() })
     .select()
     .single();
 
@@ -127,7 +137,7 @@ export const savePost = async (post: Partial<BlogPost> & { title: string; conten
     console.error('Failed to create post:', error.message);
     return null;
   }
-  return data;
+  return normalizePost(data as Record<string, unknown>);
 };
 
 export const deletePost = async (id: string): Promise<boolean> => {

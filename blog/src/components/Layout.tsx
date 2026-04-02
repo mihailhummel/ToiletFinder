@@ -7,10 +7,8 @@ export default function Layout() {
       {/* Header */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2 text-xl font-bold text-blue-600 hover:text-blue-700 transition-colors">
-            <span className="bg-blue-600 text-white p-1.5 rounded-lg">
-              <MapPin size={20} />
-            </span>
+          <Link to="/" className="flex items-center gap-2 text-xl font-bold text-slate-800 hover:text-slate-700 transition-colors">
+            <img src="/blog-logo.png" alt="Toaletna.com logo" className="h-9 w-9 rounded-lg object-cover" />
             Toaletna.com <span className="text-gray-400 font-light">| БЛОГ</span>
           </Link>
           
@@ -39,9 +37,7 @@ export default function Layout() {
             {/* Brand & Contact */}
             <div className="flex flex-col gap-4">
               <div className="flex items-center gap-2 text-2xl font-bold text-white mb-2">
-                <span className="bg-blue-600 text-white p-2 rounded-xl shadow-lg shadow-blue-600/20">
-                  <MapPin size={24} />
-                </span>
+                <img src="/blog-logo.png" alt="Toaletna.com logo" className="h-10 w-10 rounded-xl object-cover" />
                 Toaletna.com
               </div>
               <p className="text-gray-400 leading-relaxed">
@@ -55,19 +51,19 @@ export default function Layout() {
 
             {/* Quick Links */}
             <div className="flex flex-col gap-4">
-              <h3 className="text-lg font-bold text-white mb-2">Бързи Връзки</h3>
+              <h3 className="text-lg font-bold text-white mb-2">Бързи Връзки:</h3>
               <Link to="/" className="hover:text-blue-400 transition-colors w-fit">Начало Блог</Link>
-              <Link to="/login" className="flex items-center gap-2 hover:text-blue-400 transition-colors w-fit">
+              {/* <Link to="/login" className="flex items-center gap-2 hover:text-blue-400 transition-colors w-fit">
                 <LogIn size={16} />
                 Вход за администратори
-              </Link>
+              </Link> */}
             </div>
 
             {/* CTA */}
             <div className="flex flex-col gap-4 items-start md:items-end">
-              <h3 className="text-lg font-bold text-white mb-2">Открий тоалетна сега</h3>
+              <h3 className="text-lg font-bold text-white mb-2">Изпаднал си в нужда?</h3>
               <p className="text-gray-400 text-left md:text-right mb-2">
-                Използвай нашата интерактивна карта, за да намериш най-близката тоалетна.
+                Използвай нашата интерактивна карта, за да намериш най-близката тоалетна до теб.
               </p>
               <a href="https://toaletna.com" target="_blank" rel="noopener noreferrer" className="group relative inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-8 py-4 rounded-2xl font-bold text-lg transition-all shadow-[0_0_20px_rgba(37,99,235,0.4)] hover:shadow-[0_0_30px_rgba(37,99,235,0.6)] hover:-translate-y-1 overflow-hidden">
                 <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out" />
