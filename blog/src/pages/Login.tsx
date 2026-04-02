@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { LogIn } from "lucide-react";
 import { loginAdmin, checkAdminSession } from "../store";
 
+const logoSrc = `${import.meta.env.BASE_URL}blog-logo.png`;
+
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -34,7 +36,7 @@ export default function Login() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
         <div className="flex flex-col items-center mb-8">
-          <img src="/blog-logo.png" alt="Toaletna.com logo" className="w-16 h-16 rounded-full object-cover mb-4" />
+          <img src={logoSrc} alt="Toaletna.com logo" className="w-16 h-16 rounded-full object-cover mb-4" />
           <h1 className="text-2xl font-bold text-gray-900">Админ Вход</h1>
           <p className="text-gray-500 text-center mt-2">
             Въведете данните за достъп до контролния панел на блога.
