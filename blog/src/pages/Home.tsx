@@ -54,23 +54,23 @@ export default function Home() {
           {/* Hero Carousel */}
           {recommended.length > 0 && (
             <section className="relative bg-gray-100 rounded-3xl overflow-hidden shadow-xl mb-8">
-              <div className="absolute inset-0 bg-black/40 z-10" />
-              
-              <div className="relative h-[60vh] md:h-[450px] w-full">
-                <AnimatePresence mode="wait">
+              <div className="relative h-[60vh] md:h-[450px] w-full isolate">
+                <AnimatePresence mode="sync">
                   <motion.div
                     key={currentIndex}
-                    initial={{ opacity: 0, x: 100 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -100 }}
-                    transition={{ duration: 0.5 }}
+                    initial={{ opacity: 0, x: 60, filter: "blur(8px)" }}
+                    animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
+                    exit={{ opacity: 0, x: -60, filter: "blur(8px)" }}
+                    transition={{ duration: 0.7, ease: [0.4, 0, 0.2, 1] }}
                     className="absolute inset-0"
                   >
-                    <Link to={`/${recommended[currentIndex].slug}`} className="block w-full h-full">
-                      <img src={recommended[currentIndex].thumbnail} alt={recommended[currentIndex].title} className="w-full h-full object-cover" />
-                      <div className="absolute inset-0 bg-gradient-to-t from-gray-900/80 via-gray-900/40 to-transparent z-20" />
-                      
-                      <div className="absolute bottom-0 left-0 right-0 z-30 p-6 pb-16 md:p-12 md:pb-16 max-w-7xl mx-auto">
+                    <Link to={`/${recommended[currentIndex].slug}`} className="relative block h-full w-full">
+                      <img src={recommended[currentIndex].thumbnail} alt={recommended[currentIndex].title} className="h-full w-full object-cover" />
+                      {/* Dim only the photo — stays below text and gradient */}
+                      <div className="pointer-events-none absolute inset-0 z-[1] bg-black/40" aria-hidden />
+                      <div className="pointer-events-none absolute inset-0 z-[2] bg-gradient-to-t from-gray-900/80 via-gray-900/40 to-transparent" aria-hidden />
+
+                      <div className="absolute bottom-0 left-0 right-0 z-10 p-6 pb-16 md:p-12 md:pb-16 max-w-7xl mx-auto">
                         <div className="inline-block bg-blue-600 text-white text-xs font-bold uppercase tracking-wider py-1 px-3 rounded-full mb-4 shadow-lg">
                           Топ Статия
                         </div>
