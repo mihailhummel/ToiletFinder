@@ -1,7 +1,6 @@
 import { Outlet, Link } from "react-router-dom";
 import { MapPin, LogIn, Mail, ArrowRight } from "lucide-react";
-
-const logoSrc = `${import.meta.env.BASE_URL}blog-logo.png`;
+import logoSrc from "../assets/blog-logo.png";
 
 export default function Layout() {
   return (

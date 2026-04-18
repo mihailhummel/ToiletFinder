@@ -88,6 +88,106 @@ export class SupabaseStorage {
     }
   }
 
+  async getAllToilets({ onlyUserAdded = true } = {}) {
+    try {
+      let query = supabase
+        .from('toilets')
+        .select('*')
+        .eq('is_removed', false)
+        .order('created_at', { ascending: false });
+
+      if (onlyUserAdded) {
+        query = query.eq('source', 'user');
+      }
+
+      const { data, error } = await query;
+      if (error) {
+        console.error('❌ Error fetching all toilets:', error);
+        throw error;
+      }
+      return data.map(this.transformToilet);
+    } catch (error) {
+      console.error('❌ Failed to fetch all toilets:', error);
+      throw error;
+    }
+  }
+
+  async getAllReviews() {
+    try {
+      const { data, error } = await supabase
+        .from('reviews')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('❌ Error fetching all reviews:', error);
+        throw error;
+      }
+
+      const toiletIds = [...new Set(data.map(r => r.toilet_id).filter(Boolean))];
+      let toiletsById = {};
+      if (toiletIds.length > 0) {
+        const { data: toilets } = await supabase
+          .from('toilets')
+          .select('id, title, type')
+          .in('id', toiletIds);
+        toiletsById = Object.fromEntries((toilets || []).map(t => [t.id, t]));
+      }
+
+      return data.map(review => ({
+        id: review.id,
+        toiletId: review.toilet_id,
+        userId: review.user_id,
+        userName: review.user_name,
+        rating: review.rating,
+        text: review.text,
+        createdAt: new Date(review.created_at),
+        toilet: toiletsById[review.toilet_id] || null
+      }));
+    } catch (error) {
+      console.error('❌ Failed to fetch all reviews:', error);
+      throw error;
+    }
+  }
+
+  async getAllReports() {
+    try {
+      const { data, error } = await supabase
+        .from('reports')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('❌ Error fetching all reports:', error);
+        throw error;
+      }
+
+      const toiletIds = [...new Set(data.map(r => r.toilet_id).filter(Boolean))];
+      let toiletsById = {};
+      if (toiletIds.length > 0) {
+        const { data: toilets } = await supabase
+          .from('toilets')
+          .select('id, title, type')
+          .in('id', toiletIds);
+        toiletsById = Object.fromEntries((toilets || []).map(t => [t.id, t]));
+      }
+
+      return data.map(report => ({
+        id: report.id,
+        toiletId: report.toilet_id,
+        userId: report.user_id,
+        userName: report.user_name,
+        reason: report.reason,
+        comment: report.comment || null,
+        createdAt: new Date(report.created_at),
+        toilet: toiletsById[report.toilet_id] || null
+      }));
+    } catch (error) {
+      console.error('❌ Failed to fetch all reports:', error);
+      throw error;
+    }
+  }
+
   async getUserReports(userId) {
     try {
       const { data, error } = await supabase

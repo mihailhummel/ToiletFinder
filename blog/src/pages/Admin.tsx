@@ -39,9 +39,16 @@ export default function Admin() {
   const [isEditing, setIsEditing] = useState(false);
   const [isPreview, setIsPreview] = useState(false);
   const [currentPost, setCurrentPost] = useState<Partial<BlogPost>>({});
+  const [tagsInput, setTagsInput] = useState("");
   const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
   const [loading, setLoading] = useState(true);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const parseTags = (value: string): string[] =>
+    value
+      .split(",")
+      .map((t) => t.trim())
+      .filter(Boolean);
 
   const insertMarkdown = (prefix: string, suffix: string = "") => {
     const textarea = textareaRef.current;
@@ -83,6 +90,7 @@ export default function Admin() {
 
   const handleEdit = (post: BlogPost) => {
     setCurrentPost(post);
+    setTagsInput((post.tags ?? []).join(", "));
     setSlugManuallyEdited(true);
     setIsEditing(true);
   };
@@ -118,6 +126,8 @@ export default function Admin() {
       return;
     }
 
+    const tags = parseTags(tagsInput);
+
     await savePost({
       id: currentPost.id,
       title: currentPost.title,
@@ -127,7 +137,7 @@ export default function Admin() {
       content: currentPost.content,
       meta_description: currentPost.meta_description || currentPost.subtitle || "",
       author: currentPost.author,
-      tags: currentPost.tags ?? [],
+      tags,
       is_recommended: currentPost.is_recommended || false,
       is_published: currentPost.is_published ?? true,
     });
@@ -137,6 +147,7 @@ export default function Admin() {
     setIsPreview(false);
     setSlugManuallyEdited(false);
     setCurrentPost({});
+    setTagsInput("");
   };
 
   const renderPreviewContentWithAds = (content: string) => {
@@ -338,20 +349,19 @@ export default function Admin() {
               </label>
               <input
                 type="text"
-                value={(currentPost.tags ?? []).join(", ")}
-                onChange={(e) => {
-                  const tags = e.target.value
-                    .split(",")
-                    .map((t) => t.trim())
-                    .filter(Boolean);
+                value={tagsInput}
+                onChange={(e) => setTagsInput(e.target.value)}
+                onBlur={() => {
+                  const tags = parseTags(tagsInput);
                   setCurrentPost({ ...currentPost, tags });
+                  setTagsInput(tags.join(", "));
                 }}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                 placeholder="SEO, здраве, тоалетни, хигиена..."
               />
-              {(currentPost.tags ?? []).length > 0 && (
+              {parseTags(tagsInput).length > 0 && (
                 <div className="flex flex-wrap gap-2 pt-1">
-                  {(currentPost.tags ?? []).map((tag, i) => (
+                  {parseTags(tagsInput).map((tag, i) => (
                     <span key={i} className="bg-blue-50 text-blue-700 text-xs font-medium px-2.5 py-1 rounded-full border border-blue-200">
                       {tag}
                     </span>
@@ -498,6 +508,7 @@ export default function Admin() {
           <button
             onClick={() => {
               setCurrentPost({ author: "Екипът на Toaletna.com", is_published: true, tags: [] });
+              setTagsInput("");
               setSlugManuallyEdited(false);
               setIsEditing(true);
             }}

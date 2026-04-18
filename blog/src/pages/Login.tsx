@@ -2,8 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { LogIn } from "lucide-react";
 import { loginAdmin, checkAdminSession } from "../store";
-
-const logoSrc = `${import.meta.env.BASE_URL}blog-logo.png`;
+import logoSrc from "../assets/blog-logo.png";
 
 export default function Login() {
   const [email, setEmail] = useState("");
