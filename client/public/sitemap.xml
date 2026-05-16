@@ -19,6 +19,14 @@
     </image:image>
   </url>
 
+  <!-- Blog -->
+  <url>
+    <loc>https://toaletna.com/blog/</loc>
+    <lastmod>2025-05-16</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+
   <!-- City-specific landing pages (can be added later) -->
   <url>
     <loc>https://toaletna.com/?city=sofia</loc>

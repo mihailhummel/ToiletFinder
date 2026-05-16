@@ -73,12 +73,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Handle spatial query - NO CACHING
         const centerLat = parseFloat(lat as string);
         const centerLng = parseFloat(lng as string);
-        const radiusKm = radius ? parseFloat(radius as string) : 10;
-        
+
+        if (
+          isNaN(centerLat) || isNaN(centerLng) ||
+          centerLat < -90 || centerLat > 90 ||
+          centerLng < -180 || centerLng > 180
+        ) {
+          return res.status(400).json({ error: "Invalid coordinates" });
+        }
+
+        const radiusKm = radius ? Math.min(parseFloat(radius as string), 100) : 10;
+
         try {
           logDatabaseRequest('/api/toilets', `spatial`);
           const toilets = await storage.getToiletsNearby(centerLat, centerLng, Math.max(radiusKm, 15));
-          
+
           // Filter to exact requested radius
           const filteredToilets = toilets.filter(toilet => {
             const distance = calculateDistance(
@@ -88,7 +97,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             return distance <= radiusKm;
           });
           res.json(filteredToilets);
-          
+
         } catch (dbError) {
           console.error("Database error:", dbError);
           throw dbError;
@@ -409,35 +418,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/toilets/:id", async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
+
+      // Verify Firebase Bearer token
+      const authHeader = req.headers.authorization;
+      if (!authHeader?.startsWith("Bearer ")) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+      let decoded: any;
+      try {
+        decoded = await auth.verifyIdToken(authHeader.split("Bearer ")[1]);
+      } catch {
+        return res.status(403).json({ error: "Invalid or expired token" });
+      }
+      const requestingUid = decoded.uid;
+
       const updateData = req.body;
-      
-      console.log(`📝 PUT /api/toilets/${id} called with data:`, updateData);
-      
-      // Basic validation
       if (!updateData.type) {
         return res.status(400).json({ error: "Missing toilet type" });
       }
-      
       if (updateData.title === undefined) {
         return res.status(400).json({ error: "Missing toilet title" });
       }
-      
-      // Check if toilet exists
+
       const toilets = await storage.getToilets();
       const toilet = toilets.find(t => t.id === id);
-      
       if (!toilet) {
         return res.status(404).json({ error: "Toilet not found" });
       }
-      
-      console.log(`📝 Updating toilet ${id}...`);
+
+      const isAdmin = decoded.admin === true;
+      const isCreator = toilet.userId === requestingUid;
+      if (!isAdmin && !isCreator) {
+        return res.status(403).json({ error: "You can only edit toilets you have created" });
+      }
+
       await storage.updateToilet(id, updateData);
-      
-      console.log(`✅ Toilet ${id} updated successfully`);
       res.json({ message: "Toilet updated successfully", id });
-    } catch (error) {
-      console.error("❌ Error updating toilet:", error);
-      res.status(500).json({ error: "Failed to update toilet", details: error.message });
+    } catch (error: any) {
+      console.error("Error updating toilet:", error);
+      res.status(500).json({ error: "Failed to update toilet" });
     }
   });
 
@@ -489,20 +508,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Health check endpoint with DB monitoring
-  app.get("/api/health", (req: Request, res: Response) => {
-    const elapsed = Date.now() - lastResetTime;
-    const ratePerMinute = dbRequestCount / (elapsed / 1000 / 60);
-    
-    res.json({ 
-      status: "healthy", 
-      database: {
-        totalRequests: dbRequestCount,
-        ratePerMinute: Math.round(ratePerMinute * 10) / 10,
-        elapsedMinutes: Math.round(elapsed / 1000 / 60),
-        status: dbRequestCount > 50 ? 'HIGH_USAGE' : dbRequestCount > 20 ? 'MODERATE' : 'LOW'
-      }
-    });
+  // Health check endpoint
+  app.get("/api/health", (_req: Request, res: Response) => {
+    res.json({ status: "healthy" });
   });
 
   // No cache statistics - caching removed

@@ -306,15 +306,18 @@ export const useUpdateToilet = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async ({ toiletId, updateData }: { 
-      toiletId: string; 
-      updateData: { type: string; title: string; accessibility: string; accessType: string; notes?: string; coordinates?: { lat: number; lng: number } } 
+    mutationFn: async ({ toiletId, updateData, idToken }: {
+      toiletId: string;
+      idToken: string;
+      updateData: { type: string; title: string; accessibility: string; accessType: string; notes?: string; coordinates?: { lat: number; lng: number } };
     }) => {
       const response = await fetch(`/api/toilets/${toiletId}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(updateData)
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`,
+        },
+        body: JSON.stringify(updateData),
       });
       
       if (!response.ok) {

@@ -43,9 +43,11 @@ export const ToiletDetailsModal = ({ toilet, isOpen, onClose }: ToiletDetailsMod
     if (!toilet || !user) return;
 
     try {
+      const idToken = await user.getIdToken();
       await updateToiletMutation.mutateAsync({
         toiletId: toilet.id,
-        updateData: updatedData
+        updateData: updatedData,
+        idToken,
       });
       
       toast({

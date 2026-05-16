@@ -1,6 +1,8 @@
 import 'dotenv/config';
 import express, { type Request, Response, NextFunction } from "express";
 import { createProxyMiddleware } from "http-proxy-middleware";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import path from "path";
@@ -13,6 +15,52 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const app = express();
+
+// Security headers (CSP and COEP disabled — needed for map tiles and embeds)
+app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
+
+// CORS — allow only the production origin (and localhost in dev)
+const allowedOrigins = [
+  "https://toaletna.com",
+  "https://www.toaletna.com",
+  ...(process.env.NODE_ENV !== "production"
+    ? ["http://localhost:5001", "http://localhost:5173", "http://localhost:3001"]
+    : []),
+];
+app.use((req: Request, res: Response, next: NextFunction) => {
+  const origin = req.headers.origin as string | undefined;
+  if (origin && allowedOrigins.includes(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+  }
+  res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type,Authorization");
+  if (req.method === "OPTIONS") { res.sendStatus(204); return; }
+  next();
+});
+
+// Rate limiting — 200 req / 15 min per IP for all API routes
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 200,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many requests, please try again later." },
+});
+// Tighter limit for write operations — 20 req / 15 min per IP
+const writeLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many write requests, please try again later." },
+});
+app.use("/api/", apiLimiter);
+app.use("/api/reports", writeLimiter);
+app.use("/api/toilets", (req: Request, res: Response, next: NextFunction) => {
+  if (["POST", "PUT", "DELETE"].includes(req.method)) return writeLimiter(req, res, next);
+  next();
+});
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 

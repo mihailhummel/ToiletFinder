@@ -28,6 +28,7 @@ Crawl-delay: 1
 
 # Sitemap location
 Sitemap: https://toaletna.com/sitemap.xml
+Sitemap: https://toaletna.com/blog/sitemap.xml
 
 # Popular search engines
 User-agent: Googlebot
