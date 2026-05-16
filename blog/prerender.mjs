@@ -28,8 +28,8 @@ const SITE_URL     = (process.env.VITE_SITE_URL || 'https://toaletna.com').repla
 const BASE_PATH    = (process.env.VITE_BASE_PATH || '/blog').replace(/\/$/, '');
 const DIST_DIR     = path.resolve(__dirname, 'dist');
 
-// After `vite build` with base=/blog, the shell lands at dist/blog/index.html
-const SHELL_PATH   = path.join(DIST_DIR, 'blog', 'index.html');
+// Vite's `base: '/blog'` only prefixes asset URLs — the shell always lands at dist/index.html
+const SHELL_PATH   = path.join(DIST_DIR, 'index.html');
 
 if (!SUPABASE_URL || !SUPABASE_KEY) {
   console.error('[prerender] Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY — skipping prerender.');
@@ -224,10 +224,15 @@ async function main() {
 
   console.log(`[prerender] Fetched ${posts.length} published posts.`);
 
-  // Improve homepage
+  // Ensure dist/blog/ directory exists
+  const blogDir = path.join(DIST_DIR, 'blog');
+  fs.mkdirSync(blogDir, { recursive: true });
+
+  // Write improved homepage to dist/blog/index.html
+  // (served when proxy forwards /blog/ to the blog service)
   const homepageHtml = patchShell(shell, homepageHeadTags());
-  fs.writeFileSync(SHELL_PATH, homepageHtml, 'utf8');
-  console.log('[prerender] Updated: dist/blog/index.html');
+  fs.writeFileSync(path.join(blogDir, 'index.html'), homepageHtml, 'utf8');
+  console.log('[prerender] Created: dist/blog/index.html');
 
   // Generate per-post pages
   for (const post of posts) {
