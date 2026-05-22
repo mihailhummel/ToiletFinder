@@ -17,7 +17,7 @@ const __dirname = dirname(__filename);
 const app = express();
 
 // Security headers (CSP and COEP disabled — needed for map tiles and embeds)
-app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
+app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false, crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" } }));
 
 // CORS — allow only the production origin (and localhost in dev)
 const allowedOrigins = [
