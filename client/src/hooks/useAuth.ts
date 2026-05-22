@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react';
-import { auth } from '../lib/firebase';
-import { 
-  signInWithPopup, 
-  GoogleAuthProvider, 
+import { auth, signInWithGoogle as firebaseSignInWithGoogle } from '../lib/firebase';
+import {
   signOut as firebaseSignOut,
   onAuthStateChanged,
   User
@@ -37,15 +35,7 @@ export function useAuth() {
     return () => unsubscribe();
   }, []);
 
-  const signInWithGoogle = async () => {
-    try {
-      const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
-    } catch (error) {
-      console.error('Google sign in error:', error);
-      throw error;
-    }
-  };
+  const signInWithGoogle = firebaseSignInWithGoogle;
 
   const signOut = async () => {
     try {
