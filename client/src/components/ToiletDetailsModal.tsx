@@ -9,7 +9,9 @@ import { LoginModal } from "./LoginModal";
 import { EditToiletModal } from "./EditToiletModal";
 import { useToiletReviews, useDeleteToilet, useUpdateToilet } from "@/hooks/useToilets";
 import { useAuth } from "@/hooks/useAuth";
-import { useToast } from "@/hooks/use-toast";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { notify } from "@/lib/notify";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import type { Toilet } from "@/types/toilet";
 import { formatDistanceToNow } from "date-fns";
 import { haptics } from "@/lib/haptics";
@@ -24,14 +26,13 @@ export const ToiletDetailsModal = ({ toilet, isOpen, onClose }: ToiletDetailsMod
   const [showAddReview, setShowAddReview] = useState(false);
   const [showReport, setShowReport] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showEditToilet, setShowEditToilet] = useState(false);
-  
+
   const { user, isAdmin } = useAuth();
+  const { t } = useLanguage();
   const { data: reviews = [] } = useToiletReviews(toilet?.id || "");
   const deleteToiletMutation = useDeleteToilet();
   const updateToiletMutation = useUpdateToilet();
-  const { toast } = useToast();
 
   const handleEditConfirm = async (updatedData: {
     type: string;
@@ -50,19 +51,16 @@ export const ToiletDetailsModal = ({ toilet, isOpen, onClose }: ToiletDetailsMod
         idToken,
       });
       
-      toast({
-        title: "Toilet updated",
-        description: "The toilet information has been updated successfully."
+      notify.success("Toilet updated", {
+        description: "The toilet information has been updated.",
       });
-      
+
       setShowEditToilet(false);
       onClose(); // Close the details modal too
     } catch (error) {
       console.error("❌ Edit toilet error:", error);
-      toast({
-        title: "Error",
-        description: `Failed to update toilet information: ${error.message || error}`,
-        variant: "destructive"
+      notify.error("Couldn't update toilet", {
+        description: error instanceof Error ? error.message : "Please try again.",
       });
     }
   };
@@ -128,11 +126,7 @@ export const ToiletDetailsModal = ({ toilet, isOpen, onClose }: ToiletDetailsMod
 
     // Check if user can edit (admin or creator)
     if (!isAdmin && toilet?.userId !== user.uid) {
-      toast({
-        title: "Access denied",
-        description: "You can only edit toilet locations you have added.",
-        variant: "destructive"
-      });
+      notify.error(t('toast.editPermission'));
       return;
     }
 
@@ -142,21 +136,13 @@ export const ToiletDetailsModal = ({ toilet, isOpen, onClose }: ToiletDetailsMod
   const handleDeleteToilet = async () => {
     haptics.strong();
     if (!user) {
-      toast({
-        title: "Access denied",
-        description: "You must be logged in to delete toilet locations.",
-        variant: "destructive"
-      });
+      notify.error("You must be logged in to delete toilet locations.");
       return;
     }
 
     // Check if user can delete (admin or creator)
     if (!isAdmin && toilet?.userId !== user.uid) {
-      toast({
-        title: "Access denied", 
-        description: "You can only delete toilet locations you have added.",
-        variant: "destructive"
-      });
+      notify.error(t('toast.deletePermission'));
       return;
     }
 
@@ -168,19 +154,14 @@ export const ToiletDetailsModal = ({ toilet, isOpen, onClose }: ToiletDetailsMod
       });
 
       haptics.success();
-      toast({
-        title: "Success!",
-        description: "Toilet location deleted successfully."
-      });
+      notify.success(t('toast.toiletDeleted'));
 
       onClose();
     } catch (error) {
       haptics.error();
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to delete toilet location.",
-        variant: "destructive"
-      });
+      notify.error(
+        error instanceof Error ? error.message : t('toast.deleteError')
+      );
     }
   };
 
@@ -341,9 +322,18 @@ export const ToiletDetailsModal = ({ toilet, isOpen, onClose }: ToiletDetailsMod
                 <Button
                   variant="outline"
                   className="flex flex-col items-center space-y-1 h-auto py-2.5 border-red-200 hover:bg-red-50 text-xs"
-                  onClick={() => {
+                  onClick={async () => {
                     haptics.warning();
-                    setShowDeleteConfirm(true);
+                    const confirmed = await confirmDialog({
+                      title: t('confirm.deleteToilet.title'),
+                      description: t('confirm.deleteToilet.body'),
+                      confirmText: t('button.delete'),
+                      cancelText: t('button.cancel'),
+                      variant: 'destructive',
+                    });
+                    if (confirmed) {
+                      handleDeleteToilet();
+                    }
                   }}
                 >
                   <Trash2 className="w-3.5 h-3.5 text-red-600" />
@@ -418,36 +408,6 @@ export const ToiletDetailsModal = ({ toilet, isOpen, onClose }: ToiletDetailsMod
         />
       )}
 
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Delete Toilet Location</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <p className="text-gray-600">
-              Are you sure you want to delete this toilet location? This action cannot be undone.
-            </p>
-            <div className="flex space-x-3">
-              <Button
-                variant="outline"
-                onClick={() => setShowDeleteConfirm(false)}
-                className="flex-1"
-              >
-                Cancel
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={handleDeleteToilet}
-                disabled={deleteToiletMutation.isPending}
-                className="flex-1"
-              >
-                {deleteToiletMutation.isPending ? "Deleting..." : "Delete"}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
     </>
   );
 };

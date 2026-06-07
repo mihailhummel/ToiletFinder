@@ -1,7 +1,23 @@
 import React from 'react'
 import { createRoot } from "react-dom/client";
+import { registerSW } from 'virtual:pwa-register';
 import App from "./App";
 import "./index.css";
+
+// Register the Workbox service worker (no-op in dev — disabled via vite.config).
+// autoUpdate + skipWaiting/clientsClaim means new deploys take over within a session.
+registerSW({ immediate: true });
+
+// One-time cleanup for users upgrading from the old hand-written service worker:
+// delete its orphaned caches (toilet-map-*). Workbox's cleanupOutdatedCaches only
+// prunes Workbox-managed caches, so these would otherwise linger as dead storage.
+if ('caches' in window) {
+  caches.keys().then((names) => {
+    names
+      .filter((name) => name.startsWith('toilet-map-'))
+      .forEach((name) => caches.delete(name));
+  }).catch(() => { /* non-critical */ });
+}
 
 // Error boundary component to catch and display errors
 class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean, error: Error | null, errorInfo: React.ErrorInfo | null}> {

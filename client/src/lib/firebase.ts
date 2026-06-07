@@ -1,24 +1,30 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, User } from "firebase/auth";
 
-// Firebase configuration - supports both environment variables and defaults
+// Firebase configuration - sourced entirely from environment variables.
+// These VITE_* values are public by design (Firebase relies on Security Rules
+// and authorized domains, not on the keys being secret), but they must not be
+// hardcoded in source so they can be rotated and managed per environment.
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyAtsQ6Q-VNqVZee2v2Dz_yzfCL-7u1b2kQ",
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "findwc-2be85.firebaseapp.com",
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "findwc-2be85",
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "findwc-2be85.firebasestorage.app",
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "823137125904",
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:823137125904:web:3c6d8394fbc5ca7995ac95",
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "G-NLG2BCCRC4"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
-// Log configuration for debugging in production
-if (import.meta.env.PROD) {
-  console.log("🔑 Firebase Config:", {
-    authDomain: firebaseConfig.authDomain,
-    projectId: firebaseConfig.projectId,
-    usingEnvVars: !!import.meta.env.VITE_FIREBASE_API_KEY
-  });
+// Fail fast if required configuration is missing rather than silently shipping
+// a broken or misconfigured auth setup.
+const requiredKeys = ["apiKey", "authDomain", "projectId", "appId"] as const;
+const missingKeys = requiredKeys.filter((key) => !firebaseConfig[key]);
+if (missingKeys.length > 0) {
+  throw new Error(
+    `Missing required Firebase env vars: ${missingKeys
+      .map((k) => `VITE_FIREBASE_${k.replace(/([A-Z])/g, "_$1").toUpperCase()}`)
+      .join(", ")}`
+  );
 }
 
 // Initialize Firebase (AUTH ONLY)

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
+import { ConfirmDialogHost } from "@/components/ui/confirm-dialog";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { LanguageProvider, useLanguage } from "@/contexts/LanguageContext";
 
@@ -14,6 +15,8 @@ import { LoginModal } from "./components/LoginModal";
 import { ReportModal } from "./components/ReportModal";
 import { LanguageSwitch } from "./components/LanguageSwitch";
 import { WelcomeModal } from "./components/WelcomeModal";
+import { LoadingScreen } from "./components/LoadingScreen";
+import { DesktopNavLinks, ProfileMenu, InfoModals, type InfoModalType } from "./components/NavMenu";
 import ErrorBoundary, { MapErrorBoundary } from "./components/ErrorBoundary";
 
 // Utils
@@ -27,10 +30,9 @@ import { useToast } from "./hooks/use-toast";
 import { clearToiletCache } from "@/hooks/useToilets";
 
 // Icons
-import { User, MapPin, Filter, Plus, Search, Menu, LogOut, Download } from "lucide-react";
+import { MapPin, Plus, Search } from "lucide-react";
 import { Button } from "./components/ui/button";
 import { Input } from "./components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./components/ui/dialog";
 
 // Types
 import type { Toilet, MapLocation, ToiletType, Accessibility, AccessType } from "./types/toilet";
@@ -71,13 +73,8 @@ function AppContent() {
   // 🚀 Initialize accessibility
   useEffect(() => {
     initAccessibility();
-    
-    // Register service worker for offline support
-    if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
-      navigator.serviceWorker.register('/sw.js')
-        .then(() => console.log('🚀 Service Worker registered'))
-        .catch(err => console.error('❌ Service Worker registration failed:', err));
-    }
+
+    // Service worker registration is handled once in main.tsx via vite-plugin-pwa.
 
     // PWA Install detection
     const checkMobile = () => {
@@ -102,7 +99,8 @@ function AppContent() {
       setCanInstall(false);
       toast({
         title: "App Installed!",
-        description: "App has been successfully added to your home screen"
+        description: "App has been successfully added to your home screen",
+        variant: "success"
       });
     };
 
@@ -134,7 +132,7 @@ function AppContent() {
   const [showAddToilet, setShowAddToilet] = useState(false);
   const [showFilter, setShowFilter] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
-  const [showUserMenu, setShowUserMenu] = useState(false);
+  const [activeInfoModal, setActiveInfoModal] = useState<InfoModalType>(null);
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
   const [showReport, setShowReport] = useState(false);
   const [reportToilet, setReportToilet] = useState<Toilet | null>(null);
@@ -165,40 +163,40 @@ function AppContent() {
     if (!editingToilet || !user) return;
 
     try {
+      // The server authenticates writes with a Firebase Bearer token
+      // (see requireAuth in server/routes.ts), not cookies — so attach it.
+      const idToken = await user.getIdToken();
       const response = await fetch(`/api/toilets/${editingToilet.id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`,
+        },
         body: JSON.stringify(updatedData)
       });
 
       if (!response.ok) {
-        throw new Error('Failed to update toilet');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to update toilet');
       }
 
       toast({
         title: "Toilet updated",
-        description: "The toilet information has been updated successfully."
+        description: "The toilet information has been updated successfully.",
+        variant: "success"
       });
 
       setEditingToilet(null);
 
-      // Gently refresh toilet data without clearing everything
-      if (typeof window !== 'undefined') {
-        // Just refresh the toilet display, don't force reload everything
-        if (window.refreshToilets) {
-          console.log("🔄 Refreshing toilet display after edit...");
-          setTimeout(() => {
-            window.refreshToilets();
-          }, 50);
-        }
-      }
+      // The map renders from the 'all-toilets' query cache. window.refreshToilets
+      // is a no-op, so invalidate the query directly to refresh markers after edit.
+      queryClient.invalidateQueries({ queryKey: ['all-toilets'] });
     } catch (error) {
       console.error("❌ App edit toilet error:", error);
       toast({
-        title: "Error", 
+        title: "Error",
         description: `Failed to update toilet information: ${error.message || error}`,
-        variant: "destructive"
+        variant: "error"
       });
     }
   };
@@ -253,7 +251,7 @@ function AppContent() {
 
   // Add/remove modal-open class to body when modals are open
   useEffect(() => {
-    const isAnyModalOpen = showAddToilet || showFilter || showLogin || showUserMenu || showWelcomeModal;
+    const isAnyModalOpen = showAddToilet || showFilter || showLogin || !!activeInfoModal || showWelcomeModal;
     if (isAnyModalOpen) {
       document.body.classList.add('modal-open');
     } else {
@@ -263,7 +261,7 @@ function AppContent() {
     return () => {
       document.body.classList.remove('modal-open');
     };
-  }, [showAddToilet, showFilter, showLogin, showUserMenu, showWelcomeModal]);
+  }, [showAddToilet, showFilter, showLogin, activeInfoModal, showWelcomeModal]);
 
   // Get user location on mount
   useEffect(() => {
@@ -282,7 +280,7 @@ function AppContent() {
           toast({
             title: "Access denied",
             description: "You can only edit toilet locations you have added.",
-            variant: "destructive"
+            variant: "error"
           });
         }
       } else if (!user) {
@@ -306,6 +304,7 @@ function AppContent() {
           title: t('toast.cacheCleared'),
           description: t('toast.cacheClearedMessage'),
           duration: 3000,
+          variant: "info"
         });
         // Cache cleared via keyboard shortcut
       }
@@ -318,6 +317,7 @@ function AppContent() {
           title: "Welcome modal opened",
           description: "Development shortcut used (Ctrl+Shift+W)",
           duration: 2000,
+          variant: "info"
         });
       }
       
@@ -329,6 +329,7 @@ function AppContent() {
           title: "First visit flag reset",
           description: "Refresh the page to see welcome modal again",
           duration: 3000,
+          variant: "info"
         });
       }
     };
@@ -336,14 +337,6 @@ function AppContent() {
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [toast, t]);
-
-  const handleUserMenuClick = useCallback(() => {
-    if (user) {
-      setShowUserMenu(true);
-    } else {
-      setShowLogin(true);
-    }
-  }, [user]);
 
   const handleLocateUser = async () => {
     try {
@@ -354,6 +347,7 @@ function AppContent() {
       toast({
         title: "Requesting location",
         description: "Please allow location access if prompted by your browser.",
+        variant: "info"
       });
       
       // Wait a bit for location to be set and then show success toast
@@ -361,7 +355,8 @@ function AppContent() {
         if (userLocation) {
           toast({
             title: t('toast.locationFound'),
-            description: t('toast.locationFoundMessage')
+            description: t('toast.locationFoundMessage'),
+            variant: "success"
           });
         }
       }, 1000);
@@ -369,7 +364,7 @@ function AppContent() {
       toast({
         title: "Location access needed",
         description: "Please click the location icon in your browser's address bar and allow location access, then try again.",
-        variant: "destructive"
+        variant: "error"
       });
     }
   };
@@ -402,7 +397,8 @@ function AppContent() {
         
         toast({
           title: "Location updated",
-          description: "New location selected. You can now save your changes."
+          description: "New location selected. You can now save your changes.",
+          variant: "success"
         });
       } else {
         // Try to reconstruct the toilet from editLocationData
@@ -418,12 +414,14 @@ function AppContent() {
           
           toast({
             title: "Location updated",
-            description: "New location selected. You can now save your changes."
+            description: "New location selected. You can now save your changes.",
+            variant: "success"
           });
         } else {
           toast({
             title: "Error",
-            description: "Lost toilet data during location editing. Please try again."
+            description: "Lost toilet data during location editing. Please try again.",
+            variant: "error"
           });
         }
       }
@@ -442,7 +440,6 @@ function AppContent() {
       globalAddingState.pendingData = null;
       
       // Set location and show confirmation modal
-      console.log('🚽 App.tsx: Map clicked, setting location and data:', { location, dataToUse });
       setPendingToiletLocation(location);
       setPendingToiletData(dataToUse);
       setIsAddingToilet(false);
@@ -453,9 +450,6 @@ function AppContent() {
   }, [isAddingToilet, pendingToiletData, isEditingLocation, editLocationData, editingToilet, toast]);
 
   const handleLocationSelectionRequest = useCallback((type: ToiletType, title: string, accessibility: Accessibility, accessType: AccessType, hasBabyChanging: boolean) => {
-    // Location selection requested
-    console.log('🚽 App.tsx: Location selection requested with hasBabyChanging =', hasBabyChanging);
-    
     // Set global state immediately
     globalAddingState.isAdding = true;
     globalAddingState.pendingData = { type, title, accessibility, accessType, hasBabyChanging };
@@ -473,8 +467,9 @@ function AppContent() {
     }, 100);
     
     toast({
-      title: "Select Location", 
-      description: "Tap on the map where you want to add the toilet"
+      title: "Select Location",
+      description: "Tap on the map where you want to add the toilet",
+      variant: "info"
     });
   }, [toast]);
 
@@ -503,7 +498,8 @@ function AppContent() {
       
       toast({
         title: "Select new location",
-        description: "Click on the map to choose a new location for this toilet."
+        description: "Click on the map to choose a new location for this toilet.",
+        variant: "info"
       });
     }
   }, [toast, editingToilet]);
@@ -525,14 +521,15 @@ function AppContent() {
     if (found) {
       toast({
         title: t('admin.toiletFound'),
-        description: `ID: ${searchToiletId}`
+        description: `ID: ${searchToiletId}`,
+        variant: "success"
       });
       setSearchToiletId(''); // Clear search after success
     } else {
       toast({
         title: t('admin.toiletNotFound'),
         description: `ID: ${searchToiletId}`,
-        variant: "destructive"
+        variant: "error"
       });
     }
   }, [searchToiletId, flyToToiletFn, toast, t]);
@@ -548,19 +545,19 @@ function AppContent() {
   const handleSignOut = useCallback(async () => {
     try {
       await signOut();
-      setShowUserMenu(false);
       // Delay the toast to prevent it from affecting the Map re-render
       setTimeout(() => {
         toast({
           title: "Signed out",
-          description: "You have been signed out successfully"
+          description: "You have been signed out successfully",
+          variant: "success"
         });
       }, 100);
     } catch (error) {
       toast({
         title: "Error",
         description: "Failed to sign out. Please try again.",
-        variant: "destructive"
+        variant: "error"
       });
     }
   }, [signOut, toast]);
@@ -580,7 +577,8 @@ function AppContent() {
         if (outcome === 'accepted') {
           toast({
             title: t('pwa.install'),
-            description: t('pwa.installDescription')
+            description: t('pwa.installDescription'),
+            variant: "success"
           });
         }
         
@@ -591,7 +589,7 @@ function AppContent() {
         toast({
           title: "Install Error",
           description: "Could not install app. Please try adding to home screen manually.",
-          variant: "destructive"
+          variant: "error"
         });
       }
     } else {
@@ -610,7 +608,8 @@ function AppContent() {
       
       toast({
         title: t('pwa.downloadApp'),
-        description: instructions
+        description: instructions,
+        variant: "info"
       });
     }
   }, [deferredPrompt, toast, t]);
@@ -620,14 +619,7 @@ function AppContent() {
 
 
   if (authLoading) {
-    return (
-      <div className="fixed inset-0 bg-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-          <div className="text-gray-600">Loading...</div>
-        </div>
-      </div>
-    );
+    return <LoadingScreen isLoading />;
   }
 
   return (
@@ -671,6 +663,9 @@ function AppContent() {
               )}
               
               <div className="flex items-center space-x-2 sm:space-x-3 flex-shrink-0">
+                {/* Desktop navigation links (next to language switch) */}
+                <DesktopNavLinks onOpenModal={setActiveInfoModal} />
+
                 {/* Language Switch */}
                 <LanguageSwitch />
                 
@@ -707,23 +702,16 @@ function AppContent() {
                   )}
                 </div>
                 
-                {/* User Menu */}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleUserMenuClick}
-                  className="w-8 h-8 rounded-full bg-gray-200 p-0 overflow-hidden"
-                >
-                  {user?.photoURL ? (
-                    <img
-                      src={user.photoURL}
-                      alt={user.displayName || 'User'}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <User className="w-4 h-4 text-gray-600" />
-                  )}
-                </Button>
+                {/* Profile button + dropdown navigation */}
+                <ProfileMenu
+                  user={user}
+                  isAdmin={isAdmin}
+                  isMobile={isMobile}
+                  onOpenModal={setActiveInfoModal}
+                  onSignOut={handleSignOut}
+                  onInstallApp={handleInstallApp}
+                  onLoginClick={handleLoginClick}
+                />
               </div>
             </div>
           </header>
@@ -756,7 +744,8 @@ function AppContent() {
                   setShowEditModal(true);
                   toast({
                     title: "Location editing cancelled",
-                    description: "Returned to edit mode."
+                    description: "Returned to edit mode.",
+                    variant: "info"
                   });
                 } else {
                   handleAddToilet();
@@ -861,86 +850,11 @@ function AppContent() {
             />
           )}
 
-          {/* User Menu Modal */}
-          <Dialog open={showUserMenu} onOpenChange={setShowUserMenu}>
-            <DialogContent 
-              className="sm:max-w-md z-30 bg-white shadow-xl border-0"
-              style={{
-                borderRadius: '24px',
-                margin: '0',
-                maxWidth: '500px',
-                width: 'calc(100vw - 40px)',
-                maxHeight: 'calc(100vh - 112px)',
-                left: '50%',
-                top: 'calc(50% + 40px)',
-                transform: 'translate(-50%, -50%)',
-                boxShadow: '0 10px 40px rgba(0,0,0,0.2)',
-                overflowY: 'auto',
-                padding: '1rem'
-              }}
-            >
-              <DialogHeader>
-                <DialogTitle className="text-xl font-semibold text-gray-900">{t('user.menu')}</DialogTitle>
-              </DialogHeader>
-              <div className="flex flex-col space-y-6">
-                <div className="flex items-center space-x-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100">
-                  <div className="w-14 h-14 rounded-full overflow-hidden flex items-center justify-center bg-gradient-to-br from-blue-600 to-blue-700 shadow-md">
-                    {user?.photoURL ? (
-                      <img
-                        src={user.photoURL}
-                        alt={user.displayName || 'User'}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <User className="w-7 h-7 text-white" />
-                    )}
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-semibold text-gray-900">
-                      {user?.displayName || 'User'}
-                    </p>
-                    <p className="text-sm text-gray-600">
-                      {user?.email}
-                    </p>
-                    {isAdmin && (
-                      <p className="text-xs text-blue-600 font-medium mt-1">
-                        Admin
-                      </p>
-                    )}
-                  </div>
-                </div>
-                
-                {/* Action buttons */}
-                <div className="flex flex-col space-y-3">
-                  {/* Download App button - Only show on mobile and when PWA not already installed */}
-                  {isMobile && !window.matchMedia('(display-mode: standalone)').matches && (
-                    <Button
-                      variant="default"
-                      onClick={handleInstallApp}
-                      className="w-full bg-blue-600 hover:bg-blue-700 text-white h-12"
-                    >
-                      <Download className="w-4 h-4 mr-2" />
-                      {t('pwa.downloadApp')}
-                    </Button>
-                  )}
-                  
-                  {/* Sign Out button */}
-                  <Button
-                    variant="outline"
-                    onClick={handleSignOut}
-                    className="w-full border-gray-300 text-gray-700 hover:bg-gray-50 h-12"
-                  >
-                    <LogOut className="w-4 h-4 mr-2" />
-                    {t('user.signOut')}
-                  </Button>
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
-
-
+          {/* Info modals: About / Guides / Contacts */}
+          <InfoModals activeModal={activeInfoModal} onClose={() => setActiveInfoModal(null)} />
 
           <Toaster />
+          <ConfirmDialogHost />
         </div>
       </QueryClientProvider>
     </TooltipProvider>

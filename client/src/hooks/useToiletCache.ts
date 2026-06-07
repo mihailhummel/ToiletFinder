@@ -1,7 +1,8 @@
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { useMemo, useState, useEffect } from 'react';
 import { Toilet } from '@/types/toilet';
-import { useToast } from '@/hooks/use-toast';
+import { notify } from '@/lib/notify';
+import { auth } from '@/lib/firebase';
 
 interface ViewportBounds {
   north: number;
@@ -65,12 +66,20 @@ async function addToilet(toiletData: NewToiletData): Promise<Toilet> {
     addedByUserName: toiletData.addedByUserName
   };
   
-  // Sending toilet data to server
-  console.log('🚽 useToiletCache: Sending to server with hasBabyChanging =', serverData.hasBabyChanging, 'Full serverData:', serverData);
-  
+  // The server authenticates writes with a Firebase Bearer token
+  // (requireAuth in server/routes.ts), so attach the current user's ID token.
+  const user = auth?.currentUser;
+  if (!user) {
+    throw new Error('Authentication required');
+  }
+  const idToken = await user.getIdToken();
+
   const response = await fetch('/api/toilets', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${idToken}`,
+    },
     body: JSON.stringify(serverData)
   });
   
@@ -162,7 +171,6 @@ export function useToiletCache(bounds: ViewportBounds | undefined, zoomLevel: nu
 // Hook for adding toilets with smart cache updates
 export function useAddToiletOptimized() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
   
   return useMutation({
     mutationFn: addToilet,
@@ -218,9 +226,8 @@ export function useAddToiletOptimized() {
         );
       });
       
-      toast({
-        title: "Toilet Added Successfully!",
-        description: "Your toilet location is now visible to everyone."
+      notify.success("Toilet added!", {
+        description: "Your toilet location is now visible to everyone.",
       });
     },
     
@@ -231,10 +238,8 @@ export function useAddToiletOptimized() {
       // Restore previous state
       queryClient.setQueryData(['all-toilets'], context.previousToilets);
       
-      toast({
-        title: "Failed to Add Toilet",
+      notify.error("Couldn't add toilet", {
         description: "Please check your connection and try again.",
-        variant: "destructive"
       });
     }
   });

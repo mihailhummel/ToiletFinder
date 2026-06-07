@@ -8,7 +8,7 @@ import { EditToiletModal } from "./EditToiletModal";
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/hooks/use-toast";
+import { InlineMessage } from "@/components/ui/inline-message";
 import { useAddToiletOptimized } from "@/hooks/useToiletCache";
 import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -52,9 +52,9 @@ export const AddToiletModal = ({ isOpen, onClose, location, initialData, onReque
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  
+  const [formError, setFormError] = useState<string | null>(null);
+
   const { user } = useAuth();
-  const { toast } = useToast();
   const { t } = useLanguage();
   const addToiletMutation = useAddToiletOptimized(); // Uses optimized caching
   
@@ -116,13 +116,10 @@ export const AddToiletModal = ({ isOpen, onClose, location, initialData, onReque
     e.stopPropagation();
     
     // Form submission initiated
-    
+    setFormError(null);
+
     if (!user) {
-      toast({
-        title: "Authentication required",
-        description: "Please sign in to add a toilet location.",
-        variant: "destructive"
-      });
+      setFormError("Please sign in to add a toilet location.");
       return;
     }
 
@@ -181,11 +178,7 @@ export const AddToiletModal = ({ isOpen, onClose, location, initialData, onReque
       
     } catch (error) {
       console.error("🚽 Client: Unexpected error:", error);
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred. Please try again.",
-        variant: "destructive"
-      });
+      setFormError("An unexpected error occurred. Please try again.");
     }
   };
 
@@ -227,6 +220,7 @@ export const AddToiletModal = ({ isOpen, onClose, location, initialData, onReque
     setHasBabyChanging(false);
     setShowConfirmation(false);
     setIsEditing(false);
+    setFormError(null);
     onClose();
   };
 
@@ -347,6 +341,9 @@ export const AddToiletModal = ({ isOpen, onClose, location, initialData, onReque
             </div>
 
             <form onSubmit={handleSubmit}>
+              {formError && (
+                <InlineMessage variant="error" className="mb-2">{formError}</InlineMessage>
+              )}
               <div className="flex space-x-2 pt-2">
                 <Button
                   type="button"
@@ -391,21 +388,16 @@ export const AddToiletModal = ({ isOpen, onClose, location, initialData, onReque
               </Select>
             </div>
 
-            <div className="flex items-center md:space-x-2 md:pt-1">
-              <span className="inline-flex shrink-0 scale-[0.5] md:scale-100 md:origin-left" aria-hidden>
-                <Checkbox
-                  id="baby-changing"
-                  checked={hasBabyChanging}
-                  onCheckedChange={(checked) => {
-                    const newValue = !!checked;
-                    setHasBabyChanging(newValue);
-                    console.log('🚽 AddToiletModal: Baby changing checkbox changed to:', newValue);
-                  }}
-                />
-              </span>
-              <Label 
-                htmlFor="baby-changing" 
-                className="text-xs font-medium text-gray-700 cursor-pointer"
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="baby-changing"
+                checked={hasBabyChanging}
+                onCheckedChange={(checked) => setHasBabyChanging(!!checked)}
+                className="!min-h-0 !min-w-0 h-4 w-4 shrink-0"
+              />
+              <Label
+                htmlFor="baby-changing"
+                className="text-xs font-medium text-gray-700 cursor-pointer select-none"
               >
                 {t('addToilet.hasBabyChanging')}
               </Label>
@@ -459,6 +451,10 @@ export const AddToiletModal = ({ isOpen, onClose, location, initialData, onReque
               </Select>
             </div>
             
+            {formError && (
+              <InlineMessage variant="error">{formError}</InlineMessage>
+            )}
+
             <div className="flex space-x-2 pt-2">
               <Button
                 type="button"

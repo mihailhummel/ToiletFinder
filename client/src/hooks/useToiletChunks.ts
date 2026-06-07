@@ -1,7 +1,7 @@
 import { useQueries, useQueryClient, useMutation } from '@tanstack/react-query';
 import { useMemo, useState, useEffect, useRef } from 'react';
 import { Toilet } from '@/types/toilet';
-import { useToast } from '@/hooks/use-toast';
+import { notify } from '@/lib/notify';
 
 const CHUNK_SIZE = 0.05; // ~5.5km squares
 
@@ -203,7 +203,6 @@ export function useToiletChunks(bounds: ViewportBounds | undefined) {
 // Hook for adding toilets with optimistic updates
 export function useAddToilet() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
   
   return useMutation({
     mutationFn: addToilet,
@@ -252,9 +251,8 @@ export function useAddToilet() {
         );
       });
       
-      toast({
-        title: "Toilet Added Successfully!",
-        description: "Your toilet location is now visible to everyone."
+      notify.success("Toilet added!", {
+        description: "Your toilet location is now visible to everyone.",
       });
     },
     
@@ -265,10 +263,8 @@ export function useAddToilet() {
       // Restore previous state
       queryClient.setQueryData(['toilet-chunk', context.chunkKey], context.previousChunk);
       
-      toast({
-        title: "Failed to Add Toilet",
+      notify.error("Couldn't add toilet", {
         description: "Please check your connection and try again.",
-        variant: "destructive"
       });
     }
   });

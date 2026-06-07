@@ -173,6 +173,9 @@ interface Translations {
   'report.reasonOther': string;
   'report.detailsPlaceholder': string;
   'report.detailsLabel': string;
+  'report.commentPlaceholder': string;
+  'report.commentOptional': string;
+  'report.submitting': string;
   
   // Language Switch
   'language.switch': string;
@@ -183,6 +186,16 @@ interface Translations {
   'admin.searchPlaceholder': string;
   'admin.toiletNotFound': string;
   'admin.toiletFound': string;
+
+  // Confirmations & inline/notification feedback
+  'confirm.deleteToilet.title': string;
+  'confirm.deleteToilet.body': string;
+  'toast.reviewSubmitted': string;
+  'toast.reviewError': string;
+  'toast.editPermission': string;
+  'toast.deletePermission': string;
+  'toast.toiletDeleted': string;
+  'toast.deleteError': string;
 
   // Descriptions
   'description.editToilet': string;
@@ -241,6 +254,44 @@ interface Translations {
   'welcome.reviewDescription': string;
   'welcome.gotIt': string;
   'welcome.contactMe': string;
+
+  // Navigation
+  'nav.blog': string;
+  'nav.about': string;
+  'nav.guides': string;
+  'nav.contacts': string;
+  'nav.download': string;
+  'nav.menu': string;
+  'nav.signIn': string;
+
+  // About Modal
+  'about.title': string;
+  'about.p1': string;
+  'about.p2': string;
+  'about.p3': string;
+  'about.p4': string;
+
+  // Guides Modal
+  'guides.title': string;
+  'guides.mapLegend': string;
+  'guides.legend.babyChanging': string;
+  'guides.legend.public': string;
+  'guides.legend.mall': string;
+  'guides.legend.gasStation': string;
+  'guides.legend.cafe': string;
+  'guides.legend.portable': string;
+  'guides.legend.other': string;
+  'guides.howToAdd': string;
+  'guides.howToAddPre': string;
+  'guides.howToAddPost': string;
+
+  // Contacts Modal
+  'contacts.title': string;
+  'contacts.orReachOut': string;
+  'contacts.copied': string;
+
+  // Toilet type badge
+  'toiletType.hasBabyChangingBadge': string;
 }
 
 const translations: Record<Language, Translations> = {
@@ -290,7 +341,7 @@ const translations: Record<Language, Translations> = {
     'toiletType.gasStation': 'Gas Station',
     'toiletType.trainStation': 'Train Station',
     'toiletType.busStation': 'Bus Station',
-    'toiletType.mall': 'Mall',
+    'toiletType.mall': 'Shop | Mall',
     'toiletType.other': 'Other',
     'toiletType.EKOTOI': 'EKOTOI',
     'toiletType.hasBabyChangingBadge': 'Baby Changing Facility',
@@ -398,6 +449,9 @@ const translations: Record<Language, Translations> = {
     'report.reasonOther': 'Other',
     'report.detailsPlaceholder': 'Please describe what information is incorrect...',
     'report.detailsLabel': 'What details are wrong? (Required)',
+    'report.commentPlaceholder': 'Add any extra details (optional)',
+    'report.commentOptional': 'Comment (optional)',
+    'report.submitting': 'Submitting…',
     
     // Language Switch
     'language.switch': 'Language',
@@ -408,6 +462,16 @@ const translations: Record<Language, Translations> = {
     'admin.searchPlaceholder': 'Search by Toilet ID...',
     'admin.toiletNotFound': 'Toilet not found',
     'admin.toiletFound': 'Toilet found!',
+
+    // Confirmations & inline/notification feedback
+    'confirm.deleteToilet.title': 'Delete this toilet?',
+    'confirm.deleteToilet.body': "This action can't be undone.",
+    'toast.reviewSubmitted': 'Review submitted!',
+    'toast.reviewError': "Couldn't submit review. Please try again.",
+    'toast.editPermission': 'You can only edit toilets you have added.',
+    'toast.deletePermission': 'You can only delete toilets you have added.',
+    'toast.toiletDeleted': 'Toilet deleted',
+    'toast.deleteError': "Couldn't delete toilet. Please try again.",
 
     // Descriptions
     'description.editToilet': 'Make changes to the toilet details.',
@@ -466,6 +530,41 @@ const translations: Record<Language, Translations> = {
     'welcome.reviewDescription': 'Share your experience and rate toilet facilities to help other users.',
     'welcome.gotIt': 'Got it, let\'s go!',
     'welcome.contactMe': 'Contact us at:',
+
+    // Navigation
+    'nav.blog': 'Blog',
+    'nav.about': 'About Us',
+    'nav.guides': 'Guides',
+    'nav.contacts': 'Contacts',
+    'nav.download': 'Download App',
+    'nav.menu': 'Menu',
+    'nav.signIn': 'Sign in with Google',
+
+    // About Modal
+    'about.title': 'About Us',
+    'about.p1': 'Our mission is to map out every accessible and clean restroom in the country, ensuring nobody ever has to compromise their comfort or dignity.',
+    'about.p2': 'We believe access to sanitation is a fundamental human right. Together, we can build a comprehensive guide that helps locals and tourists alike find relief in a clean and safe environment.',
+    'about.p3': 'We are a group of developers, designers, and urban enthusiasts who grew tired of wondering where the nearest usable toilet is.',
+    'about.p4': 'What started as a weekend project has evolved into a growing community of contributors.',
+
+    // Guides Modal
+    'guides.title': 'Guides',
+    'guides.mapLegend': 'Map Legend',
+    'guides.legend.babyChanging': 'Baby changing',
+    'guides.legend.public': 'Public',
+    'guides.legend.mall': 'Mall | Shops',
+    'guides.legend.gasStation': 'Gas Station',
+    'guides.legend.cafe': 'Cafe | Restaurant',
+    'guides.legend.portable': 'Portable Toilet',
+    'guides.legend.other': 'Other',
+    'guides.howToAdd': 'How to Add a Toilet',
+    'guides.howToAddPre': 'Tap on the blue ',
+    'guides.howToAddPost': ' button on the main screen and follow the instructions to add a new restroom location.',
+
+    // Contacts Modal
+    'contacts.title': 'Contacts',
+    'contacts.orReachOut': 'or reach out',
+    'contacts.copied': 'Copied to clipboard',
   },
   bg: {
     // Header
@@ -513,7 +612,7 @@ const translations: Record<Language, Translations> = {
     'toiletType.gasStation': 'Бензиностанция',
     'toiletType.trainStation': 'Жп. Гара / Метро',
     'toiletType.busStation': 'Автогара',
-    'toiletType.mall': 'Мол',
+    'toiletType.mall': 'Магазин | Мол',
     'toiletType.other': 'Друго',
     'toiletType.EKOTOI': 'EKOTOI',
     'toiletType.hasBabyChangingBadge': 'Място за смяна на пелени',
@@ -621,6 +720,9 @@ const translations: Record<Language, Translations> = {
     'report.reasonOther': 'Друго',
     'report.detailsPlaceholder': 'Моля, опишете каква информация е неправилна...',
     'report.detailsLabel': 'Какви детайли са грешни? (Задължително)',
+    'report.commentPlaceholder': 'Добавете подробности (по избор)',
+    'report.commentOptional': 'Коментар (по избор)',
+    'report.submitting': 'Изпращане…',
     
     // Language Switch
     'language.switch': 'Език',
@@ -631,6 +733,16 @@ const translations: Record<Language, Translations> = {
     'admin.searchPlaceholder': 'Търси по ID на тоалетна...',
     'admin.toiletNotFound': 'Тоалетната не е намерена',
     'admin.toiletFound': 'Тоалетната е намерена!',
+
+    // Confirmations & inline/notification feedback
+    'confirm.deleteToilet.title': 'Изтриване на тази тоалетна?',
+    'confirm.deleteToilet.body': 'Това действие не може да бъде отменено.',
+    'toast.reviewSubmitted': 'Отзивът е изпратен!',
+    'toast.reviewError': 'Неуспешно изпращане на отзива. Опитайте отново.',
+    'toast.editPermission': 'Можете да редактирате само тоалетни, които сте добавили.',
+    'toast.deletePermission': 'Можете да изтривате само тоалетни, които сте добавили.',
+    'toast.toiletDeleted': 'Тоалетната е изтрита',
+    'toast.deleteError': 'Неуспешно изтриване на тоалетната. Опитайте отново.',
 
     // Descriptions
     'description.editToilet': 'Направи промени в детайлите на тоалетната.',
@@ -689,6 +801,41 @@ const translations: Record<Language, Translations> = {
     'welcome.reviewDescription': 'Споделете впечатленията си и оценете тоалетните съоръжения, за да помогнете на други потребители.',
     'welcome.gotIt': 'Разбрах, да започваме!',
     'welcome.contactMe': 'Пишете ни на:',
+
+    // Navigation
+    'nav.blog': 'Блог',
+    'nav.about': 'За Нас',
+    'nav.guides': 'Насоки',
+    'nav.contacts': 'Контакти',
+    'nav.download': 'Изтегли',
+    'nav.menu': 'Меню',
+    'nav.signIn': 'Влез с Google',
+
+    // About Modal
+    'about.title': 'За Нас',
+    'about.p1': 'Нашата мисия е да картографираме всяка достъпна и чиста тоалетна в страната, така че никой да не прави компромис с комфорта и достойнството си.',
+    'about.p2': 'Вярваме, че достъпът до санитарни условия е основно човешко право. Заедно можем да изградим изчерпателен наръчник, който помага както на местните, така и на туристите да намерят облекчение в чиста и безопасна среда.',
+    'about.p3': 'Ние сме група от разработчици, дизайнери и градски ентусиасти, на които им омръзна да се чудят къде е най-близката използваема тоалетна.',
+    'about.p4': 'Това, което започна като проект през уикенда, се превърна в растяща общност от сътрудници.',
+
+    // Guides Modal
+    'guides.title': 'Насоки',
+    'guides.mapLegend': 'Легенда на картата',
+    'guides.legend.babyChanging': 'Място за повиване',
+    'guides.legend.public': 'Обществена',
+    'guides.legend.mall': 'Мол | Магазини',
+    'guides.legend.gasStation': 'Бензиностанция',
+    'guides.legend.cafe': 'Кафене | Ресторант',
+    'guides.legend.portable': 'Преносима тоалетна',
+    'guides.legend.other': 'Друго',
+    'guides.howToAdd': 'Как да добавите тоалетна',
+    'guides.howToAddPre': 'Натиснете синия ',
+    'guides.howToAddPost': ' бутон на основния екран и следвайте инструкциите, за да добавите нова локация на тоалетна.',
+
+    // Contacts Modal
+    'contacts.title': 'Контакти',
+    'contacts.orReachOut': 'или се свържете',
+    'contacts.copied': 'Копирано в клипборда',
   },
 };
 

@@ -3,7 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { StarRating } from "./StarRating";
-import { useToast } from "@/hooks/use-toast";
+import { notify } from "@/lib/notify";
+import { InlineMessage } from "@/components/ui/inline-message";
 import { useAddReview, useUserReviewStatus } from "@/hooks/useToilets";
 import { useAuth } from "@/hooks/useAuth";
 import type { Toilet } from "@/types/toilet";
@@ -17,39 +18,28 @@ interface AddReviewModalProps {
 export const AddReviewModal = ({ toilet, isOpen, onClose }: AddReviewModalProps) => {
   const [rating, setRating] = useState(0);
   const [text, setText] = useState("");
-  
+  const [formError, setFormError] = useState<string | null>(null);
+
   const { user } = useAuth();
-  const { toast } = useToast();
   const addReviewMutation = useAddReview();
   const { data: hasReviewed } = useUserReviewStatus(toilet.id, user?.uid);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+    setFormError(null);
+
     if (!user) {
-      toast({
-        title: "Authentication required",
-        description: "Please sign in to leave a review.",
-        variant: "destructive"
-      });
+      setFormError("Please sign in to leave a review.");
       return;
     }
 
     if (rating === 0) {
-      toast({
-        title: "Rating required",
-        description: "Please select a rating.",
-        variant: "destructive"
-      });
+      setFormError("Please select a rating.");
       return;
     }
 
     if (hasReviewed) {
-      toast({
-        title: "Already reviewed",
-        description: "You have already reviewed this toilet.",
-        variant: "destructive"
-      });
+      setFormError("You have already reviewed this toilet.");
       return;
     }
 
@@ -65,20 +55,15 @@ export const AddReviewModal = ({ toilet, isOpen, onClose }: AddReviewModalProps)
         }
       });
 
-      toast({
-        title: "Success!",
-        description: "Your review has been submitted."
+      notify.success("Review submitted!", {
+        description: "Thanks for helping others find quality facilities.",
       });
 
       onClose();
       setRating(0);
       setText("");
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to submit review. Please try again.",
-        variant: "destructive"
-      });
+      setFormError("Failed to submit review. Please try again.");
     }
   };
 
@@ -86,6 +71,7 @@ export const AddReviewModal = ({ toilet, isOpen, onClose }: AddReviewModalProps)
     onClose();
     setRating(0);
     setText("");
+    setFormError(null);
   };
 
   if (hasReviewed) {
@@ -144,6 +130,10 @@ export const AddReviewModal = ({ toilet, isOpen, onClose }: AddReviewModalProps)
             />
           </div>
           
+          {formError && (
+            <InlineMessage variant="error">{formError}</InlineMessage>
+          )}
+
           <div className="flex space-x-3 pt-2">
             <Button
               type="button"

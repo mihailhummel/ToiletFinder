@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/hooks/use-toast";
+import { InlineMessage } from "@/components/ui/inline-message";
 import { haptics } from "@/lib/haptics";
 import { useLanguage } from "@/contexts/LanguageContext";
 import type { ToiletType, Accessibility, AccessType, MapLocation } from "@/types/toilet";
@@ -51,8 +51,8 @@ export const EditToiletModal = ({ isOpen, onClose, location, initialData, onConf
   const [accessType, setAccessType] = useState<AccessType>(initialData.accessType);
   const [hasBabyChanging, setHasBabyChanging] = useState(initialData.hasBabyChanging);
   const [editableLocation, setEditableLocation] = useState(location || { lat: 0, lng: 0 });
-  
-  const { toast } = useToast();
+  const [formError, setFormError] = useState<string | null>(null);
+
   const { t } = useLanguage();
   
   // Dynamic toilet types with translations
@@ -108,14 +108,11 @@ export const EditToiletModal = ({ isOpen, onClose, location, initialData, onConf
     e.stopPropagation();
     
     console.log("Edit toilet form submitted");
-    
+    setFormError(null);
+
     // Validate coordinates
     if (!editableLocation.lat || !editableLocation.lng) {
-      toast({
-        title: "Invalid coordinates",
-        description: "Please enter valid latitude and longitude values.",
-        variant: "destructive"
-      });
+      setFormError("Please enter valid latitude and longitude values.");
       return;
     }
 
@@ -128,15 +125,9 @@ export const EditToiletModal = ({ isOpen, onClose, location, initialData, onConf
       hasBabyChanging,
       coordinates: editableLocation
     });
-    
-    // Close the modal
+
+    // Close the modal (the parent shows a success notification once saved)
     handleClose();
-    
-    // Show success toast
-    toast({
-      title: "Changes saved",
-      description: "Your changes have been saved successfully."
-    });
   };
 
   const handleCancel = (e: React.MouseEvent) => {
@@ -146,6 +137,7 @@ export const EditToiletModal = ({ isOpen, onClose, location, initialData, onConf
   };
 
   const handleClose = () => {
+    setFormError(null);
     onClose();
   };
 
@@ -157,8 +149,8 @@ export const EditToiletModal = ({ isOpen, onClose, location, initialData, onConf
           borderRadius: '24px',
           margin: '0',
           maxWidth: '500px',
-          width: 'calc(100vw - 16px)', // Reduced margins for more content space
-          maxHeight: 'calc(100vh - 80px)', // Reduced top/bottom margins
+          width: 'calc(100vw - 2rem)',
+          maxHeight: 'calc(100vh - 120px)',
           left: '50%',
           top: 'calc(50% + 8px)', // Moved closer to center
           transform: 'translate(-50%, -50%)',
@@ -264,17 +256,16 @@ export const EditToiletModal = ({ isOpen, onClose, location, initialData, onConf
             </Select>
           </div>
 
-          <div className="flex items-center md:space-x-2 md:pt-1">
-            <span className="inline-flex shrink-0 scale-[0.5] md:scale-100 md:origin-left" aria-hidden>
-              <Checkbox
-                id="baby-changing-edit"
-                checked={hasBabyChanging}
-                onCheckedChange={(checked) => setHasBabyChanging(!!checked)}
-              />
-            </span>
-            <Label 
-              htmlFor="baby-changing-edit" 
-              className="text-xs font-medium text-gray-700 cursor-pointer"
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="baby-changing-edit"
+              checked={hasBabyChanging}
+              onCheckedChange={(checked) => setHasBabyChanging(!!checked)}
+              className="!min-h-0 !min-w-0 h-4 w-4 shrink-0"
+            />
+            <Label
+              htmlFor="baby-changing-edit"
+              className="text-xs font-medium text-gray-700 cursor-pointer select-none"
             >
               {t('addToilet.hasBabyChanging')}
             </Label>
@@ -328,6 +319,10 @@ export const EditToiletModal = ({ isOpen, onClose, location, initialData, onConf
             </Select>
           </div>
           
+          {formError && (
+            <InlineMessage variant="error">{formError}</InlineMessage>
+          )}
+
           <div className="flex space-x-2 pt-1.5 min-w-0">
             <Button
               type="button"

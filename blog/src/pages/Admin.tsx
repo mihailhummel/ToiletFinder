@@ -18,6 +18,7 @@ import {
   List,
   Heading,
   Tag,
+  AlertTriangle,
 } from "lucide-react";
 import Markdown from "react-markdown";
 import {
@@ -29,6 +30,7 @@ import {
   BlogPost,
 } from "../store";
 import { generateSlug } from "../lib/slugify";
+import ConfirmModal from "../components/ConfirmModal";
 
 const siteUrl = import.meta.env.VITE_SITE_URL || "https://toaletna.com";
 const basePath = import.meta.env.VITE_BASE_PATH || "/blog";
@@ -42,6 +44,8 @@ export default function Admin() {
   const [tagsInput, setTagsInput] = useState("");
   const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const parseTags = (value: string): string[] =>
@@ -95,11 +99,15 @@ export default function Admin() {
     setIsEditing(true);
   };
 
-  const handleDelete = async (id: string) => {
-    if (window.confirm("Сигурни ли сте, че искате да изтриете тази статия?")) {
-      await deletePost(id);
-      await refreshPosts();
-    }
+  const handleDelete = (id: string) => {
+    setPendingDeleteId(id);
+  };
+
+  const confirmDelete = async () => {
+    if (!pendingDeleteId) return;
+    await deletePost(pendingDeleteId);
+    await refreshPosts();
+    setPendingDeleteId(null);
   };
 
   const handleToggleRecommended = async (post: BlogPost) => {
@@ -120,9 +128,11 @@ export default function Admin() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFormError(null);
 
     if (!currentPost.title || !currentPost.content || !currentPost.author) {
-      alert("Моля, попълнете всички задължителни полета.");
+      setFormError("Моля, попълнете всички задължителни полета.");
+      setIsPreview(false);
       return;
     }
 
@@ -469,6 +479,13 @@ export default function Admin() {
             </label>
           </div>
 
+          {formError && (
+            <div className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+              <AlertTriangle size={18} className="mt-0.5 shrink-0 text-red-500" />
+              <span>{formError}</span>
+            </div>
+          )}
+
           <div className="flex justify-end gap-4 pt-4 border-t border-gray-100">
             <button
               type="button"
@@ -606,6 +623,17 @@ export default function Admin() {
           </table>
         </div>
       </div>
+
+      <ConfirmModal
+        open={pendingDeleteId !== null}
+        title="Изтриване на статия"
+        message="Сигурни ли сте, че искате да изтриете тази статия? Това действие не може да бъде отменено."
+        confirmText="Изтрий"
+        cancelText="Отказ"
+        variant="destructive"
+        onConfirm={confirmDelete}
+        onClose={() => setPendingDeleteId(null)}
+      />
     </div>
   );
 }
