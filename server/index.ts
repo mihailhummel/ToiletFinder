@@ -43,6 +43,11 @@ app.use(
           "https://apis.google.com",
           "https://accounts.google.com",
         ],
+        // Leaflet map popups use inline onclick= handlers (window.getDirections,
+        // window.setRating, etc.). helmet's default is script-src-attr 'none',
+        // which blocks ALL of them and breaks every popup button. Allow them.
+        // TODO(B3): migrate popups to event delegation, then drop this.
+        "script-src-attr": ["'unsafe-inline'"],
         "style-src": ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
         "font-src": ["'self'", "https://fonts.gstatic.com", "data:"],
         "img-src": [
@@ -61,6 +66,7 @@ app.use(
           "https://*.google-analytics.com",
           "https://*.analytics.google.com",
           "https://www.googletagmanager.com",
+          "https://*.googleusercontent.com", // SW fetches Google profile avatars
         ],
         "frame-src": [
           "https://accounts.google.com",
