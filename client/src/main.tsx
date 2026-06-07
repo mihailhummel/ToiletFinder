@@ -3,10 +3,15 @@ import { createRoot } from "react-dom/client";
 import { registerSW } from 'virtual:pwa-register';
 import App from "./App";
 import "./index.css";
+import { initAnalytics } from "./lib/consent";
 
 // Register the Workbox service worker (no-op in dev — disabled via vite.config).
 // autoUpdate + skipWaiting/clientsClaim means new deploys take over within a session.
 registerSW({ immediate: true });
+
+// Load Google Analytics ONLY if the user previously gave consent (GDPR hard-gate).
+// First-time / rejected visitors get no tracking; the ConsentBanner handles opt-in.
+initAnalytics();
 
 // One-time cleanup for users upgrading from the old hand-written service worker:
 // delete its orphaned caches (toilet-map-*). Workbox's cleanupOutdatedCaches only

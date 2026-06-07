@@ -1,9 +1,17 @@
 import { useState, useEffect, useCallback } from "react";
+import { Switch, Route } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { ConfirmDialogHost } from "@/components/ui/confirm-dialog";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { LanguageProvider, useLanguage } from "@/contexts/LanguageContext";
+
+// Privacy / legal pages (lazy-free: small static components)
+import { ConsentBanner } from "./components/ConsentBanner";
+import PrivacyPolicy from "./pages/legal/PrivacyPolicy";
+import TermsOfService from "./pages/legal/TermsOfService";
+import CookiePolicy from "./pages/legal/CookiePolicy";
+import CookieSettings from "./pages/legal/CookieSettings";
 
 // Components
 import { PWABanner } from "./components/PWABanner";
@@ -861,11 +869,22 @@ function AppContent() {
   );
 }
 
-// Main App component with Language Provider
+// Main App component with Language Provider + client-side routing.
+// The map app (AppContent) is the default route; the legal/privacy pages are
+// siblings. The Express catch-all serves index.html for these paths, so deep
+// links like /privacy work. The ConsentBanner is global (shows on every page).
 function App() {
   return (
     <LanguageProvider>
-      <AppContent />
+      <Switch>
+        <Route path="/privacy" component={PrivacyPolicy} />
+        <Route path="/terms" component={TermsOfService} />
+        <Route path="/cookies" component={CookiePolicy} />
+        <Route path="/cookie-settings" component={CookieSettings} />
+        {/* No path = default: the map application */}
+        <Route component={AppContent} />
+      </Switch>
+      <ConsentBanner />
     </LanguageProvider>
   );
 }

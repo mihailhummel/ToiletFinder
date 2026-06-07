@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { Link } from 'wouter';
 import {
   User,
   LogOut,
@@ -99,7 +100,8 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
   onInstallApp,
   onLoginClick,
 }) => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const bg = language === 'bg';
   const [open, setOpen] = useState(false);
   // Falls back to the User icon if the Google avatar fails to load (e.g. a 429
   // from lh3.googleusercontent.com), so we never show a broken image.
@@ -274,6 +276,25 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
                 {t('user.signOut')}
               </button>
             )}
+          </div>
+
+          {/* Legal / privacy footer links (reachable from the profile menu) */}
+          <div className="px-4 py-3 border-t border-slate-100 flex flex-wrap gap-x-3 gap-y-1">
+            {[
+              { href: '/privacy', label: bg ? 'Поверителност' : 'Privacy' },
+              { href: '/terms', label: bg ? 'Условия' : 'Terms' },
+              { href: '/cookies', label: bg ? 'Бисквитки' : 'Cookies' },
+              { href: '/cookie-settings', label: bg ? 'Настройки' : 'Cookie settings' },
+            ].map((l) => (
+              <Link
+                key={l.href}
+                href={l.href}
+                onClick={() => setOpen(false)}
+                className="text-[11px] text-slate-400 hover:text-blue-600 transition-colors"
+              >
+                {l.label}
+              </Link>
+            ))}
           </div>
         </div>
       )}

@@ -70,34 +70,10 @@
     }
     </script>
     
-    <!-- Google Analytics -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-FPF6DRB75R"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-FPF6DRB75R', {
-        page_title: 'Toilet Map Bulgaria',
-        page_location: 'https://toaletna.com',
-        anonymize_ip: true,
-        allow_google_signals: false,
-        allow_ad_personalization_signals: false
-      });
-      
-      // Track custom events
-      function trackEvent(action, category, label, value) {
-        gtag('event', action, {
-          event_category: category,
-          event_label: label,
-          value: value
-        });
-      }
-      
-      // Make gtag globally available
-      window.gtag = gtag;
-      window.trackEvent = trackEvent;
-    </script>
-    
+    <!-- Google Analytics is loaded ONLY after cookie consent — see
+         src/lib/consent.ts (initAnalytics) and the ConsentBanner. It must not be
+         bootstrapped here, or it would fire before consent (GDPR/ePrivacy). -->
+
     <!-- PWA Meta Tags -->
     <meta name="theme-color" content="#ffffff">
     <link rel="manifest" href="/manifest.json">
@@ -129,7 +105,8 @@
     
     <!-- Performance Optimizations -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://www.googletagmanager.com">
+    <!-- No googletagmanager preconnect: we must not even open a connection to
+         Google before cookie consent. GA is loaded on demand by lib/consent.ts. -->
     <link rel="preconnect" href="/api" crossorigin>
     <link rel="dns-prefetch" href="https://toaletna.com">
 
@@ -207,17 +184,7 @@
       window.DOMAIN = window.location.origin;
 
       // Service worker is registered by vite-plugin-pwa (see src/main.tsx) — not here.
-
-      // Performance monitoring
-      window.addEventListener('load', function() {
-        if (window.gtag && performance) {
-          const loadTime = performance.timing.loadEventEnd - performance.timing.navigationStart;
-          gtag('event', 'timing_complete', {
-            name: 'load',
-            value: loadTime
-          });
-        }
-      });
+      // (Performance/GA timing events removed: analytics is now consent-gated.)
     </script>
   </body>
 </html>
