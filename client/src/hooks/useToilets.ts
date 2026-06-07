@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import { auth } from "@/lib/firebase";
 import type { Toilet, InsertToilet, InsertReview, InsertReport, Review, MapLocation } from "@/types/toilet";
 import { useCallback, useRef, useState, useMemo, useEffect } from 'react';
 
@@ -384,6 +385,9 @@ export const useAddReview = () => {
       queryClient.invalidateQueries({ queryKey: ["toilets", variables.toiletId, "reviews"] });
       queryClient.invalidateQueries({ queryKey: ["toilets"] });
       queryClient.invalidateQueries({ queryKey: ["toilets-supabase"] });
+      // The map renders from the 'all-toilets' cache — refresh it so the marker's
+      // rating/review-count aggregates update after a new review.
+      queryClient.invalidateQueries({ queryKey: ["all-toilets"] });
     },
   });
 };
@@ -401,11 +405,10 @@ export const useUserReviewStatus = (toiletId: string, userId?: string) => {
     queryKey: ["user-review-status", toiletId, userId],
     queryFn: async () => {
       if (!userId) return null;
-      
-      const response = await fetch(`/api/toilets/${toiletId}/user-review?userId=${userId}`);
-      if (response.status === 404) return null;
-      if (!response.ok) throw new Error('Failed to fetch user review status');
-      
+
+      // Endpoint is auth-gated; apiRequest attaches the Firebase token and the
+      // server derives identity from it (the userId query param is ignored).
+      const response = await apiRequest("GET", `/api/toilets/${toiletId}/user-review`);
       return await response.json();
     },
     enabled: !!toiletId && !!userId,
@@ -417,14 +420,19 @@ export const useDeleteToilet = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async ({ toiletId, adminEmail, userId }: { toiletId: string; adminEmail: string; userId: string }): Promise<void> => {
-      
-      const requestBody = { adminEmail, userId };
-      
+    mutationFn: async ({ toiletId }: { toiletId: string; adminEmail?: string; userId?: string }): Promise<void> => {
+      const user = auth?.currentUser;
+      if (!user) {
+        throw new Error('Authentication required');
+      }
+      const idToken = await user.getIdToken();
+
       const response = await fetch(`/api/toilets/${toiletId}`, {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestBody),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`,
+        },
       });
       
       
@@ -439,10 +447,13 @@ export const useDeleteToilet = () => {
       // Invalidate and refetch toilet queries
       queryClient.invalidateQueries({ queryKey: ["toilets"] });
       queryClient.invalidateQueries({ queryKey: ["toilets-supabase"] });
-      
+      // The map renders from 'all-toilets' — invalidate it so the deleted
+      // marker actually disappears instead of lingering until staleTime.
+      queryClient.invalidateQueries({ queryKey: ["all-toilets"] });
+
       // Clear cache to ensure deleted toilet doesn't show up
       clearToiletCache();
-      
+
     },
     onError: (error) => {
       console.error("❌ Failed to delete toilet:", error);

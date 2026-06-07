@@ -110,36 +110,54 @@ export const reportSchema = createSelectSchema(reports, {
 
 export const toiletReportSchema = createSelectSchema(toiletReports);
 
+// Coordinates must fall within Bulgaria's bounding box (with generous slack).
+// Bulgaria spans roughly lat 41.2–44.2, lng 22.4–28.6. Rejecting points outside
+// this stops "coordinate poisoning" (toilets placed anywhere on earth).
+export const bulgariaCoordinatesSchema = z.object({
+  lat: z.number().min(41.0).max(44.5),
+  lng: z.number().min(22.0).max(28.8),
+});
+
 export const insertToiletSchema = z.object({
   type: toiletTypeSchema,
-  title: z.string().nullable().optional(),
-  coordinates: z.object({
-    lat: z.number(),
-    lng: z.number()
-  }),
-  notes: z.string().optional(),
+  title: z.string().max(120).nullable().optional(),
+  coordinates: bulgariaCoordinatesSchema,
+  notes: z.string().max(1000).optional(),
   accessibility: accessibilitySchema.default('unknown'),
   accessType: accessTypeSchema.default('unknown'),
   hasBabyChanging: z.boolean().default(false),
   userId: z.string(),
   source: z.enum(['osm', 'user']).default('user'),
-  addedByUserName: z.string().optional(),
+  addedByUserName: z.string().max(80).optional(),
+});
+
+// PUT /api/toilets/:id — validated update payload. `coordinates` is accepted here
+// but the route strips it for non-admins (only admins may relocate a toilet, e.g.
+// to fix an OSM import); regular creators can edit details but not move the pin.
+export const updateToiletSchema = z.object({
+  type: toiletTypeSchema,
+  title: z.string().max(120).nullable(),
+  accessibility: accessibilitySchema.optional(),
+  accessType: accessTypeSchema.optional(),
+  hasBabyChanging: z.boolean().optional(),
+  notes: z.string().max(1000).optional(),
+  coordinates: bulgariaCoordinatesSchema.optional(),
 });
 
 export const insertReviewSchema = z.object({
   toiletId: z.string(),
   userId: z.string(),
-  userName: z.string(),
-  rating: z.number().min(1).max(5),
-  text: z.string().optional(),
+  userName: z.string().max(80),
+  rating: z.number().int().min(1).max(5),
+  text: z.string().max(2000).optional(),
 });
 
 export const insertReportSchema = z.object({
   toiletId: z.string(),
   userId: z.string(),
-  userName: z.string(),
+  userName: z.string().max(80),
   reason: reportReasonSchema,
-  comment: z.string().optional(),
+  comment: z.string().max(1000).optional(),
 });
 
 export const insertToiletReportSchema = z.object({
@@ -153,6 +171,7 @@ export type Review = z.infer<typeof reviewSchema>;
 export type Report = z.infer<typeof reportSchema>;
 export type ToiletReport = z.infer<typeof toiletReportSchema>;
 export type InsertToilet = z.infer<typeof insertToiletSchema>;
+export type UpdateToilet = z.infer<typeof updateToiletSchema>;
 export type InsertReview = z.infer<typeof insertReviewSchema>;
 export type InsertReport = z.infer<typeof insertReportSchema>;
 export type InsertToiletReport = z.infer<typeof insertToiletReportSchema>;

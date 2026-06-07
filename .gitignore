@@ -64,6 +64,9 @@ firebase-admin-config.d.ts
 # Supabase
 .supabase
 
+# MCP config (contains a full-power Supabase management token — never commit)
+.mcp.json
+
 # Admin Manager (local only - contains sensitive logs and configs)
 admin-manager/
 

@@ -132,11 +132,10 @@ export const useUserReviewStatus = (toiletId: string, userId?: string) => {
     queryKey: ["user-review-status", toiletId, userId],
     queryFn: async () => {
       if (!userId) return null;
-      
-      const response = await fetch(`/api/toilets/${toiletId}/user-review?userId=${userId}`);
-      if (response.status === 404) return null;
-      if (!response.ok) throw new Error('Failed to fetch user review status');
-      
+
+      // Auth-gated endpoint; apiRequest attaches the Firebase token (server
+      // derives identity from it; the userId query param is ignored).
+      const response = await apiRequest("GET", `/api/toilets/${toiletId}/user-review`);
       return await response.json();
     },
     enabled: !!toiletId && !!userId,

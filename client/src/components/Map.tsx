@@ -3,9 +3,11 @@ import { Button } from '@/components/ui/button';
 import { Crosshair, Plus } from 'lucide-react';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import { useToiletCache } from '@/hooks/useToiletCache';
-import { useDeleteToilet, useAddReview, preloadToiletsForRegion } from '@/hooks/useToilets';
+import { useDeleteToilet, useAddReview } from '@/hooks/useToilets';
 import { useAuth } from '@/hooks/useAuth';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { notify } from '@/lib/notify';
+import { confirmDialog } from '@/components/ui/confirm-dialog';
 import { useQueryClient } from '@tanstack/react-query';
 import type { Toilet, MapLocation } from '@/types/toilet';
 import L from 'leaflet';
@@ -15,6 +17,16 @@ import { LoadingScreen } from './LoadingScreen';
 import { clusterPoints, isCluster, getClusterStyle, getClusterBounds, type ClusterPoint, type Cluster } from '@/utils/clustering';
 // @ts-ignore
 window.L = L;
+
+// Escape user-controlled values before injecting them into popup innerHTML.
+// Prevents stored XSS via toilet titles, names, and review text.
+const escapeHtml = (value: unknown): string =>
+  String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
 
 interface MapProps {
   onToiletClick: (toilet: Toilet) => void;
@@ -36,7 +48,7 @@ declare global {
     resetStars: (toiletId: string) => void;
     submitReview: (toiletId: string) => void;
     cancelReview: (toiletId: string) => void;
-    loadReviews: (toiletId: string) => void;
+    loadReviews: (toiletId: string, force?: boolean) => void;
     toggleReviews: (toiletId: string) => void;
     restoreReviewState: (toiletId: string) => void;
     openLoginModal: () => void;
@@ -53,6 +65,15 @@ declare global {
     currentEditingToilet?: any;
   }
 }
+
+// Short-lived cache for popup reviews. The Leaflet popups call window.loadReviews
+// imperatively on every open AND on every reopen after a pan/zoom — without this,
+// each map move re-fetches reviews for the open marker. Module scope so it survives
+// component remounts; pass force=true (after submitting a review) to bypass it.
+// NOTE: `Map` is shadowed in this module by `export const Map` below, so use the
+// global constructor explicitly to avoid a temporal-dead-zone reference error.
+const reviewsCache = new globalThis.Map<string, { data: any[]; ts: number }>();
+const REVIEWS_CACHE_TTL_MS = 30 * 1000;
 
 const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, onReportClick, onMapReady, isAdmin, currentUser, isAddingToilet }: MapProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
@@ -83,7 +104,8 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, onReportC
   
   const userRingMarker = useRef<any>(null);
   const toiletMarkers = useRef<Array<{ toiletId: string; marker: any }>>([]);
-  const [leafletLoaded, setLeafletLoaded] = useState(false);
+  // Leaflet is bundled (import at top) and ready synchronously — no async CDN load.
+  const [leafletLoaded] = useState(true);
   const [isAwayFromUser, setIsAwayFromUser] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [mapBounds, setMapBounds] = useState<any>(null);
@@ -194,39 +216,20 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, onReportC
     return userLocation;
   }, [userLocation?.lat, userLocation?.lng]);
 
-  // Auto-request location on component mount and preload nearby toilets
+  // Auto-request location on component mount
   useEffect(() => {
     getCurrentLocation();
   }, []);
 
-  // Preload toilets for user's region when location is available - ONLY ONCE
-  useEffect(() => {
-    if (stableUserLocation && !userLocationSet.current) {
-      preloadToiletsForRegion(stableUserLocation.lat, stableUserLocation.lng, 30);
-      userLocationSet.current = true; // Mark that we've handled the first location
-    }
-  }, [stableUserLocation ? 'has-location' : 'no-location']); // Only run when we first get a location
+  // NOTE: a redundant preloadToiletsForRegion() spatial fetch used to run here on
+  // first geolocation. It was removed — useToiletCache already loads the full list,
+  // so the preload was a duplicate Supabase read for no benefit.
 
-  // Load Leaflet CSS and JS (simplified without external clustering)
-  useEffect(() => {
-    const cssLink = document.createElement('link');
-    cssLink.rel = 'stylesheet';
-    cssLink.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-    document.head.appendChild(cssLink);
-
-    const script = document.createElement('script');
-    script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-    script.onload = () => {
-      setLeafletLoaded(true);
-      // Silent for performance
-    };
-    document.head.appendChild(script);
-
-    return () => {
-      if (cssLink.parentNode) document.head.removeChild(cssLink);
-      if (script.parentNode) document.head.removeChild(script);
-    };
-  }, []);
+  // Leaflet is bundled via `import L from 'leaflet'` + `'leaflet/dist/leaflet.css'`
+  // (top of this file) and exposed as window.L, so it's available synchronously.
+  // We intentionally no longer pull it from a third-party CDN (unpkg) — that removed
+  // a supply-chain dependency and let us tighten the CSP. `leafletLoaded` defaults
+  // to true, so no loader effect is needed here.
 
   // Set up global functions for popup buttons
   useEffect(() => {
@@ -251,84 +254,77 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, onReportC
         }, 500);
       };
 
-      window.loadReviews = async (toiletId) => {
+      window.loadReviews = async (toiletId, force = false) => {
         try {
-          const response = await fetch(`/api/toilets/${toiletId}/reviews`);
-          if (response.ok) {
-            const reviews = await response.json();
-            
-            const reviewSummary = document.getElementById(`review-summary-${toiletId}`);
-            if (reviewSummary && reviews.length > 0) {
-              const avgRating = (reviews.reduce((sum: number, r: any) => sum + r.rating, 0) / reviews.length).toFixed(1);
-              const ratingNum = parseFloat(avgRating);
-              const fullStars = Math.round(ratingNum);
-              const starsHTML = '★'.repeat(fullStars) + '☆'.repeat(5 - fullStars);
-              
-              reviewSummary.innerHTML = `
-                <span style="display: flex; align-items: center; gap: 4px;">
-                  <span style="color: #facc15; font-size: 14px;">${starsHTML}</span>
-                  <span style="font-weight: 500;">${avgRating}</span>
-                  <span>(${reviews.length} review${reviews.length === 1 ? '' : 's'})</span>
-                </span>
-              `;
-            }
-            
-            const reviewsSection = document.getElementById(`reviews-section-${toiletId}`);
-            if (reviewsSection) {
-              if (reviews.length > 0) {
-                reviewsSection.innerHTML = `
-                  <button 
-                    onclick="window.toggleReviews('${toiletId}')"
-                    style="width: 100%; padding: 6px 10px; background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 6px; font-size: 13px; font-weight: 500; color: #374151; cursor: pointer; transition: background-color 0.2s; display: flex; align-items: center; justify-content: space-between;"
-                    onmouseover="this.style.background='#e5e7eb'"
-                    onmouseout="this.style.background='#f3f4f6'"
-                  >
-                    <span>Reviews (${reviews.length})</span>
-                    <span style="font-size: 12px; color: #6b7280;">▼</span>
-                  </button>
-                  <div id="reviews-${toiletId}" style="display: none; margin-top: 12px;">
-                    <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #f3f4f6;">
-                      <div style="font-size: 13px; color: #64748b; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">
-                        Recent Reviews (${reviews.length})
-                      </div>
-                      <div class="reviews-scrollable" style="max-height: 120px; overflow-y: auto; padding-right: 4px;">
-                        ${reviews.slice(0, 5).map((review: any) => `
-                          <div style="padding: 12px; background: #f9fafb; border-radius: 8px; margin-bottom: 8px;">
-                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
-                              <div style="display: flex; align-items: center; gap: 8px;">
-                                <div style="width: 24px; height: 24px; background: #3b82f6; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 12px; font-weight: 600;">
-                                  ${review.userName.charAt(0).toUpperCase()}
-                                </div>
-                                <span style="font-size: 14px; font-weight: 500; color: #374151;">${review.userName}</span>
-                              </div>
-                              <div style="display: flex; color: #facc15; margin-left: auto;">
-                                ${'★'.repeat(review.rating)}${'☆'.repeat(5 - review.rating)}
-                              </div>
-                            </div>
-                            ${review.text ? `<div style="font-size: 14px; color: #6b7280; line-height: 1.4; margin-top: 8px;">${review.text}</div>` : ''}
-                            <div style="font-size: 12px; color: #9ca3af; margin-top: 6px;">
-                              ${new Date(review.createdAt).toLocaleDateString()}
-                            </div>
-                          </div>
-                        `).join('')}
+          let reviews: any[];
+          const cached = reviewsCache.get(toiletId);
+          if (!force && cached && Date.now() - cached.ts < REVIEWS_CACHE_TTL_MS) {
+            reviews = cached.data;
+          } else {
+            const response = await fetch(`/api/toilets/${toiletId}/reviews`);
+            if (!response.ok) return;
+            reviews = await response.json();
+            reviewsCache.set(toiletId, { data: reviews, ts: Date.now() });
+          }
+
+          const section = document.getElementById(`reviews-section-${toiletId}`);
+          if (!section) return;
+
+          const count = reviews.length;
+          const avg = count > 0 ? reviews.reduce((sum: number, r: any) => sum + r.rating, 0) / count : 0;
+          const rounded = Math.round(avg);
+          const reviewLabel = count === 1 ? t('popup.review') : t('popup.reviews');
+
+          const summaryStars = [1, 2, 3, 4, 5]
+            .map(i => i <= rounded
+              ? `<span>★</span>`
+              : `<span class="text-slate-200">★</span>`)
+            .join('');
+
+          const listHtml = count > 0
+            ? reviews.slice(0, 12).map((review: any) => {
+                const filled = '★'.repeat(review.rating);
+                const empty = '<span class="text-slate-200">★</span>'.repeat(5 - review.rating);
+                let dateStr = '';
+                try { dateStr = new Date(review.createdAt).toLocaleDateString('bg-BG'); } catch (e) { dateStr = ''; }
+                return `
+                  <div class="mb-2.5 last:mb-0 p-3 bg-white rounded-xl border border-slate-100 shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
+                    <div class="flex justify-between items-center mb-1.5">
+                      <span class="font-bold text-[12px] text-slate-800">${escapeHtml(review.userName || '')}</span>
+                      <div class="flex text-[10px] items-center gap-1.5">
+                        <span class="text-amber-400 flex tracking-widest">${filled}${empty}</span>
+                        <span class="text-slate-400 font-medium">${dateStr}</span>
                       </div>
                     </div>
+                    ${review.text ? `<p class="text-[12px] text-slate-600 leading-snug">${escapeHtml(review.text)}</p>` : ''}
+                  </div>`;
+              }).join('')
+            : `<p class="text-[11px] text-slate-500 italic pb-2 text-center">${t('popup.noReviews')}</p>`;
+
+          section.innerHTML = `
+            <div ${count > 0 ? `onclick="window.toggleReviews('${toiletId}')"` : ''} class="mx-4 mt-3 mb-2 px-3 py-2.5 bg-slate-50/50 border border-slate-100 rounded-xl ${count > 0 ? 'cursor-pointer hover:bg-slate-100/50 transition-colors group shadow-sm' : ''}">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <div class="text-[34px] font-bold text-slate-900 leading-[0.8] tracking-tight">${avg > 0 ? avg.toFixed(1) : '0.0'}</div>
+                  <div class="flex flex-col justify-center gap-[4px] mt-1">
+                    <div class="flex text-amber-400 text-[15px] leading-none">${summaryStars}</div>
+                    <div class="text-[11px] text-slate-500 font-medium leading-none">${count} ${reviewLabel}</div>
                   </div>
-                `;
-              } else {
-                reviewsSection.innerHTML = `
-                  <div style="text-align: center; color: #6b7280; font-size: 14px; padding: 8px 0;">
-                    ${t('popup.noReviews')}
-                  </div>
-                `;
-              }
-            }
-            
-            // Restore state after reviews are loaded and DOM is updated
-            setTimeout(() => {
-              window.restoreReviewState(toiletId);
-            }, 50);
-          }
+                </div>
+                ${count > 0 ? `<div class="w-6 h-6 rounded-full bg-white flex items-center justify-center text-slate-400 border border-slate-200 shadow-sm group-hover:border-slate-300 transition-all">
+                  <svg id="chevron-${toiletId}" width="14" height="14" class="transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path></svg>
+                </div>` : ''}
+              </div>
+            </div>
+            <div id="reviews-${toiletId}" class="hidden px-4 mb-2 max-h-[170px] overflow-y-auto reviews-scrollable">
+              ${listHtml}
+            </div>
+          `;
+
+          // Restore state after reviews are loaded and DOM is updated
+          setTimeout(() => {
+            window.restoreReviewState(toiletId);
+          }, 50);
         } catch (error) {
           console.error('Error loading reviews:', error);
         }
@@ -451,14 +447,14 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, onReportC
             [toiletId]: { rating: 0, text: '', visible: false }
           }));
           
-          // Reload reviews
-          window.loadReviews(toiletId);
-          
+          // Reload reviews — force-bypass the cache so the new review shows immediately
+          window.loadReviews(toiletId, true);
+
           // Show success message
-          alert('Review submitted successfully!');
+          notify.success(t('toast.reviewSubmitted'));
         } catch (error) {
           console.error('📝 Client: Error submitting review:', error);
-          alert('Error submitting review. Please try again.');
+          notify.error(t('toast.reviewError'));
         }
       };
 
@@ -503,16 +499,13 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, onReportC
           if (isReviewsVisible) {
             const reviewsContainer = document.getElementById(`reviews-${toiletId}`);
             if (reviewsContainer) {
-              reviewsContainer.style.display = 'block';
+              reviewsContainer.classList.remove('hidden');
             }
-            
-            // Update toggle button arrow
-            const toggleButton = document.querySelector(`button[onclick="window.toggleReviews('${toiletId}')"]`);
-            if (toggleButton) {
-              const arrow = toggleButton.querySelector('span:last-child');
-              if (arrow) {
-                arrow.textContent = '▲';
-              }
+
+            // Rotate the chevron to expanded state
+            const chevron = document.getElementById(`chevron-${toiletId}`);
+            if (chevron) {
+              chevron.classList.add('rotate-180');
             }
           }
           
@@ -592,13 +585,13 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, onReportC
         // Find the toilet data
         const toilet = toilets.find(t => t.id === toiletId);
         if (!toilet) {
-          alert('Toilet not found');
+          notify.error(t('admin.toiletNotFound'));
           return;
         }
         
         // Check if user can edit (admin or creator)
         if (!isAdmin && toilet.userId !== user.uid) {
-          alert('You can only edit toilets you have added');
+          notify.error(t('toast.editPermission'));
           return;
         }
         
@@ -625,17 +618,24 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, onReportC
         // Find the toilet to check permissions
         const toilet = toilets.find(t => t.id === toiletId);
         if (!toilet) {
-          alert('Toilet not found');
+          notify.error(t('admin.toiletNotFound'));
           return;
         }
         
         // Check if user can delete (admin or creator)
         if (!isAdmin && toilet.userId !== user.uid) {
-          alert('You can only delete toilets you have added');
+          notify.error(t('toast.deletePermission'));
           return;
         }
         
-        if (confirm('Are you sure you want to delete this toilet?')) {
+        const confirmedDelete = await confirmDialog({
+          title: t('confirm.deleteToilet.title'),
+          description: t('confirm.deleteToilet.body'),
+          confirmText: t('button.delete'),
+          cancelText: t('button.cancel'),
+          variant: 'destructive',
+        });
+        if (confirmedDelete) {
           try {
             await deleteToiletMutation.mutateAsync({
               toiletId,
@@ -648,10 +648,10 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, onReportC
             }
             
             // Show success message
-            alert('Toilet deleted successfully');
+            notify.success(t('toast.toiletDeleted'));
           } catch (error) {
             console.error('Error deleting toilet:', error);
-            alert('Failed to delete toilet. Please try again.');
+            notify.error(t('toast.deleteError'));
           }
         }
       };
@@ -894,13 +894,11 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, onReportC
         return;
       } catch (error) {
         // Marker was removed, clear reference and recreate below
-        console.log('📍 User marker was invalidated, recreating...');
         userMarker.current = null;
       }
     }
 
     // Create or recreate the location indicator
-    console.log('📍 Creating user location indicator');
     const combinedIcon = L.divIcon({
       className: 'user-location-combined',
       html: `
@@ -1071,18 +1069,17 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, onReportC
           coordinates = { lat: item.lat, lng: item.lng };
           toiletData = toilet;
           
-          // Set marker color: pink for baby changing facility, green for EKOTOI, blue for user-added toilets, red for OSM and Geoapify toilets
-          const markerColor = toilet.hasBabyChanging ? '#f472b6' : 
-                              toilet.type === 'EKOTOI' ? '#00A859' : 
-                              (toilet.source === 'user' ? '#2563EB' : '#FF3131');
+          // Category colors (matches the map legend / pin redesign)
+          const markerColor = getToiletMarkerColor(toilet);
           
           // Performance optimization: simpler markers at lower zoom levels
           const useSimpleMarker = currentZoom < 13;
           const icon = L.divIcon({
-            className: useSimpleMarker ? 'toilet-marker-simple' : 'toilet-marker',
+            className: useSimpleMarker ? 'toilet-marker-simple' : 'toilet-pin-marker',
             html: createToiletMarkerHTML(toilet, markerColor, useSimpleMarker),
-            iconSize: useSimpleMarker ? [24, 24] : [40, 50],
-            iconAnchor: useSimpleMarker ? [12, 12] : [20, 50]
+            iconSize: useSimpleMarker ? [24, 24] : [44, 54],
+            iconAnchor: useSimpleMarker ? [12, 12] : [22, 52],
+            popupAnchor: useSimpleMarker ? [0, -12] : [0, -28]
           });
 
           marker = L.marker([coordinates.lat, coordinates.lng], { 
@@ -1093,11 +1090,11 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, onReportC
           
           // Regular toilet marker - show popup
           marker.bindPopup(createToiletPopupHTML(toilet), {
-            maxWidth: 400,
-            minWidth: 320,
-            className: 'refined-toilet-popup',
+            maxWidth: 300,
+            minWidth: 300,
+            className: 'modern-toilet-popup',
             closeButton: true,
-            offset: [0, -40],
+            offset: [0, -20],
             autoPan: true,
             keepInView: true,
             autoPanPadding: [40, 40]
@@ -1208,7 +1205,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, onReportC
         display: flex;
         align-items: center;
         justify-content: center;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        box-shadow: 0 4px 14px rgba(0,0,0,0.35);
         font-weight: bold;
         color: ${style.textColor};
         font-size: ${style.fontSize};
@@ -1221,9 +1218,6 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, onReportC
   };
 
   const createToiletMarkerHTML = (toilet: any, markerColor: string, useSimpleMarker = false) => {
-    // Determine the emoji based on baby changing facility
-    const markerEmoji = toilet.hasBabyChanging ? '👶' : '🚽';
-    
     // Simple marker for performance at low zoom levels
     if (useSimpleMarker) {
       return `
@@ -1233,50 +1227,22 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, onReportC
           background: ${markerColor};
           border: 2px solid white;
           border-radius: 50%;
-          box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+          box-shadow: 0 2px 6px rgba(0,0,0,0.35);
         "></div>
       `;
     }
-    
-    // Regular toilet marker
+
+    // Clean, classic colored teardrop pin with a "WC" core
     return `
-      <div style="
-        position: relative;
-        width: 40px;
-        height: 50px;
-        cursor: pointer;
-      ">
-        <div style="
-          position: absolute;
-          bottom: 0;
-          left: 50%;
-          transform: translateX(-50%);
-          width: 36px;
-          height: 36px;
-          background: ${markerColor};
-          border: 2px solid white;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-          font-size: 18px;
-          color: white;
-          font-weight: bold;
-        ">
-          ${markerEmoji}
+      <div class="relative w-[44px] h-[54px] cursor-pointer group flex justify-center origin-bottom transition-transform duration-200">
+        <div class="absolute bottom-[4px] left-1/2 -translate-x-1/2 w-[14px] h-[4px] bg-slate-900/50 rounded-[100%] blur-[1.5px] group-hover:w-[20px] group-hover:bg-slate-900/30 group-hover:blur-[2px] transition-all duration-300 pointer-events-none z-0"></div>
+        <div class="absolute bottom-[8px] w-[38px] h-[38px] flex items-center justify-center group-hover:-translate-y-[4px] group-active:scale-[0.9] transition-all duration-300 drop-shadow-[0_6px_12px_rgba(0,0,0,0.32)] z-10">
+          <div class="w-[38px] h-[38px] rounded-[50%_50%_0_50%] rotate-45 flex items-center justify-center shadow-[inset_0_-2px_8px_rgba(0,0,0,0.15)] ring-1 ring-black/5" style="background-color: ${markerColor};">
+            <div class="w-[28px] h-[28px] bg-white rounded-full -rotate-45 flex items-center justify-center shadow-sm relative">
+              <span class="text-[12px] font-bold text-slate-800 leading-none absolute top-[50%] left-[50%] -translate-x-1/2 -translate-y-[45%] tracking-tight">WC</span>
+            </div>
+          </div>
         </div>
-        <div style="
-          position: absolute;
-          bottom: -8px;
-          left: 50%;
-          transform: translateX(-50%);
-          width: 0;
-          height: 0;
-          border-left: 6px solid transparent;
-          border-right: 6px solid transparent;
-          border-top: 8px solid ${markerColor};
-        "></div>
       </div>
     `;
   };
@@ -1284,10 +1250,21 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, onReportC
   const createToiletPopupHTML = (toilet: Toilet) => {
     const tags = toilet.tags as any || {};
     
+    // The old server baked hardcoded ENGLISH auto-titles into the DB
+    // ("Public Toilet", "Mall Toilet", …). Treat those as "no custom title"
+    // so they fall through and get localized from the type below — this makes
+    // the popup title respect the language regardless of server restarts or
+    // legacy rows still holding an English string.
+    const legacyAutoTitles = [
+      'public toilet', 'ekotoi', 'restaurant toilet', 'cafe toilet',
+      'gas station toilet', 'mall toilet', 'toilet'
+    ];
+
     // Get proper title based on type and custom title
     const getProperTitle = () => {
-      if (toilet.title && toilet.title.trim() !== '') {
-        return toilet.title;
+      const custom = (toilet.title || '').trim();
+      if (custom !== '' && !legacyAutoTitles.includes(custom.toLowerCase())) {
+        return custom;
       }
       if (tags.name) return tags.name;
       if (tags.operator && toilet.type === 'gas-station') return `${t('popup.toiletAt')} ${tags.operator} ${t('popup.gasStation')}`;
@@ -1296,187 +1273,166 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, onReportC
       if (toilet.type === 'restaurant') return `${t('popup.toiletIn')} ${t('popup.restaurant')}`;
       if (toilet.type === 'cafe') return `${t('popup.toiletIn')} ${t('popup.cafe')}`;
       if (toilet.type === 'gas-station') return `${t('popup.toiletAt')} ${t('popup.gasStation')}`;
+      if (toilet.type === 'EKOTOI') return t('toiletType.EKOTOI');
+      if (toilet.type === 'bus_station' || toilet.type === 'bus-station') return `${t('popup.toiletAt')} ${t('toiletType.busStation')}`;
+      if (toilet.type === 'train_station' || toilet.type === 'train-station') return `${t('popup.toiletAt')} ${t('toiletType.trainStation')}`;
       return t('popup.publicToilet');
     };
     
     const properTitle = getProperTitle();
     
     // Determine availability and accessibility based on database fields or tags
-    const getAvailability = () => {
-      if (toilet.accessType === 'paid') return { text: t('popup.paidAccess'), color: '#9333ea', bg: '#f3e8ff' };
-      if (toilet.accessType === 'customers-only') return { text: t('popup.customersOnly'), color: '#eab308', bg: '#fefce8' };
-      if (toilet.accessType === 'free') return { text: t('popup.freeToUse'), color: '#16a34a', bg: '#f0fdf4' };
-      if (tags.fee === 'yes' || tags.charge === 'yes') return { text: t('popup.paid'), color: '#9333ea', bg: '#f3e8ff' };
-      if (tags.access === 'customers' || tags.fee === 'customers') return { text: t('popup.onlyForCustomers'), color: '#eab308', bg: '#fefce8' };
-      return { text: t('popup.unknown'), color: '#6b7280', bg: '#f9fafb' };
+    const getAvailabilityBadge = () => {
+      if (toilet.accessType === 'paid' || tags.fee === 'yes' || tags.charge === 'yes') return { text: t('popup.paidAccess'), cls: 'bg-purple-100 text-purple-700 border-purple-200/50' };
+      if (toilet.accessType === 'customers-only' || tags.access === 'customers' || tags.fee === 'customers') return { text: t('popup.customersOnly'), cls: 'bg-amber-100 text-amber-700 border-amber-200/50' };
+      if (toilet.accessType === 'free') return { text: t('popup.freeToUse'), cls: 'bg-emerald-100 text-emerald-700 border-emerald-200/50' };
+      return { text: t('popup.unknown'), cls: 'bg-slate-200 text-slate-700 border-slate-300/50' };
+    };
+
+    const getAccessibilityBadge = () => {
+      if (toilet.accessibility === 'accessible' || tags.wheelchair === 'yes') return { text: t('popup.wheelchairAccessible'), cls: 'bg-blue-100 text-blue-700 border-blue-200/50' };
+      if (toilet.accessibility === 'not-accessible' || tags.wheelchair === 'no') return { text: t('popup.notWheelchairAccessible'), cls: 'bg-red-100 text-red-700 border-red-200/50' };
+      return { text: t('popup.unknown'), cls: 'bg-slate-200 text-slate-700 border-slate-300/50' };
     };
     
-    const getAccessibility = () => {
-      if (toilet.accessibility === 'accessible') return { text: t('popup.wheelchairAccessible'), color: '#2563eb', bg: '#eff6ff' };
-      if (toilet.accessibility === 'not-accessible') return { text: t('popup.notWheelchairAccessible'), color: '#dc2626', bg: '#fef2f2' };
-      if (tags.wheelchair === 'yes') return { text: t('popup.wheelchairAccessible'), color: '#2563eb', bg: '#eff6ff' };
-      if (tags.wheelchair === 'no') return { text: t('popup.notWheelchairAccessible'), color: '#dc2626', bg: '#fef2f2' };
-      return { text: t('popup.unknown'), color: '#6b7280', bg: '#f9fafb' };
-    };
-    
-    const availability = getAvailability();
-    const accessibility = getAccessibility();
-    
+    const availability = getAvailabilityBadge();
+    const accessibility = getAccessibilityBadge();
+    const canEdit = !!(isAdmin || (currentUser && currentUser.uid === toilet.userId));
+
+    // SVG icons.
+    // NOTE: explicit width/height attributes are intentional. These icons are
+    // injected as raw innerHTML (outside React) and must NOT depend on Tailwind
+    // utilities (e.g. w-[14px]) for their size — if that class is ever missing
+    // from the bundle or the CSS hasn't loaded yet, an attribute-less SVG
+    // balloons to fill its container. Attributes keep the size robust.
+    const directionsIcon = `<svg width="14" height="14" class="mb-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>`;
+    const editIcon = `<svg width="14" height="14" class="mb-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>`;
+    const reportIcon = `<svg width="14" height="14" class="mb-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`;
+    const deleteIcon = `<svg width="14" height="14" class="mb-0.5 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>`;
+
+    // Header gradient by category
+    const headerClasses = toilet.hasBabyChanging ? 'from-pink-50/70 to-white' :
+                          toilet.type === 'gas-station' ? 'from-red-50/50 to-white' :
+                          toilet.type === 'EKOTOI' ? 'from-emerald-50/50 to-white' :
+                          'from-indigo-50/40 to-white';
+
+    const directionsButton = (full: boolean) => `
+      <button onclick="window.getDirections(${toilet.coordinates.lat}, ${toilet.coordinates.lng})" class="${full ? 'w-full' : 'flex-1'} flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-xl font-bold text-[13px] tracking-wide transition-all active:scale-[0.98] shadow-[0_2px_8px_rgba(37,99,235,0.3)]" style="min-height:0;min-width:0;padding-top:8px;padding-bottom:8px;font-size:13px;height:auto">
+        ${directionsIcon}
+        ${t('popup.directions')}
+      </button>`;
+
+    const secondaryButton = (onClick: string, icon: string, label: string) => `
+      <button onclick="${onClick}" class="flex-1 flex flex-col gap-0.5 items-center justify-center py-1.5 rounded-lg bg-slate-50 text-slate-600 border border-slate-200 shadow-[0_2px_6px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_8px_rgba(0,0,0,0.1)] active:scale-[0.98] transition-all uppercase tracking-wider text-[9px] font-bold" style="min-height:0;min-width:0;padding-top:6px;padding-bottom:6px;font-size:9px;height:auto">
+        ${icon}
+        ${label}
+      </button>`;
+
+    const actionsHtml = canEdit ? `
+      ${directionsButton(true)}
+      <div class="flex gap-1.5">
+        ${secondaryButton(`window.editToilet('${toilet.id}')`, editIcon, t('popup.edit'))}
+        ${secondaryButton(`window.reportToiletNotExists('${toilet.id}')`, reportIcon, t('popup.report'))}
+        ${secondaryButton(`window.deleteToilet('${toilet.id}')`, deleteIcon, t('popup.delete'))}
+      </div>
+    ` : `
+      <div class="flex gap-1.5 items-stretch">
+        ${directionsButton(false)}
+        <button onclick="window.reportToiletNotExists('${toilet.id}')" class="flex-1 flex items-center justify-center gap-1.5 bg-slate-50 text-slate-600 border border-slate-200 py-2 rounded-xl font-bold text-[13px] tracking-wide shadow-[0_2px_6px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_8px_rgba(0,0,0,0.1)] active:scale-[0.98] transition-all" style="min-height:0;min-width:0;padding-top:8px;padding-bottom:8px;font-size:13px;height:auto">
+          ${reportIcon}
+          ${t('popup.report')}
+        </button>
+      </div>
+    `;
+
     return `
-      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; min-width: 280px; max-width: 350px; padding: 16px; background: white; border-radius: 12px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);">
-        <!-- 1. Title -->
-        <h3 style="margin: 0 0 6px 0; font-size: 18px; font-weight: 700; color: #1f2937; line-height: 1.3;">
-          ${properTitle}
-        </h3>
-        
-        <!-- Toilet Type and Baby Changing Badge -->
-        <div style="margin-bottom: 10px; display: flex; gap: 6px; align-items: center;">
-          <span style="background: #3b82f6; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 500; text-transform: uppercase;">
-            ${translateToiletType(toilet.type)}
-          </span>
-          ${toilet.hasBabyChanging ? `
-          <span style="background: #fce7f3; color: #ec4899; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 500; display: flex; align-items: center; gap: 2px;">
-            👶 ${t('toiletType.hasBabyChangingBadge')}
-          </span>
-          ` : ''}
-        </div>
-        
-        <!-- Added by information for user-added toilets -->
-        ${toilet.source === 'user' && toilet.addedByUserName ? `
-        <div style="margin-bottom: 8px; display: flex; align-items: center; gap: 4px;">
-          <div style="width: 6px; height: 6px; background: #3b82f6; border-radius: 50%; flex-shrink: 0;"></div>
-          <span style="font-size: 11px; color: #6b7280; font-weight: 500;">
-            ${t('popup.addedBy')} ${toilet.addedByUserName}
-          </span>
-        </div>
-        ` : ''}
-        
-        <!-- 2. Rating and Reviews Summary -->
-        <div id="review-summary-${toilet.id}" style="display: flex; align-items: center; gap: 6px; margin-bottom: 12px;">
-          <div style="display: flex; align-items: center; gap: 3px;">
-            <span style="color: #facc15; font-size: 16px;">☆☆☆☆☆</span>
-            <span style="font-size: 14px; font-weight: 600; color: #374151;">0.0</span>
-          </div>
-          <span style="color: #6b7280; font-size: 12px;">(0 ${t('popup.reviews')})</span>
-        </div>
-        
-        <!-- 3. Availability and Accessibility Indicators -->
-        <div style="display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px;">
-          <div style="display: flex; align-items: center; gap: 6px;">
-            <span style="font-size: 12px; font-weight: 600; color: #374151; min-width: 70px;">${t('popup.availability')}</span>
-            <span style="background: ${availability.bg}; color: ${availability.color}; padding: 3px 6px; border-radius: 4px; font-size: 11px; font-weight: 500;">
-              ${availability.text}
-            </span>
-          </div>
-          <div style="display: flex; align-items: center; gap: 6px;">
-            <span style="font-size: 12px; font-weight: 600; color: #374151; min-width: 70px;">${t('popup.accessibility')}</span>
-            <span style="background: ${accessibility.bg}; color: ${accessibility.color}; padding: 3px 6px; border-radius: 4px; font-size: 11px; font-weight: 500;">
-              ${accessibility.text}
-            </span>
-          </div>
-        </div>
-        
-        <!-- 4. Star Rating Section -->
-        <div id="rating-section-${toilet.id}" style="margin-bottom: 20px;">
-          <div style="text-align: center; margin-bottom: 12px;">
-            <div style="font-size: 16px; color: #374151; font-weight: 600; margin-bottom: 12px;">${t('popup.rateThisToilet')}</div>
-            <div id="stars-${toilet.id}" style="display: flex; justify-content: center; gap: 4px;">
-              ${[1,2,3,4,5].map(i => `
-                <button 
-                  onclick="window.setRating('${toilet.id}', ${i})"
-                  id="star-${toilet.id}-${i}"
-                  style="width: 36px; height: 36px; background: #f3f4f6; border: 2px solid #e5e7eb; border-radius: 8px; cursor: pointer; font-size: 20px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; color: #d1d5db;"
-                  onmouseover="window.hoverStars('${toilet.id}', ${i})"
-                  onmouseout="window.resetStars('${toilet.id}')"
-                >★</button>
-              `).join('')}
+      <div class="font-sans text-slate-800 w-[290px] pb-0 flex flex-col max-h-[85vh] relative">
+        <div class="flex flex-col overflow-hidden">
+          <div class="overflow-y-auto no-scrollbar pb-2">
+
+            <!-- Header -->
+            <div class="relative px-4 pt-3 pb-3 bg-gradient-to-br ${headerClasses}">
+              <div class="flex items-start justify-between gap-3 mb-2 pr-6">
+                <h3 class="text-[16px] font-bold text-slate-900 leading-tight tracking-tight">${escapeHtml(properTitle)}</h3>
+              </div>
+              <div class="flex flex-wrap gap-1.5 mb-2">
+                <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-[10px] font-bold uppercase tracking-wider bg-blue-600 text-white shadow-sm border border-blue-700/20">${translateToiletType(toilet.type)}</span>
+                ${toilet.hasBabyChanging ? `<span class="inline-flex items-center px-1.5 py-0.5 rounded-sm text-[10px] font-bold uppercase tracking-wider bg-pink-100 text-pink-700 border border-pink-200/60 shadow-sm">👶 ${t('toiletType.hasBabyChangingBadge')}</span>` : ''}
+              </div>
+              ${(toilet.source === 'user' && toilet.addedByUserName) ? `
+              <div class="flex items-center gap-1.5 text-[10px] text-slate-500 font-semibold mt-1">
+                <div class="w-1.5 h-1.5 rounded-full bg-indigo-500 shadow-[0_0_4px_rgba(99,102,241,0.5)]"></div>
+                ${t('popup.addedBy')} ${escapeHtml(toilet.addedByUserName)}
+              </div>` : ''}
+            </div>
+
+            <!-- Availability & Access -->
+            <div class="px-4 py-2.5 flex flex-col gap-2 bg-slate-50/50 border-t border-slate-100">
+              <div class="flex items-center gap-3">
+                <span class="text-[11px] font-bold text-slate-500 min-w-[70px]">${t('popup.availability')}</span>
+                <span class="${availability.cls} px-1.5 py-0.5 rounded-[4px] text-[11px] font-semibold shadow-sm border">${availability.text}</span>
+              </div>
+              <div class="flex items-center gap-3">
+                <span class="text-[11px] font-bold text-slate-500 min-w-[70px]">${t('popup.accessibility')}</span>
+                <span class="${accessibility.cls} px-1.5 py-0.5 rounded-[4px] text-[11px] font-semibold shadow-sm border">${accessibility.text}</span>
+              </div>
+            </div>
+
+            <!-- Reviews summary + list (populated by loadReviews) -->
+            <div id="reviews-section-${toilet.id}">
+              <div class="mx-4 mt-3 mb-2 px-3 py-2.5 bg-slate-50/50 border border-slate-100 rounded-xl">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-3">
+                    <div class="text-[34px] font-bold text-slate-900 leading-[0.8] tracking-tight">0.0</div>
+                    <div class="flex flex-col justify-center gap-[4px] mt-1">
+                      <div class="flex text-amber-400 text-[15px] leading-none">${'<span class="text-slate-200">★</span>'.repeat(5)}</div>
+                      <div class="text-[11px] text-slate-500 font-medium leading-none">0 ${t('popup.reviews')}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Divider -->
+            <div class="h-px bg-slate-100 mx-4 w-[calc(100%-32px)] mt-5 mb-3 relative">
+              <span class="absolute left-1/2 -top-[7px] -translate-x-1/2 bg-white px-1.5 whitespace-nowrap text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-none">${t('popup.rateThisToilet')}</span>
+            </div>
+
+            <!-- Rate Section -->
+            <div class="px-4 pb-1">
+              <div class="flex gap-1 justify-between mt-3 mb-1">
+                ${[1,2,3,4,5].map(i => `
+                  <button
+                    onmouseover="window.hoverStars('${toilet.id}', ${i})"
+                    onmouseout="window.resetStars('${toilet.id}')"
+                    onclick="window.setRating('${toilet.id}', ${i})"
+                    id="star-${toilet.id}-${i}"
+                    class="flex-1 h-9 rounded-[8px] bg-white border border-slate-200 shadow-[0_1px_3px_rgba(0,0,0,0.06)] text-slate-300 transition-all hover:shadow-[0_4px_6px_rgba(0,0,0,0.08)] flex items-center justify-center text-[22px] focus:outline-none"
+                    style="height:36px;min-height:36px;max-height:36px;min-width:0;padding:0;font-size:22px;line-height:1"
+                  >★</button>
+                `).join('')}
+              </div>
+
+              <div id="review-comment-${toilet.id}" class="hidden mt-2 space-y-1.5">
+                <textarea
+                  id="comment-${toilet.id}"
+                  placeholder="${t('popup.shareExperience')}"
+                  oninput="window.handleTextareaChange('${toilet.id}', this.value)"
+                  class="w-full text-[12px] p-2.5 rounded-lg border border-slate-200 bg-white shadow-inner focus:outline-none focus:ring-1 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all resize-none h-[60px] placeholder:text-slate-400"
+                ></textarea>
+                <div class="flex gap-1.5">
+                  <button onclick="window.submitReview('${toilet.id}')" class="flex-1 py-1.5 bg-blue-600 hover:bg-blue-700 text-white shadow-[0_2px_8px_rgba(37,99,235,0.3)] text-[11px] font-bold rounded-lg active:scale-[0.98]">${t('popup.submitReview')}</button>
+                  <button onclick="window.cancelReview('${toilet.id}')" class="px-3 py-1.5 bg-slate-100 text-slate-600 text-[11px] font-bold rounded-lg shadow-sm border border-slate-200 active:scale-[0.98]">${t('popup.cancel')}</button>
+                </div>
+              </div>
             </div>
           </div>
-          
-          <!-- Review Comment Section (Hidden by default) -->
-          <div id="review-comment-${toilet.id}" style="display: none; margin-top: 16px;">
-            <textarea 
-              id="comment-${toilet.id}"
-              placeholder="${t('popup.shareExperience')}"
-              style="width: 100%; min-height: 80px; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; font-family: inherit; resize: vertical; box-sizing: border-box;"
-              oninput="window.handleTextareaChange('${toilet.id}', this.value)"
-            ></textarea>
-            <div style="display: flex; gap: 8px; margin-top: 12px;">
-              <button 
-                onclick="window.submitReview('${toilet.id}')"
-                style="flex: 1; padding: 10px; background: #059669; color: white; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background-color 0.2s;"
-                onmouseover="this.style.background='#047857'"
-                onmouseout="this.style.background='#059669'"
-              >
-                ${t('popup.submitReview')}
-              </button>
-              <button 
-                onclick="window.cancelReview('${toilet.id}')"
-                style="flex: 1; padding: 10px; background: #6b7280; color: white; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background-color 0.2s;"
-                onmouseover="this.style.background='#4b5563'"
-                onmouseout="this.style.background='#6b7280'"
-              >
-                ${t('popup.cancel')}
-              </button>
-            </div>
+
+          <!-- Fixed actions -->
+          <div class="p-3 pt-3 flex flex-col gap-2 bg-white rounded-b-[16px] border-t border-slate-100 shadow-[0_-4px_10px_-10px_rgba(0,0,0,0.1)] shrink-0 z-10 relative">
+            ${actionsHtml}
           </div>
         </div>
-        
-        <!-- 6. Reviews Section -->
-        <div id="reviews-section-${toilet.id}" style="margin-bottom: 20px;">
-          <!-- This will be populated by loadReviews function -->
-          <div style="text-align: center; color: #6b7280; font-size: 14px; padding: 8px 0;">
-            ${t('popup.noReviews')}
-          </div>
-        </div>
-        
-        <!-- 7. Action Buttons Row -->
-        <div style="display: flex; gap: 8px; margin-bottom: 8px;">
-          <button 
-            onclick="window.getDirections(${toilet.coordinates.lat}, ${toilet.coordinates.lng})"
-            style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 12px; background: #3b82f6; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background-color 0.2s;"
-            onmouseover="this.style.background='#2563eb'"
-            onmouseout="this.style.background='#3b82f6'"
-          >
-            <span style="font-size: 16px;">🧭</span>
-            ${t('popup.directions')}
-          </button>
-          <button 
-            onclick="window.reportToiletNotExists('${toilet.id}')" 
-            style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 12px; background: #dc2626; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background-color 0.2s;"
-            onmouseover="this.style.background='#b91c1c'"
-            onmouseout="this.style.background='#dc2626'"
-          >
-            <span style="font-size: 16px;">⚠️</span>
-            ${t('popup.report')}
-          </button>
-        </div>
-        
-        <!-- 8. Edit/Delete Buttons Row (for admins and creators) -->
-        ${(isAdmin || (currentUser && currentUser.uid === toilet.userId)) ? `
-        <div style="display: flex; gap: 8px;">
-          <button 
-            onclick="window.editToilet('${toilet.id}')" 
-            style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 12px; background: #059669; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background-color 0.2s;"
-            onmouseover="this.style.background='#047857'"
-            onmouseout="this.style.background='#059669'"
-          >
-            <span style="font-size: 16px;">✏️</span>
-            ${t('popup.edit')}
-          </button>
-          ${(isAdmin || (currentUser && currentUser.uid === toilet.userId)) ? `
-            <button 
-              onclick="window.deleteToilet('${toilet.id}')" 
-              style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 12px; background: #991b1b; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background-color 0.2s;"
-              onmouseover="this.style.background='#7f1d1d'"
-              onmouseout="this.style.background='#991b1b'"
-            >
-              <span style="font-size: 16px;">🗑️</span>
-              ${t('popup.delete')}
-            </button>
-          ` : ''}
-        </div>
-        ` : ''}
       </div>
     `;
   };
@@ -1560,16 +1516,13 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, onReportC
     Object.entries(reviewVisibility).forEach(([toiletId, isVisible]) => {
       const reviewsContainer = document.getElementById(`reviews-${toiletId}`);
       if (reviewsContainer) {
-        reviewsContainer.style.display = isVisible ? 'block' : 'none';
+        reviewsContainer.classList.toggle('hidden', !isVisible);
       }
-      
-      // Update toggle button arrow
-      const toggleButton = document.querySelector(`button[onclick="window.toggleReviews('${toiletId}')"]`);
-      if (toggleButton) {
-        const arrow = toggleButton.querySelector('span:last-child');
-        if (arrow) {
-          arrow.textContent = isVisible ? '▲' : '▼';
-        }
+
+      // Rotate the chevron icon based on visibility
+      const chevron = document.getElementById(`chevron-${toiletId}`);
+      if (chevron) {
+        chevron.classList.toggle('rotate-180', isVisible);
       }
     });
   }, [reviewVisibility]);
@@ -1744,7 +1697,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, onReportC
         </div>
       )}
 
-      <LoadingScreen isLoading={toiletsLoading} toiletCount={allToiletsCount} />
+      <LoadingScreen isLoading={toiletsLoading} />
       
 
       
@@ -1757,6 +1710,24 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, onReportC
 export const Map = memo(MapComponent);
 
 export default Map;
+
+// Category colors for map pins (matches the map legend in Guides)
+function getToiletMarkerColor(toilet: any): string {
+  if (toilet?.hasBabyChanging) return '#ff66c4'; // pink - baby changing
+
+  // Normalise the type so that variants like "gas_station", "gasStation",
+  // "GAS-STATION" all resolve to the same category.
+  const type = String(toilet?.type || '')
+    .toLowerCase()
+    .replace(/[_\s]+/g, '-');
+
+  if (type === 'ekotoi' || type === 'portable') return '#00bf63'; // green - portable / EKOTOI
+  if (type === 'gas-station' || type === 'gasstation') return '#ff3131'; // red - gas station
+  if (type === 'public') return '#5170ff'; // blue - public
+  if (type === 'mall' || type === 'shop' || type === 'shops') return '#38b6ff'; // light blue - mall | shops
+  if (type === 'cafe' || type === 'restaurant') return '#ffbd59'; // yellow - cafe | restaurant
+  return '#ad52ec'; // purple - other
+}
 
 function getDistance(point1: MapLocation, point2: MapLocation): number {
   const R = 6371e3;

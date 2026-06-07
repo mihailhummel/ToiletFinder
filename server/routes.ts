@@ -1,7 +1,7 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertToiletSchema, insertReviewSchema, insertReportSchema, insertToiletReportSchema } from "@shared/schema";
+import { insertToiletSchema, updateToiletSchema, insertReviewSchema, insertReportSchema, insertToiletReportSchema } from "@shared/schema";
 import { z } from "zod";
 import { auth } from "../firebase-admin-config.js";
 
@@ -21,25 +21,52 @@ function calculateDistance(lat1: number, lng1: number, lat2: number, lng2: numbe
 let dbRequestCount = 0;
 let lastResetTime = Date.now();
 
-// Function to generate default title based on toilet type
-function getDefaultTitle(type: string): string {
-  switch (type) {
-    case 'public':
-      return 'Public Toilet';
-    case 'EKOTOI':
-      return 'EKOTOI';
-    case 'restaurant':
-      return 'Restaurant Toilet';
-    case 'cafe':
-      return 'Cafe Toilet';
-    case 'gas-station':
-      return 'Gas Station Toilet';
-    case 'mall':
-      return 'Mall Toilet';
-    case 'other':
-      return 'Toilet';
-    default:
-      return 'Toilet';
+// In-memory cache for the full toilet list. This is the real protection against
+// excessive DB load: Express's built-in weak ETag returns 304s, but only AFTER the
+// route has run the full Supabase query + transform — so the 304 saves bandwidth,
+// not database reads. Caching here caps reads to ~1 per TTL regardless of how many
+// clients ask. Invalidated on every toilet-mutating route via clearToiletsCache().
+// NOTE: per-process — with N Railway replicas you get up to N reads per TTL.
+type ToiletList = Awaited<ReturnType<typeof storage.getToilets>>;
+let toiletListCache: { data: ToiletList; ts: number } | null = null;
+const TOILET_CACHE_TTL_MS = 60 * 1000;
+
+async function getCachedToilets(): Promise<ToiletList> {
+  if (toiletListCache && Date.now() - toiletListCache.ts < TOILET_CACHE_TTL_MS) {
+    return toiletListCache.data;
+  }
+  const data = await storage.getToilets();
+  toiletListCache = { data, ts: Date.now() };
+  return data;
+}
+
+function clearToiletsCache() {
+  toiletListCache = null;
+}
+
+// Verify a Firebase ID token from the Authorization: Bearer <token> header.
+// Returns the authenticated user, or null after sending an error response.
+async function requireAuth(
+  req: Request,
+  res: Response
+): Promise<{ uid: string; admin: boolean; email?: string; name: string } | null> {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith("Bearer ")) {
+    res.status(401).json({ error: "Authentication required" });
+    return null;
+  }
+  try {
+    const decoded = await auth.verifyIdToken(authHeader.split("Bearer ")[1]);
+    // Display name is derived from the verified token only — never from the
+    // request body — so a user can't spoof another name (e.g. an admin homoglyph).
+    const name =
+      (decoded.name as string | undefined)?.trim() ||
+      decoded.email?.split("@")[0] ||
+      "Потребител";
+    return { uid: decoded.uid, admin: decoded.admin === true, email: decoded.email, name };
+  } catch {
+    res.status(403).json({ error: "Invalid or expired token" });
+    return null;
   }
 }
 
@@ -104,12 +131,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         
       } else {
-        // All toilets endpoint - NO CACHING
+        // All toilets endpoint - served from the 60s in-memory cache
         logDatabaseRequest('/api/toilets', 'ALL');
-        const toilets = await storage.getToilets();
-        
-        // Silent for performance
-        
+        const toilets = await getCachedToilets();
+
+        // Let the browser/SW reuse the response briefly and revalidate in the
+        // background, so panning the map doesn't re-hit the server every time.
+        res.set('Cache-Control', 'public, max-age=30, stale-while-revalidate=300');
         res.json(toilets);
       }
       
@@ -262,30 +290,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/toilets", async (req: Request, res: Response) => {
     try {
-      console.log('🚽 Server: Received POST /api/toilets with body:', req.body);
-      console.log('🚽 Server: hasBabyChanging from request:', req.body.hasBabyChanging);
-      
-      const toilet = insertToiletSchema.parse(req.body);
-      
-      console.log('🚽 Server: After schema parse, hasBabyChanging:', toilet.hasBabyChanging);
-      
-      // Set default title if title is null, undefined, or empty
+      // Require a valid Firebase token and trust the token for identity
+      const authUser = await requireAuth(req, res);
+      if (!authUser) return;
+
+      const toilet = insertToiletSchema.parse({ ...req.body, userId: authUser.uid });
+
+      // Leave the title empty when the user didn't supply one. The client
+      // renders a localized fallback from the type (getProperTitle in
+      // Map.tsx) based on the active language — so we must NOT bake an
+      // English string into the DB here, or it would show in English
+      // regardless of the user's chosen language.
       if (!toilet.title || toilet.title.trim() === '') {
-        toilet.title = getDefaultTitle(toilet.type);
+        toilet.title = null;
       }
       
       const id = await storage.createToilet(toilet);
+      clearToiletsCache();
       const response = { id, ...toilet };
       res.json(response);
     } catch (error) {
-      console.error("❌ Error in POST /api/toilets:", error);
-      
       if (error instanceof z.ZodError) {
-        console.error("❌ Zod validation error:", error.errors);
-        res.status(400).json({ error: "Invalid toilet data", details: error.errors });
+        res.status(400).json({ error: "Invalid toilet data" });
       } else {
-        console.error("❌ Unexpected error:", error);
-        res.status(500).json({ error: "Failed to create toilet", message: error instanceof Error ? error.message : "Unknown error" });
+        console.error("Error creating toilet:", error);
+        res.status(500).json({ error: "Failed to create toilet" });
       }
     }
   });
@@ -294,6 +323,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       const reviews = await storage.getReviewsForToilet(id);
+      res.set('Cache-Control', 'public, max-age=30, stale-while-revalidate=120');
       res.json(reviews);
     } catch (error) {
       console.error("Error fetching reviews:", error);
@@ -304,26 +334,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/toilets/:id/reviews", async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
-      // Silent for performance
-      
-      const review = insertReviewSchema.parse({ ...req.body, toiletId: id });
-      // Silent for performance
-      
+
+      const authUser = await requireAuth(req, res);
+      if (!authUser) return;
+
+      // userName comes from the verified token, never the body (anti-spoofing).
+      const review = insertReviewSchema.parse({
+        ...req.body,
+        toiletId: id,
+        userId: authUser.uid,
+        userName: authUser.name,
+      });
+
+      // One review per user per toilet (DB UNIQUE constraint backs this).
+      if (await storage.hasUserReviewedToilet(id, authUser.uid)) {
+        return res.status(409).json({ error: "You have already reviewed this toilet" });
+      }
+
       await storage.createReview(review);
-      // Silent for performance
-      
-      const response = { message: "Review created successfully" };
-      // Silent for performance
-      res.json(response);
+      res.json({ message: "Review created successfully" });
     } catch (error) {
-      console.error("❌ Error in POST /api/toilets/:id/reviews:", error);
-      
       if (error instanceof z.ZodError) {
-        console.error("❌ Zod validation error:", error.errors);
-        res.status(400).json({ error: "Invalid review data", details: error.errors });
+        res.status(400).json({ error: "Invalid review data" });
       } else {
-        console.error("❌ Unexpected error:", error);
-        res.status(500).json({ error: "Failed to create review", message: error instanceof Error ? error.message : "Unknown error" });
+        console.error("Error in POST /api/toilets/:id/reviews:", error);
+        res.status(500).json({ error: "Failed to create review" });
       }
     }
   });
@@ -331,13 +366,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/toilets/:id/user-review", async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
-      const { userId } = req.query;
-      
-      if (!userId) {
-        return res.json({ hasReviewed: false });
-      }
-      
-      const hasReviewed = await storage.hasUserReviewedToilet(id, userId as string);
+
+      // Identity comes from the verified token, not a client-supplied userId —
+      // otherwise anyone could probe whether a given user reviewed a toilet.
+      const authUser = await requireAuth(req, res);
+      if (!authUser) return;
+
+      const hasReviewed = await storage.hasUserReviewedToilet(id, authUser.uid);
       res.json({ hasReviewed });
     } catch (error) {
       console.error("Error checking review status:", error);
@@ -347,36 +382,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/reports", async (req: Request, res: Response) => {
     try {
-      const report = insertReportSchema.parse(req.body);
-      await storage.createReport(report);
-      
-      // If report is "doesnt-exist", also increment the toilet removal counter
+      const authUser = await requireAuth(req, res);
+      if (!authUser) return;
+
+      // userName from the verified token, never the body.
+      const report = insertReportSchema.parse({ ...req.body, userId: authUser.uid, userName: authUser.name });
+
+      // "doesnt-exist" feeds the auto-removal counter — enforce one per user so a
+      // single actor can't drive the threshold and censor a legitimate toilet.
       if (report.reason === 'doesnt-exist') {
-        const toiletReport = {
-          toiletId: report.toiletId,
-          userId: report.userId,
-          userName: report.userName,
-          reason: report.reason,
-          comment: report.comment
-        };
-        
-        await storage.reportToiletNotExists(toiletReport);
-        
-        // Check if toilet should be removed (5 reports threshold)
+        if (await storage.hasUserReportedToilet(report.toiletId, authUser.uid)) {
+          return res.status(409).json({ error: "You have already reported this toilet" });
+        }
+
+        await storage.createReport(report);
+        await storage.reportToiletNotExists({ toiletId: report.toiletId, userId: report.userId });
+
+        // Count of DISTINCT reporters (one row per user, enforced by UNIQUE constraint).
         const reportCount = await storage.getToiletReportCount(report.toiletId);
-        
         if (reportCount >= 5) {
           await storage.removeToiletFromReports(report.toiletId);
+          clearToiletsCache(); // toilet was soft-removed — drop the stale list
         }
-        
+
         res.json({ message: "Report submitted successfully", reportCount });
       } else {
-        // For other report types (wrong-details, inaccessible, etc.), just store the report
+        await storage.createReport(report);
         res.json({ message: "Report submitted successfully" });
       }
     } catch (error) {
       if (error instanceof z.ZodError) {
-        res.status(400).json({ error: "Invalid report data", details: error.errors });
+        res.status(400).json({ error: "Invalid report data" });
       } else {
         console.error("Error creating report:", error);
         res.status(500).json({ error: "Failed to submit report" });
@@ -387,27 +423,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/toilets/:id/report-not-exists", async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
-      // Silent for performance
-      
-      const toiletReport = insertToiletReportSchema.parse({ ...req.body, toiletId: id });
-      // Silent for performance
-      
-      await storage.reportToiletNotExists(toiletReport);
-      
-      // Check if toilet should be removed
-      const reportCount = await storage.getToiletReportCount(id);
-      // Silent for performance
-      
-      if (reportCount >= 5) {
-        // Silent for performance
-        await storage.removeToiletFromReports(id);
+
+      const authUser = await requireAuth(req, res);
+      if (!authUser) return;
+
+      const toiletReport = insertToiletReportSchema.parse({ ...req.body, toiletId: id, userId: authUser.uid });
+
+      // One report per user per toilet (DB UNIQUE backs this) — prevents a single
+      // actor from reaching the auto-removal threshold on their own.
+      if (await storage.hasUserReportedToilet(id, authUser.uid)) {
+        return res.status(409).json({ error: "You have already reported this toilet" });
       }
-      
+
+      await storage.reportToiletNotExists(toiletReport);
+
+      // DISTINCT reporters (one row per user).
+      const reportCount = await storage.getToiletReportCount(id);
+      if (reportCount >= 5) {
+        await storage.removeToiletFromReports(id);
+        clearToiletsCache(); // toilet was soft-removed — drop the stale list
+      }
+
       res.json({ message: "Toilet reported successfully", reportCount });
     } catch (error) {
       if (error instanceof z.ZodError) {
-        console.error('❌ Validation error:', error.errors);
-        res.status(400).json({ error: "Invalid report data", details: error.errors });
+        res.status(400).json({ error: "Invalid report data" });
       } else {
         console.error("Error reporting toilet:", error);
         res.status(500).json({ error: "Failed to report toilet" });
@@ -420,41 +460,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { id } = req.params;
 
       // Verify Firebase Bearer token
-      const authHeader = req.headers.authorization;
-      if (!authHeader?.startsWith("Bearer ")) {
-        return res.status(401).json({ error: "Authentication required" });
-      }
-      let decoded: any;
-      try {
-        decoded = await auth.verifyIdToken(authHeader.split("Bearer ")[1]);
-      } catch {
-        return res.status(403).json({ error: "Invalid or expired token" });
-      }
-      const requestingUid = decoded.uid;
+      const authUser = await requireAuth(req, res);
+      if (!authUser) return;
 
-      const updateData = req.body;
-      if (!updateData.type) {
-        return res.status(400).json({ error: "Missing toilet type" });
-      }
-      if (updateData.title === undefined) {
-        return res.status(400).json({ error: "Missing toilet title" });
-      }
+      // Validate + bound the payload (coords checked against Bulgaria bbox here).
+      const updateData = updateToiletSchema.parse(req.body);
 
-      const toilets = await storage.getToilets();
+      const toilets = await getCachedToilets();
       const toilet = toilets.find(t => t.id === id);
       if (!toilet) {
         return res.status(404).json({ error: "Toilet not found" });
       }
 
-      const isAdmin = decoded.admin === true;
-      const isCreator = toilet.userId === requestingUid;
+      const isAdmin = authUser.admin === true;
+      const isCreator = toilet.userId === authUser.uid;
       if (!isAdmin && !isCreator) {
         return res.status(403).json({ error: "You can only edit toilets you have created" });
       }
 
+      // Only admins may relocate a toilet (e.g. fix an OSM import); a regular
+      // creator can edit details but not move the pin.
+      if (!isAdmin) delete (updateData as { coordinates?: unknown }).coordinates;
+
       await storage.updateToilet(id, updateData);
+      clearToiletsCache();
       res.json({ message: "Toilet updated successfully", id });
     } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Invalid toilet data" });
+      }
       console.error("Error updating toilet:", error);
       res.status(500).json({ error: "Failed to update toilet" });
     }
@@ -463,44 +497,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/toilets/:id", async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
-      const { adminEmail, userId } = req.body;
-      
-      if (!userId) {
-        return res.status(403).json({ error: "User authentication required" });
-      }
-      
+
+      // Identity comes from the verified token, never the request body
+      const authUser = await requireAuth(req, res);
+      if (!authUser) return;
+
       // Get the toilet to check ownership
-      const toilets = await storage.getToilets();
+      const toilets = await getCachedToilets();
       const toilet = toilets.find(t => t.id === id);
-      
+
       if (!toilet) {
         return res.status(404).json({ error: "Toilet not found" });
       }
-      
-      // Verify Firebase token
-      let userRecord;
-      try {
-        userRecord = await auth.getUser(userId);
-      } catch (firebaseError: any) {
-        console.error("❌ Firebase verification error:", firebaseError);
-        return res.status(403).json({ error: "Invalid user credentials" });
-      }
-      
+
       // Check if user is admin OR the creator of the toilet
-      const isAdmin = userRecord.customClaims?.admin === true;
-      const isCreator = toilet.userId === userId;
-      
-      if (!isAdmin && !isCreator) {
+      const isCreator = toilet.userId === authUser.uid;
+      if (!authUser.admin && !isCreator) {
         return res.status(403).json({ error: "You can only delete toilets you have created" });
       }
-      
-      // If user claims to be admin, verify email matches
-      if (adminEmail && userRecord.email !== adminEmail) {
-        return res.status(403).json({ error: "Email mismatch" });
-      }
-      
+
       await storage.deleteToilet(id);
-      
+      clearToiletsCache();
+
       res.json({ message: "Toilet deleted successfully" });
     } catch (error) {
       console.error("❌ Error deleting toilet:", error);

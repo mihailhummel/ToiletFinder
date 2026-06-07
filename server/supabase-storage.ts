@@ -32,9 +32,7 @@ export class SupabaseStorage implements IStorage {
     try {
       // Generate a unique ID for the toilet
       const toiletId = `toilet_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      
-      console.log('🚽 Storage: Creating toilet with hasBabyChanging =', toilet.hasBabyChanging);
-      
+
       const toiletData = {
         id: toiletId,
         coordinates: toilet.coordinates,
@@ -53,8 +51,6 @@ export class SupabaseStorage implements IStorage {
         review_count: 0
       };
       
-      console.log('🚽 Storage: Database payload has_baby_changing =', toiletData.has_baby_changing);
-
       const { data, error } = await supabase
         .from('toilets')
         .insert([toiletData])
@@ -179,17 +175,6 @@ export class SupabaseStorage implements IStorage {
 
   async createReview(review: InsertReview): Promise<void> {
     try {
-      // First, check if reviews table exists and has the right structure
-      const { data: existingReviews, error: checkError } = await supabase
-        .from('reviews')
-        .select('*')
-        .limit(1);
-
-      if (checkError) {
-        console.error('❌ Reviews table error:', checkError);
-        throw new Error('Reviews table not found or not accessible. Please run the SQL script in Supabase dashboard first.');
-      }
-
       const { error } = await supabase
         .from('reviews')
         .insert([{
@@ -206,18 +191,10 @@ export class SupabaseStorage implements IStorage {
         throw error;
       }
 
-      // Update toilet review count
-      const { error: updateError } = await supabase
-        .from('toilets')
-        .update({ 
-          review_count: (existingReviews.length || 0) + 1,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', review.toiletId);
-
-      if (updateError) {
-        console.error('❌ Error updating toilet review count:', updateError);
-      }
+      // NOTE: review_count and average_rating are maintained automatically by the
+      // DB trigger `trigger_update_toilet_rating` on the reviews table. Do NOT
+      // update them here (the old manual count was computed from a limit(1) probe
+      // and was wrong).
     } catch (error) {
       console.error('❌ Failed to create review:', error);
       throw error;
@@ -330,9 +307,9 @@ export class SupabaseStorage implements IStorage {
 
   async getToiletReportCount(toiletId: string): Promise<number> {
     try {
-      const { count, error } = await supabase
+      const { data, error } = await supabase
         .from('toilet_reports')
-        .select('*', { count: 'exact', head: true })
+        .select('user_id')
         .eq('toilet_id', toiletId);
 
       if (error) {
@@ -340,8 +317,9 @@ export class SupabaseStorage implements IStorage {
         throw error;
       }
 
-      // Silent for performance
-      return count || 0;
+      // Count DISTINCT reporters so a single user submitting repeatedly can't
+      // drive the auto-removal threshold and censor a legitimate toilet.
+      return new Set((data || []).map((r: any) => r.user_id)).size;
     } catch (error) {
       console.error('❌ Failed to get report count:', error);
       return 0;
@@ -622,11 +600,6 @@ export class SupabaseStorage implements IStorage {
       averageRating: data.average_rating || 0,
       reviewCount: data.review_count || 0
     };
-    
-    // Debug logging for baby changing
-    if (data.has_baby_changing) {
-      console.log('🚽 Transform: Found toilet with baby changing:', data.id, 'has_baby_changing =', data.has_baby_changing);
-    }
     
     return transformed;
   }

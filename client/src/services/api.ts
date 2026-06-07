@@ -1,6 +1,7 @@
 // 🔗 Centralized API Service Layer with Error Handling & Retry Logic
 
 import type { Toilet, InsertToilet, Review, InsertReview, Report, InsertReport } from '@/types/toilet'
+import { auth } from '@/lib/firebase'
 
 // 🛡️ Enhanced fetch with retry logic and error handling
 class APIError extends Error {
@@ -172,13 +173,14 @@ class ToiletAPI {
     return await response.json()
   }
 
-  // 👤 Check if user has reviewed toilet
-  async getUserReviewStatus(toiletId: string, userId: string): Promise<{ hasReviewed: boolean }> {
-    const params = new URLSearchParams({ userId })
+  // 👤 Check if user has reviewed toilet (auth-gated; identity comes from the token)
+  async getUserReviewStatus(toiletId: string): Promise<{ hasReviewed: boolean }> {
+    const token = await auth?.currentUser?.getIdToken()
     const response = await fetchWithRetry(
-      `${this.baseURL}/toilets/${toiletId}/user-review?${params}`
+      `${this.baseURL}/toilets/${toiletId}/user-review`,
+      { headers: token ? { Authorization: `Bearer ${token}` } : {} }
     )
-    
+
     return await response.json()
   }
 

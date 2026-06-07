@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import Markdown from "react-markdown";
+import DOMPurify from "dompurify";
 import { format } from "date-fns";
 import { bg } from "date-fns/locale";
 import { ArrowLeft, Calendar, User, Clock, MapPin, ChevronLeft, ChevronRight } from "lucide-react";
@@ -69,7 +70,10 @@ export default function Post() {
 
       const isHtml = /<[a-z][\s\S]*>/i.test(part);
       if (isHtml) {
-        return <div key={index} dangerouslySetInnerHTML={{ __html: part }} />;
+        // Sanitize before injecting: blog HTML is admin-authored, but defense in
+        // depth means we never render raw HTML straight from the DB.
+        const clean = DOMPurify.sanitize(part);
+        return <div key={index} dangerouslySetInnerHTML={{ __html: clean }} />;
       }
 
       return <Markdown key={index}>{part}</Markdown>;

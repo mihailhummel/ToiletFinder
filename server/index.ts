@@ -16,8 +16,69 @@ const __dirname = dirname(__filename);
 
 const app = express();
 
-// Security headers (CSP and COEP disabled — needed for map tiles and embeds)
-app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false, crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" } }));
+// Behind Railway's proxy: trust the first hop so express-rate-limit keys on the
+// real client IP (X-Forwarded-For) instead of the proxy address. Must be set
+// before the rate limiters are registered.
+app.set("trust proxy", 1);
+
+// Security headers via helmet, including a real Content-Security-Policy.
+// (The Netlify-style client/public/_headers file is NOT honored by Express, so
+// the CSP must live here.) COEP/COOP are relaxed for the Google sign-in popup
+// and cross-origin map tiles.
+//
+// NOTE: script-src still allows 'unsafe-inline' because index.html currently has
+// inline scripts (GA bootstrap + window config). Branch B (B3) moves those into
+// the bundle / consent-gated loader; once done, REMOVE 'unsafe-inline' here.
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      useDefaults: true,
+      directives: {
+        "default-src": ["'self'"],
+        "script-src": [
+          "'self'",
+          "'unsafe-inline'", // TODO(B3): remove once inline scripts are gone
+          "https://www.googletagmanager.com",
+          "https://www.google-analytics.com",
+          "https://apis.google.com",
+          "https://accounts.google.com",
+        ],
+        "style-src": ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+        "font-src": ["'self'", "https://fonts.gstatic.com", "data:"],
+        "img-src": [
+          "'self'",
+          "data:",
+          "blob:",
+          "https://*.basemaps.cartocdn.com",
+          "https://*.googleusercontent.com",
+          "https://www.google-analytics.com",
+        ],
+        "connect-src": [
+          "'self'",
+          "https://*.supabase.co",
+          "https://identitytoolkit.googleapis.com",
+          "https://securetoken.googleapis.com",
+          "https://*.google-analytics.com",
+          "https://*.analytics.google.com",
+          "https://www.googletagmanager.com",
+        ],
+        "frame-src": [
+          "https://accounts.google.com",
+          "https://apis.google.com",
+          "https://*.firebaseapp.com",
+        ],
+        "worker-src": ["'self'"],
+        "manifest-src": ["'self'"],
+        "frame-ancestors": ["'none'"],
+        "base-uri": ["'self'"],
+        "object-src": ["'none'"],
+        "upgrade-insecure-requests": [],
+      },
+    },
+    crossOriginEmbedderPolicy: false,
+    crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" },
+  })
+);
 
 // CORS — allow only the production origin (and localhost in dev)
 const allowedOrigins = [
@@ -38,10 +99,12 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   next();
 });
 
-// Rate limiting — 200 req / 15 min per IP for all API routes
+// Rate limiting — 150 req / 15 min per IP for all API routes.
+// Tightened from 200 now that server-side caching + dropping the redundant
+// preload sharply cut a legitimate client's request count.
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 200,
+  max: 150,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: "Too many requests, please try again later." },
@@ -67,27 +130,13 @@ app.use(express.urlencoded({ extended: false }));
 app.use((req, res, next) => {
   const start = Date.now();
   const requestPath = req.path;
-  let capturedJsonResponse: Record<string, any> | undefined = undefined;
-
-  const originalResJson = res.json;
-  res.json = function (bodyJson, ...args) {
-    capturedJsonResponse = bodyJson;
-    return originalResJson.apply(res, [bodyJson, ...args]);
-  };
 
   res.on("finish", () => {
     const duration = Date.now() - start;
     if (requestPath.startsWith("/api")) {
-      let logLine = `${req.method} ${requestPath} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse) {
-        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
-      }
-
-      if (logLine.length > 80) {
-        logLine = logLine.slice(0, 79) + "…";
-      }
-
-      log(logLine);
+      // Concise access log — method, path, status, duration. The response body is
+      // intentionally NOT logged (it spammed the terminal with full toilet arrays).
+      log(`${req.method} ${requestPath} ${res.statusCode} in ${duration}ms`);
     }
   });
 
@@ -99,10 +148,12 @@ app.use((req, res, next) => {
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
-
-    res.status(status).json({ message });
-    throw err;
+    // Log the full error server-side; never echo internal messages on 5xx.
+    console.error("Unhandled error:", err);
+    const message = status < 500 ? err.message || "Request error" : "Internal Server Error";
+    if (!res.headersSent) {
+      res.status(status).json({ message });
+    }
   });
 
   // Proxy /blog/* to the blog service
