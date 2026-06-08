@@ -850,15 +850,17 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, onReportC
         }
       );
 
-      // Wait for animation, then try to open popup
-      // Note: The marker might not exist yet if toilet is outside viewport
+      // Mark this toilet as the one to open. The marker-restore logic reopens it
+      // once its marker is rendered for the new viewport (handles the case where
+      // the marker doesn't exist yet because the toilet was off-screen).
+      manuallyClosedPopupRef.current = false;
+      openPopupToiletIdRef.current = toiletId;
+
+      // Also try directly after the fly animation, in case the marker already exists.
       setTimeout(() => {
         const marker = toiletMarkers.current.find(m => m.toiletId === toiletId);
         if (marker && marker.marker) {
-          console.log('🎪 Opening popup for toilet');
           marker.marker.openPopup();
-        } else {
-          console.log('⏳ Marker not yet created (will appear when map loads the area)');
         }
       }, 1600);
 
@@ -868,6 +870,18 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, onReportC
     // Call the callback to expose the function
     onMapReady(flyToToilet);
   }, [map.current, leafletLoaded, onMapReady, queryClient]);
+
+  // Close any open toilet popup when the rest of the app asks (e.g. the user
+  // taps the locate button or opens a menu item). Dispatched from App.tsx.
+  useEffect(() => {
+    const closePopups = () => {
+      manuallyClosedPopupRef.current = true;
+      openPopupToiletIdRef.current = null;
+      map.current?.closePopup();
+    };
+    window.addEventListener('toaletna:close-popups', closePopups);
+    return () => window.removeEventListener('toaletna:close-popups', closePopups);
+  }, []);
 
   const userLocationSet = useRef(false);
   const lastUserLocation = useRef<{lat: number, lng: number} | null>(null);
@@ -1438,10 +1452,31 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, onReportC
   };
 
   const handleReturnToLocation = () => {
+    // Always close any open toilet popup when using the locate control.
+    manuallyClosedPopupRef.current = true;
+    openPopupToiletIdRef.current = null;
+    map.current?.closePopup();
+
+    // Already have a location → just recenter on it.
     if (stableUserLocation && map.current) {
       map.current.setView([stableUserLocation.lat, stableUserLocation.lng], 16);
       setIsAwayFromUser(false);
+      return;
     }
+
+    // No location yet (e.g. the user declined earlier) → (re)request it. On most
+    // browsers this re-prompts; if it's permanently blocked the promise rejects
+    // and we point the user to their browser settings.
+    getCurrentLocation(true)
+      .then((loc: any) => {
+        if (loc && map.current) {
+          map.current.setView([loc.lat, loc.lng], 16);
+          setIsAwayFromUser(false);
+        }
+      })
+      .catch(() => {
+        notify.error(t('toast.locationDenied'));
+      });
   };
 
   const handleAddToilet = () => {
@@ -1677,18 +1712,18 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, onReportC
       
 
       
+      {/* Always visible: recenters when we have a location, or (re)requests it
+          if the user previously declined — the only retry path on mobile. */}
       <div className="fixed bottom-6 left-6" style={{ zIndex: 1000 }}>
-        {stableUserLocation && (
-          <Button
-            onClick={handleReturnToLocation}
-            className="bg-white text-blue-600 shadow-xl rounded-full p-0 border border-gray-200 transition-all duration-200 hover:scale-105 hover:bg-blue-50 hover:border-blue-300 active:scale-95 floating-button"
-            variant="outline"
-            title="Return to my location"
-            style={{ position: 'fixed', bottom: '36px', left: '24px', zIndex: 1000, width: '55px', height: '55px' }}
-          >
-            <Crosshair className="w-6 h-6" />
-          </Button>
-        )}
+        <Button
+          onClick={handleReturnToLocation}
+          className="bg-white text-blue-600 shadow-xl rounded-full p-0 border border-gray-200 transition-all duration-200 hover:scale-105 hover:bg-blue-50 hover:border-blue-300 active:scale-95 floating-button"
+          variant="outline"
+          title={t('header.findLocation')}
+          style={{ position: 'fixed', bottom: '36px', left: '24px', zIndex: 1000, width: '55px', height: '55px' }}
+        >
+          <Crosshair className="w-6 h-6" />
+        </Button>
       </div>
 
       {fetchError && (

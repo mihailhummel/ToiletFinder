@@ -132,6 +132,7 @@ interface Translations {
   'toast.selectLocationMessage': string;
   'toast.cacheCleared': string;
   'toast.cacheClearedMessage': string;
+  'toast.locationDenied': string;
   
   // User Menu
   'user.menu': string;
@@ -419,6 +420,7 @@ const translations: Record<Language, Translations> = {
     'toast.selectLocationMessage': 'Tap on the map where you want to add the toilet',
     'toast.cacheCleared': 'Cache cleared',
     'toast.cacheClearedMessage': 'All cached toilet data has been cleared.',
+    'toast.locationDenied': 'Location is off. Enable it in your browser settings, then tap the locate button again.',
     
     // User Menu
     'user.menu': 'User Menu',
@@ -701,6 +703,7 @@ const translations: Record<Language, Translations> = {
     'toast.selectLocationMessage': 'Докоснете картата, където искате да добавите тоалетната',
     'toast.cacheCleared': 'Кешът е изчистен',
     'toast.cacheClearedMessage': 'Всички кеширани данни за тоалетни са изчистени.',
+    'toast.locationDenied': 'Локацията е изключена. Включете я от настройките на браузъра и натиснете бутона за локация отново.',
     
     // User Menu
     'user.menu': 'Профил',

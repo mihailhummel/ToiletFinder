@@ -42,6 +42,7 @@ export function ConsentBanner() {
     reject: bg ? "Само нужните" : "Just the basics",
     privacy: bg ? "Поверителност" : "Privacy",
     cookies: bg ? "Бисквитки" : "Cookies",
+    terms: bg ? "Условия" : "Terms",
   };
 
   return (
@@ -54,16 +55,23 @@ export function ConsentBanner() {
       <div className="pointer-events-auto mx-auto max-w-3xl bg-white rounded-2xl shadow-2xl shadow-slate-900/20 border border-slate-200 p-4 sm:px-5 sm:py-4">
         {/* One row on desktop (text left, buttons right); stacks on mobile. */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-5">
-          <p className="min-w-0 sm:flex-1 text-[13px] leading-relaxed text-slate-600">
-            {t.body}{" "}
-            <Link href="/privacy" className="text-blue-600 font-semibold underline underline-offset-2 hover:text-blue-700">
-              {t.privacy}
-            </Link>{" "}
-            ·{" "}
-            <Link href="/cookies" className="text-blue-600 font-semibold underline underline-offset-2 hover:text-blue-700">
-              {t.cookies}
-            </Link>
-          </p>
+          <div className="min-w-0 sm:flex-1">
+            <p className="text-[13px] leading-relaxed text-slate-600">{t.body}</p>
+            {/* Policy links on their own line. */}
+            <p className="mt-1.5 text-[12px] text-blue-600">
+              <Link href="/privacy" className="font-semibold underline underline-offset-2 hover:text-blue-700">
+                {t.privacy}
+              </Link>
+              {" · "}
+              <Link href="/cookies" className="font-semibold underline underline-offset-2 hover:text-blue-700">
+                {t.cookies}
+              </Link>
+              {" · "}
+              <Link href="/terms" className="font-semibold underline underline-offset-2 hover:text-blue-700">
+                {t.terms}
+              </Link>
+            </p>
+          </div>
           {/* Both one-click and equally easy; Accept is colour-led, "Only necessary"
               is an equally-weighted outline — refusing is as easy as accepting. */}
           <div className="flex gap-2.5 sm:flex-shrink-0">

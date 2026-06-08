@@ -10,7 +10,6 @@ import {
   Linkedin,
   Copy,
   CheckCircle2,
-  Trash2,
 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
@@ -279,23 +278,10 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
                 {t('user.signOut')}
               </button>
             )}
-            {user && onDeleteAccount && (
-              <button
-                type="button"
-                onClick={() => {
-                  setOpen(false);
-                  onDeleteAccount();
-                }}
-                className="w-full flex items-center justify-center gap-2 text-red-600 hover:bg-red-50 font-semibold text-[12px] py-2 rounded-xl active:scale-[0.98] transition-all"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-                {t('account.delete')}
-              </button>
-            )}
           </div>
 
-          {/* Legal / privacy footer links (reachable from the profile menu) */}
-          <div className="px-4 py-3 border-t border-slate-100 flex flex-wrap gap-x-3 gap-y-1">
+          {/* Legal / privacy footer links — centered */}
+          <div className="px-4 pt-3 pb-1 border-t border-slate-100 flex flex-wrap justify-center gap-x-3 gap-y-1">
             {[
               { href: '/privacy', label: bg ? 'Поверителност' : 'Privacy' },
               { href: '/terms', label: bg ? 'Условия' : 'Terms' },
@@ -312,6 +298,23 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
               </Link>
             ))}
           </div>
+
+          {/* Account deletion — intentionally subtle. GDPR only requires it to be
+              accessible, not prominent. */}
+          {user && onDeleteAccount && (
+            <div className="px-4 pb-3 pt-0.5 flex justify-center">
+              <button
+                type="button"
+                onClick={() => {
+                  setOpen(false);
+                  onDeleteAccount();
+                }}
+                className="text-[11px] text-slate-400 hover:text-red-600 transition-colors"
+              >
+                {t('account.delete')}
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

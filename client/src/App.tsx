@@ -348,7 +348,14 @@ function AppContent() {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [toast, t]);
 
+  // Open an info modal from the nav — and close any open map popup first.
+  const handleOpenInfoModal = useCallback((modal: InfoModalType) => {
+    window.dispatchEvent(new CustomEvent('toaletna:close-popups'));
+    setActiveInfoModal(modal);
+  }, []);
+
   const handleLocateUser = async () => {
+    window.dispatchEvent(new CustomEvent('toaletna:close-popups'));
     try {
       // Force new permission request - this will bypass cache and ask for fresh permission
       await getCurrentLocation(true);
@@ -695,7 +702,7 @@ function AppContent() {
               
               <div className="flex items-center space-x-2 sm:space-x-3 flex-shrink-0">
                 {/* Desktop navigation links (next to language switch) */}
-                <DesktopNavLinks onOpenModal={setActiveInfoModal} />
+                <DesktopNavLinks onOpenModal={handleOpenInfoModal} />
 
                 {/* Language Switch */}
                 <LanguageSwitch />
@@ -738,7 +745,7 @@ function AppContent() {
                   user={user}
                   isAdmin={isAdmin}
                   isMobile={isMobile}
-                  onOpenModal={setActiveInfoModal}
+                  onOpenModal={handleOpenInfoModal}
                   onSignOut={handleSignOut}
                   onInstallApp={handleInstallApp}
                   onLoginClick={handleLoginClick}
