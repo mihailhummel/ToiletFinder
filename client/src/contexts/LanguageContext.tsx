@@ -262,6 +262,9 @@ interface Translations {
   'welcome.reviewDescription': string;
   'welcome.gotIt': string;
   'welcome.contactMe': string;
+  'welcome.helpAdd': string;
+  'welcome.helpReport': string;
+  'welcome.helpReview': string;
 
   // Navigation
   'nav.blog': string;
@@ -546,6 +549,9 @@ const translations: Record<Language, Translations> = {
     'welcome.reviewDescription': 'Share your experience and rate toilet facilities to help other users.',
     'welcome.gotIt': 'Got it, let\'s go!',
     'welcome.contactMe': 'Contact us at:',
+    'welcome.helpAdd': 'Add',
+    'welcome.helpReport': 'Report',
+    'welcome.helpReview': 'Review',
 
     // Navigation
     'nav.blog': 'Blog',
@@ -825,6 +831,9 @@ const translations: Record<Language, Translations> = {
     'welcome.reviewDescription': 'Споделете впечатленията си и оценете тоалетните съоръжения, за да помогнете на други потребители.',
     'welcome.gotIt': 'Разбрах, да започваме!',
     'welcome.contactMe': 'Пишете ни на:',
+    'welcome.helpAdd': 'Добави',
+    'welcome.helpReport': 'Докладвай',
+    'welcome.helpReview': 'Оцени',
 
     // Navigation
     'nav.blog': 'Блог',
