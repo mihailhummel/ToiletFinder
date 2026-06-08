@@ -138,6 +138,14 @@ interface Translations {
   'user.profile': string;
   'user.settings': string;
   'user.signOut': string;
+
+  // Account deletion (GDPR)
+  'account.delete': string;
+  'account.deleteTitle': string;
+  'account.deleteBody': string;
+  'account.deleteConfirm': string;
+  'account.deleted': string;
+  'account.deleteError': string;
   
   // PWA
   'pwa.installPrompt': string;
@@ -414,6 +422,14 @@ const translations: Record<Language, Translations> = {
     'user.profile': 'Profile',
     'user.settings': 'Settings',
     'user.signOut': 'Sign Out',
+
+    // Account deletion (GDPR)
+    'account.delete': 'Delete account',
+    'account.deleteTitle': 'Delete your account?',
+    'account.deleteBody': 'This permanently deletes your account and your reviews. Toilets you added stay on the map but are anonymized. This cannot be undone.',
+    'account.deleteConfirm': 'Delete account',
+    'account.deleted': 'Your account has been deleted',
+    'account.deleteError': "Couldn't delete your account. Please try again or contact us.",
     
     // PWA
     'pwa.installPrompt': 'Install this app for a better experience',
@@ -685,6 +701,14 @@ const translations: Record<Language, Translations> = {
     'user.profile': 'Профил',
     'user.settings': 'Настройки',
     'user.signOut': 'Излез',
+
+    // Account deletion (GDPR)
+    'account.delete': 'Изтрий профила',
+    'account.deleteTitle': 'Изтриване на профила?',
+    'account.deleteBody': 'Това изтрива завинаги профила и Вашите отзиви. Тоалетните, които сте добавили, остават на картата, но се анонимизират. Действието е необратимо.',
+    'account.deleteConfirm': 'Изтрий профила',
+    'account.deleted': 'Профилът Ви е изтрит',
+    'account.deleteError': 'Неуспешно изтриване на профила. Опитайте отново или се свържете с нас.',
     
     // PWA
     'pwa.installPrompt': 'Инсталирайте това приложение за по-добро изживяване',

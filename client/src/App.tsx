@@ -2,8 +2,10 @@ import { useState, useEffect, useCallback } from "react";
 import { Switch, Route } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
-import { ConfirmDialogHost } from "@/components/ui/confirm-dialog";
+import { ConfirmDialogHost, confirmDialog } from "@/components/ui/confirm-dialog";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { apiRequest } from "@/lib/queryClient";
+import { notify } from "@/lib/notify";
 import { LanguageProvider, useLanguage } from "@/contexts/LanguageContext";
 
 // Privacy / legal pages (lazy-free: small static components)
@@ -570,6 +572,27 @@ function AppContent() {
     }
   }, [signOut, toast]);
 
+  // GDPR account deletion — confirm, call the server (which erases personal data
+  // + anonymizes added toilets + deletes the Firebase account), then sign out.
+  const handleDeleteAccount = useCallback(async () => {
+    const confirmed = await confirmDialog({
+      title: t('account.deleteTitle'),
+      description: t('account.deleteBody'),
+      confirmText: t('account.deleteConfirm'),
+      cancelText: t('button.cancel'),
+      variant: "destructive",
+    });
+    if (!confirmed) return;
+    try {
+      await apiRequest("DELETE", "/api/account");
+      await signOut();
+      notify.success(t('account.deleted'));
+    } catch (error) {
+      console.error("Account deletion failed:", error);
+      notify.error(t('account.deleteError'));
+    }
+  }, [t, signOut]);
+
   // PWA Install function
   const handleInstallApp = useCallback(async () => {
     console.log('🔽 Install app clicked. Deferred prompt:', !!deferredPrompt);
@@ -719,6 +742,7 @@ function AppContent() {
                   onSignOut={handleSignOut}
                   onInstallApp={handleInstallApp}
                   onLoginClick={handleLoginClick}
+                  onDeleteAccount={handleDeleteAccount}
                 />
               </div>
             </div>

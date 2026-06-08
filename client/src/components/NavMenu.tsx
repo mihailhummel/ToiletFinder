@@ -10,6 +10,7 @@ import {
   Linkedin,
   Copy,
   CheckCircle2,
+  Trash2,
 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
@@ -89,6 +90,7 @@ interface ProfileMenuProps {
   onSignOut: () => void;
   onInstallApp: () => void;
   onLoginClick: () => void;
+  onDeleteAccount?: () => void;
 }
 
 export const ProfileMenu: React.FC<ProfileMenuProps> = ({
@@ -99,6 +101,7 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
   onSignOut,
   onInstallApp,
   onLoginClick,
+  onDeleteAccount,
 }) => {
   const { t, language } = useLanguage();
   const bg = language === 'bg';
@@ -274,6 +277,19 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
               >
                 <LogOut className="w-4 h-4" />
                 {t('user.signOut')}
+              </button>
+            )}
+            {user && onDeleteAccount && (
+              <button
+                type="button"
+                onClick={() => {
+                  setOpen(false);
+                  onDeleteAccount();
+                }}
+                className="w-full flex items-center justify-center gap-2 text-red-600 hover:bg-red-50 font-semibold text-[12px] py-2 rounded-xl active:scale-[0.98] transition-all"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                {t('account.delete')}
               </button>
             )}
           </div>

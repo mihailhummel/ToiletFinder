@@ -5,6 +5,25 @@ import {
   onAuthStateChanged,
   User
 } from 'firebase/auth';
+import { apiRequest } from '@/lib/queryClient';
+import { CONSENT_VERSION } from '@/lib/consent';
+
+// Record terms/privacy acceptance once per consent version per browser. The
+// server is insert-once, so this is just to avoid a redundant POST on each load.
+async function recordConsentOnce() {
+  const flag = `toaletna-consent-recorded-v${CONSENT_VERSION}`;
+  if (localStorage.getItem(flag)) return;
+  try {
+    await apiRequest('POST', '/api/consent', {
+      version: CONSENT_VERSION,
+      acceptedTerms: true,
+      acceptedPrivacy: true,
+    });
+    localStorage.setItem(flag, '1');
+  } catch {
+    /* non-critical — will retry on next load */
+  }
+}
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
@@ -25,6 +44,8 @@ export function useAuth() {
           console.error('Error checking admin status:', error);
           setIsAdmin(false);
         }
+        // Record terms/privacy consent for this signed-in user (GDPR audit trail).
+        recordConsentOnce();
       } else {
         setIsAdmin(false);
       }

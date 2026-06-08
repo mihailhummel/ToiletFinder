@@ -11,7 +11,25 @@ import Admin from "./pages/Admin";
 const basePath = import.meta.env.VITE_BASE_PATH || "/blog";
 const gaMeasurementId = import.meta.env.VITE_GA_MEASUREMENT_ID;
 
-if (gaMeasurementId && import.meta.env.MODE !== "development") {
+// The blog is served same-origin (/blog), so it shares the main app's cookie
+// consent decision in localStorage. Only load Google Analytics if the visitor
+// has accepted — otherwise no tracking (GDPR/ePrivacy hard-gate). To change the
+// choice, use the cookie settings on the main site.
+function hasAnalyticsConsent(): boolean {
+  try {
+    const raw = localStorage.getItem("toaletna-cookie-consent");
+    if (!raw) return false;
+    const c = JSON.parse(raw);
+    return c?.status === "accepted" && (c?.version ?? 0) >= 1;
+  } catch {
+    return false;
+  }
+}
+
+const analyticsAllowed =
+  !!gaMeasurementId && import.meta.env.MODE !== "development" && hasAnalyticsConsent();
+
+if (analyticsAllowed) {
   ReactGA.initialize(gaMeasurementId);
 }
 
@@ -19,7 +37,7 @@ function AppRoutes() {
   const location = useLocation();
 
   useEffect(() => {
-    if (gaMeasurementId && import.meta.env.MODE !== "development") {
+    if (analyticsAllowed) {
       ReactGA.send({ hitType: "pageview", page: location.pathname });
     }
   }, [location]);

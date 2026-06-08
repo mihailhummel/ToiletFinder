@@ -526,6 +526,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ─── Privacy / GDPR ────────────────────────────────────────────────────────
+  const consentSchema = z.object({
+    version: z.number().int().min(1).max(10000),
+    acceptedTerms: z.boolean(),
+    acceptedPrivacy: z.boolean(),
+  });
+
+  // Record the signed-in user's terms/privacy consent (insert-once per version).
+  app.post("/api/consent", async (req: Request, res: Response) => {
+    const authUser = await requireAuth(req, res);
+    if (!authUser) return;
+    try {
+      const { version, acceptedTerms, acceptedPrivacy } = consentSchema.parse(req.body);
+      await storage.recordConsent(authUser.uid, version, acceptedTerms, acceptedPrivacy);
+      res.json({ message: "Consent recorded" });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Invalid consent data" });
+      }
+      console.error("Error recording consent:", error);
+      res.status(500).json({ error: "Failed to record consent" });
+    }
+  });
+
+  // GDPR account deletion: erase the user's personal data, anonymize the toilets
+  // they added, then delete their Firebase Auth account. Identity from the token.
+  app.delete("/api/account", async (req: Request, res: Response) => {
+    const authUser = await requireAuth(req, res);
+    if (!authUser) return;
+    try {
+      await storage.deleteUserData(authUser.uid);
+      await auth.deleteUser(authUser.uid);
+      clearToiletsCache();
+      res.json({ message: "Account deleted" });
+    } catch (error) {
+      console.error("Error deleting account:", error);
+      res.status(500).json({ error: "Failed to delete account" });
+    }
+  });
+
   // Health check endpoint
   app.get("/api/health", (_req: Request, res: Response) => {
     res.json({ status: "healthy" });

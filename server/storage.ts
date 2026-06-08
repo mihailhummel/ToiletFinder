@@ -44,6 +44,10 @@ export interface IStorage {
   getUserReviews(userId: string): Promise<Review[]>;
   deleteReview(reviewId: string): Promise<void>;
 
+  // Privacy / GDPR operations
+  recordConsent(firebaseUid: string, version: number, acceptedTerms: boolean, acceptedPrivacy: boolean): Promise<void>;
+  deleteUserData(userId: string): Promise<void>;
+
   queueChange(type: 'add' | 'report' | 'delete', data: any): Promise<void>;
 }
 

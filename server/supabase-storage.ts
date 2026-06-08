@@ -556,6 +556,67 @@ export class SupabaseStorage implements IStorage {
     }
   }
 
+  // Record a user's terms/privacy consent. Append-only audit log keyed by
+  // (firebase_uid, consent_version): insert-once per version, never overwrite.
+  async recordConsent(
+    firebaseUid: string,
+    version: number,
+    acceptedTerms: boolean,
+    acceptedPrivacy: boolean
+  ): Promise<void> {
+    const { error } = await supabase
+      .from('user_consent')
+      .upsert(
+        {
+          firebase_uid: firebaseUid,
+          consent_version: version,
+          accepted_terms: acceptedTerms,
+          accepted_privacy: acceptedPrivacy,
+          accepted_at: new Date().toISOString(),
+        },
+        { onConflict: 'firebase_uid,consent_version', ignoreDuplicates: true }
+      );
+    if (error) {
+      console.error('❌ Error recording consent:', error);
+      throw error;
+    }
+  }
+
+  // GDPR erasure: delete the user's personal contributions and anonymize the
+  // shared map locations they added (so the map stays complete). Firebase Auth
+  // account deletion is done by the caller after this resolves.
+  async deleteUserData(userId: string): Promise<void> {
+    // Personal data → hard delete.
+    for (const table of ['reviews', 'reports', 'toilet_reports'] as const) {
+      const { error } = await supabase.from(table).delete().eq('user_id', userId);
+      if (error) {
+        console.error(`❌ Error deleting ${table} for user:`, error);
+        throw error;
+      }
+    }
+
+    // Community POIs the user added → anonymize, keep on the map.
+    const { error: toiletErr } = await supabase
+      .from('toilets')
+      .update({ user_id: null, added_by_user_name: null, updated_at: new Date().toISOString() })
+      .eq('user_id', userId);
+    if (toiletErr) {
+      console.error('❌ Error anonymizing user toilets:', toiletErr);
+      throw toiletErr;
+    }
+
+    // Consent rows → best-effort cleanup. Done LAST and non-fatal so that if the
+    // user_consent table hasn't been created yet (05_user_consent.sql), account
+    // deletion still completes rather than leaving a half-deleted account.
+    const { error: consentErr } = await supabase
+      .from('user_consent')
+      .delete()
+      .eq('firebase_uid', userId);
+    if (consentErr) {
+      console.warn('⚠️ Could not delete user_consent rows (non-fatal):', consentErr.message);
+    }
+  }
+
   private transformToilet(data: any): Toilet {
     // Check for invalid data but don't throw errors - try to fix if possible
     if (!data) {
