@@ -224,30 +224,32 @@ async function main() {
 
   console.log(`[prerender] Fetched ${posts.length} published posts.`);
 
-  // Ensure dist/blog/ directory exists
-  const blogDir = path.join(DIST_DIR, 'blog');
-  fs.mkdirSync(blogDir, { recursive: true });
+  // IMPORTANT: the main app proxies /blog/* to this service and STRIPS the /blog
+  // prefix, so `serve dist` receives paths WITHOUT /blog. The prerendered pages
+  // must therefore live at the dist ROOT — dist/index.html (homepage),
+  // dist/{slug}/index.html (posts), dist/sitemap.xml — so that the public URLs
+  // /blog, /blog/{slug} and /blog/sitemap.xml resolve to them. (Writing them
+  // under dist/blog/ makes them unreachable through the proxy.)
 
-  // Write improved homepage to dist/blog/index.html
-  // (served when proxy forwards /blog/ to the blog service)
+  // Homepage → overwrite the SPA shell with SEO-rich head tags.
   const homepageHtml = patchShell(shell, homepageHeadTags());
-  fs.writeFileSync(path.join(blogDir, 'index.html'), homepageHtml, 'utf8');
-  console.log('[prerender] Created: dist/blog/index.html');
+  fs.writeFileSync(path.join(DIST_DIR, 'index.html'), homepageHtml, 'utf8');
+  console.log('[prerender] Wrote: dist/index.html (homepage)');
 
-  // Generate per-post pages
+  // Per-post pages → dist/{slug}/index.html
   for (const post of posts) {
     if (!post.slug) { console.warn(`[prerender] Skipping post ${post.id} — no slug`); continue; }
-    const dir = path.join(DIST_DIR, 'blog', post.slug);
+    const dir = path.join(DIST_DIR, post.slug);
     fs.mkdirSync(dir, { recursive: true });
     const postHtml = patchShell(shell, postHeadTags(post), postRootContent(post));
     fs.writeFileSync(path.join(dir, 'index.html'), postHtml, 'utf8');
-    console.log(`[prerender]   dist/blog/${post.slug}/index.html`);
+    console.log(`[prerender]   dist/${post.slug}/index.html`);
   }
 
-  // Generate sitemap
-  const sitemapPath = path.join(DIST_DIR, 'blog', 'sitemap.xml');
+  // Sitemap → dist/sitemap.xml (served at /blog/sitemap.xml after the proxy strip)
+  const sitemapPath = path.join(DIST_DIR, 'sitemap.xml');
   fs.writeFileSync(sitemapPath, buildSitemap(posts), 'utf8');
-  console.log(`[prerender] Generated: dist/blog/sitemap.xml (${posts.length} post URLs)`);
+  console.log(`[prerender] Generated: dist/sitemap.xml (${posts.length} post URLs)`);
 
   console.log('[prerender] Done.');
 }

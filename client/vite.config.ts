@@ -20,7 +20,15 @@ export default defineConfig({
         clientsClaim: true,
         skipWaiting: true,
         navigateFallback: '/index.html',
-        navigateFallbackDenylist: [/^\/api\//],
+        // Let these paths hit the network instead of being served the cached map
+        // shell: /api/* (backend), /blog* (proxied to the separate blog service —
+        // otherwise the SW renders the map at /blog), and the SEO files.
+        navigateFallbackDenylist: [
+          /^\/api\//,
+          /^\/blog(\/|$)/,
+          /^\/sitemap\.xml$/,
+          /^\/robots\.txt$/,
+        ],
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
         runtimeCaching: [
           {
