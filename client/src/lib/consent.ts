@@ -20,6 +20,12 @@ const CONSENT_KEY = "toaletna-cookie-consent";
 // recorded on the server, see /api/consent).
 export const CONSENT_VERSION = 1;
 
+// Re-ask users who *rejected* after this many days (CNIL-aligned "reasonable
+// interval"). Accepted choices are never re-prompted on a timer; a policy-version
+// bump still re-asks everyone. Re-prompting rejecters on every visit would be a
+// dark pattern, so we only do it after a long cooldown.
+const REJECT_REPROMPT_DAYS = 180;
+
 // Public GA4 Measurement ID (not a secret; safe in the client).
 const GA_MEASUREMENT_ID = "G-FPF6DRB75R";
 
@@ -38,11 +44,23 @@ export function getConsent(): ConsentRecord | null {
   }
 }
 
-// Show the banner when there is no decision yet, OR the stored decision predates
-// the current consent version.
+// Show the banner when:
+//  - there is no decision yet, OR
+//  - the stored decision predates the current consent version (policy changed), OR
+//  - the user REJECTED more than REJECT_REPROMPT_DAYS ago (gentle re-solicitation).
+// Accepted decisions at the current version are never re-prompted on a timer.
 export function needsConsentDecision(): boolean {
   const c = getConsent();
-  return !c || c.version < CONSENT_VERSION;
+  if (!c) return true;
+  if (c.version < CONSENT_VERSION) return true;
+  if (c.status === "rejected") {
+    const ageMs = Date.now() - new Date(c.timestamp).getTime();
+    // If the timestamp is valid and older than the cooldown, ask once more.
+    if (Number.isFinite(ageMs) && ageMs > REJECT_REPROMPT_DAYS * 24 * 60 * 60 * 1000) {
+      return true;
+    }
+  }
+  return false;
 }
 
 export function hasAnalyticsConsent(): boolean {
