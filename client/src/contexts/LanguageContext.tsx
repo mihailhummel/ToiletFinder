@@ -859,7 +859,7 @@ const translations: Record<Language, Translations> = {
     'guides.legend.mall': 'Мол | Магазини',
     'guides.legend.gasStation': 'Бензиностанция',
     'guides.legend.cafe': 'Кафене | Ресторант',
-    'guides.legend.portable': 'Преносима тоалетна',
+    'guides.legend.portable': 'Мобилна тоалетна',
     'guides.legend.other': 'Друго',
     'guides.howToAdd': 'Как да добавите тоалетна',
     'guides.howToAddPre': 'Натиснете синия ',

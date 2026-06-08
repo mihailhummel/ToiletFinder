@@ -35,8 +35,8 @@ export function ConsentBanner() {
   const t = {
     title: bg ? "Бисквитки" : "Cookies",
     body: bg
-      ? "Използваме бисквитки, за да работи сайтът. С Ваше съгласие добавяме и анонимна статистика (Google Analytics), за да подобряваме картата."
-      : "We use cookies to run the site. With your consent we also add anonymous analytics (Google Analytics) to improve the map.",
+      ? "Тоалетна.com е безплатна 💙 Бисквитките помагат сайтът да работи. С Ваше съгласие виждаме анонимно кое е полезно, за да правим картата по-добра — никога не продаваме и не споделяме данните Ви."
+      : "Toaletna.com is free 💙 Cookies keep the site running. With your consent we anonymously see what helps, so we can make the map better — we never sell or share your data.",
     accept: bg ? "Приемам" : "Accept",
     // "Only necessary" is the (one-click) reject — a softer label than "Reject",
     // which is permitted and lifts opt-in while keeping refusal as easy as accept.
@@ -56,7 +56,6 @@ export function ConsentBanner() {
         {/* One row on desktop (text left, buttons right); stacks on mobile. */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-5">
           <p className="min-w-0 sm:flex-1 text-[13px] leading-relaxed text-slate-600">
-            <span className="font-bold text-slate-900">{t.title}. </span>
             {t.body}{" "}
             <Link href="/privacy" className="text-blue-600 font-semibold underline underline-offset-2 hover:text-blue-700">
               {t.privacy}
@@ -72,7 +71,7 @@ export function ConsentBanner() {
             <button
               type="button"
               onClick={() => decide("rejected")}
-              className="flex-1 sm:flex-none whitespace-nowrap px-4 py-2.5 rounded-xl border border-slate-300 text-slate-700 font-bold text-[13px] hover:bg-slate-50 active:scale-[0.98] transition-all"
+              className="flex-1 sm:flex-none whitespace-nowrap px-3 sm:px-4 py-2.5 rounded-xl border border-slate-300 text-slate-700 font-bold text-[11.5px] sm:text-[13px] hover:bg-slate-50 active:scale-[0.98] transition-all"
             >
               {t.reject}
             </button>
@@ -80,7 +79,7 @@ export function ConsentBanner() {
               ref={acceptRef}
               type="button"
               onClick={() => decide("accepted")}
-              className="flex-1 sm:flex-none whitespace-nowrap px-5 py-2.5 rounded-xl bg-blue-600 text-white font-bold text-[13px] hover:bg-blue-700 active:scale-[0.98] transition-all shadow-[0_4px_10px_rgba(37,99,235,0.25)]"
+              className="flex-1 sm:flex-none whitespace-nowrap px-3 sm:px-5 py-2.5 rounded-xl bg-blue-600 text-white font-bold text-[11.5px] sm:text-[13px] hover:bg-blue-700 active:scale-[0.98] transition-all shadow-[0_4px_10px_rgba(37,99,235,0.25)]"
             >
               {t.accept}
             </button>
