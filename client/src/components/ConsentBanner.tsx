@@ -35,12 +35,11 @@ export function ConsentBanner() {
   const t = {
     title: bg ? "Бисквитки" : "Cookies",
     body: bg
-      ? "Тоалетна.com е безплатна 💙 Бисквитките помагат сайтът да работи. С Ваше съгласие виждаме анонимно кое е полезно, за да правим картата по-добра — никога не продаваме и не споделяме данните Ви."
-      : "Toaletna.com is free 💙 Cookies keep the site running. With your consent we anonymously see what helps, so we can make the map better — we never sell or share your data.",
-    accept: bg ? "Приемам" : "Accept",
-    // "Only necessary" is the (one-click) reject — a softer label than "Reject",
-    // which is permitted and lifts opt-in while keeping refusal as easy as accept.
-    reject: bg ? "Само необходими" : "Only necessary",
+      ? "Този сайт работи с бисквитки 🍪 (истинските са по-вкусни, знаем). Помагат на сайта да запомни езика ти и да те държи вписан, а на нас показват колко хора ни посещават. Нищо страшно."
+      : "This site runs on cookies 🍪 (the real ones taste better, we know). They help the site remember your language and keep you logged in, and they show us how many people visit. Nothing scary.",
+    accept: bg ? "Приемам 🍪" : "Accept 🍪",
+    // "Just the basics" is the one-click reject (refusal is as easy as accepting).
+    reject: bg ? "Само нужните" : "Just the basics",
     privacy: bg ? "Поверителност" : "Privacy",
     cookies: bg ? "Бисквитки" : "Cookies",
   };

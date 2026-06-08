@@ -1,5 +1,5 @@
 import { useLanguage } from "@/contexts/LanguageContext";
-import { LegalLayout, LegalSection, Placeholder } from "./LegalLayout";
+import { LegalLayout, LegalSection } from "./LegalLayout";
 
 const CONTACT_EMAIL = "contact@toaletna.com";
 
@@ -76,8 +76,9 @@ export default function TermsOfService() {
 
       <LegalSection heading={bg ? "Приложимо право" : "Governing law"}>
         <p>
-          {bg ? "Тези условия се уреждат от законите на " : "These terms are governed by the laws of "}
-          <Placeholder>{bg ? "приложима юрисдикция, напр. Република България" : "governing jurisdiction, e.g. Republic of Bulgaria"}</Placeholder>.
+          {bg
+            ? "Тези условия се уреждат от законите на Република България."
+            : "These terms are governed by the laws of the Republic of Bulgaria."}
         </p>
       </LegalSection>
 

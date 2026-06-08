@@ -14,16 +14,16 @@ export default function CookiePolicy() {
     ? [
         ["toilet-finder-language", "Запомня избрания език", "Необходима"],
         ["toaletna-cookie-consent", "Запомня избора Ви за бисквитки", "Необходима"],
-        ["toilet-map-visited", "Скрива началния прозорец при повторно посещение", "Необходима"],
+        ["toilet-map-visited", "Скрива началния прозорец при повторно посещение", "Функционална"],
         ["Firebase Auth (сесия)", "Поддържа Ви вписани след вход с Google", "Необходима"],
-        ["_ga, _ga_*, _gid", "Google Analytics — анонимна статистика", "Аналитична (със съгласие)"],
+        ["_ga, _ga_*", "Google Analytics — статистика за употребата", "Аналитична (със съгласие)"],
       ]
     : [
         ["toilet-finder-language", "Remembers your chosen language", "Essential"],
         ["toaletna-cookie-consent", "Remembers your cookie choice", "Essential"],
-        ["toilet-map-visited", "Hides the welcome dialog on return visits", "Essential"],
+        ["toilet-map-visited", "Hides the welcome dialog on return visits", "Functional"],
         ["Firebase Auth (session)", "Keeps you signed in after Google login", "Essential"],
-        ["_ga, _ga_*, _gid", "Google Analytics — anonymous statistics", "Analytics (consent)"],
+        ["_ga, _ga_*", "Google Analytics — usage statistics", "Analytics (consent)"],
       ];
 
   return (
@@ -40,10 +40,10 @@ export default function CookiePolicy() {
       <LegalSection heading={bg ? "Категории" : "Categories"}>
         <ul className="list-disc pl-5 space-y-1">
           <li>
-            <strong>{bg ? "Необходими" : "Essential"}</strong>{" "}
+            <strong>{bg ? "Необходими и функционални" : "Essential & functional"}</strong>{" "}
             {bg
-              ? "— винаги активни; нужни за основните функции (език, сесия, съгласие). Не изискват съгласие."
-              : "— always on; required for core functions (language, session, consent). No consent required."}
+              ? "— винаги активни; за основните функции и Вашите предпочитания (език, сесия при вход, запомняне на този избор, скриване на началния прозорец). Първа страна, без проследяване."
+              : "— always on; for core functions and your preferences (language, sign-in session, remembering this choice, hiding the welcome dialog). First-party, no tracking."}
           </li>
           <li>
             <strong>{bg ? "Аналитични" : "Analytics"}</strong>{" "}

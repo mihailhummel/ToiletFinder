@@ -1,5 +1,5 @@
 import { useLanguage } from "@/contexts/LanguageContext";
-import { LegalLayout, LegalSection, Placeholder } from "./LegalLayout";
+import { LegalLayout, LegalSection } from "./LegalLayout";
 
 const CONTACT_EMAIL = "contact@toaletna.com";
 
@@ -21,9 +21,11 @@ export default function PrivacyPolicy() {
       <LegalSection heading={bg ? "Администратор на данни" : "Data Controller"}>
         <p>
           {bg ? "Администратор на личните данни е " : "The controller of your personal data is "}
-          <Placeholder>{bg ? "юридическо име на администратора" : "controller legal name"}</Placeholder>
-          {bg ? ", адрес: " : ", address: "}
-          <Placeholder>{bg ? "адрес за кореспонденция" : "registered address"}</Placeholder>.
+          {bg ? "Михаил Хуммел" : "Mihail Hummel"}
+          {bg ? ", адрес за кореспонденция: " : ", correspondence address: "}
+          {bg
+            ? "ул. Кирил и Методий 35, гр. Шумен, 9700, България"
+            : "35 Kiril i Metodiy St, Shumen 9700, Bulgaria"}.
           {bg ? " Можете да се свържете с нас на " : " You can contact us at "}
           <a className="text-blue-600 underline" href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>.
         </p>
@@ -48,8 +50,8 @@ export default function PrivacyPolicy() {
           </li>
           <li>
             {bg
-              ? "Анализ на употребата (само със съгласие): анонимизирани данни чрез Google Analytics."
-              : "Usage analytics (with consent only): anonymised data via Google Analytics."}
+              ? "Статистика за употребата (само със съгласие) чрез Google Analytics, с включено съкращаване на IP адреса. Не обещаваме пълна анонимност."
+              : "Usage statistics (with consent only) via Google Analytics, with IP truncation enabled. We do not promise full anonymity."}
           </li>
           <li>
             {bg
@@ -120,8 +122,8 @@ export default function PrivacyPolicy() {
       <LegalSection heading={bg ? "Деца" : "Children"}>
         <p>
           {bg
-            ? "Услугата не е насочена към деца под 16 години и ние не събираме умишлено техни данни."
-            : "The service is not directed at children under 16 and we do not knowingly collect their data."}
+            ? "Услугата не е насочена към деца под 14 години (възрастта за валидно цифрово съгласие в България) и ние не събираме умишлено техни данни."
+            : "The service is not directed at children under 14 (the age of valid digital consent in Bulgaria) and we do not knowingly collect their data."}
         </p>
       </LegalSection>
 

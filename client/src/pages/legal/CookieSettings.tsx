@@ -50,8 +50,8 @@ export default function CookieSettings() {
           </p>
           <p className="mt-1 text-[13px] text-slate-600">
             {bg
-              ? "Помага ни да разберем как се ползва картата. Данните са анонимизирани. Нищо не се проследява без съгласие."
-              : "Helps us understand how the map is used. Data is anonymised. Nothing is tracked without consent."}
+              ? "Помага ни да разберем как се ползва картата. Нищо не се проследява без Вашето съгласие."
+              : "Helps us understand how the map is used. Nothing is tracked without your consent."}
           </p>
           <div className="mt-4 flex gap-2.5">
             <button
