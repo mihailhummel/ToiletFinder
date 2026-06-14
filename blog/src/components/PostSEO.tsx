@@ -3,7 +3,7 @@ import type { BlogPost } from "../store";
 
 const siteUrl = import.meta.env.VITE_SITE_URL || "https://toaletna.com";
 const basePath = import.meta.env.VITE_BASE_PATH || "/blog";
-const defaultOgImage = `${siteUrl}${basePath}/og-default.jpg`;
+const defaultOgImage = `${siteUrl}${basePath}/blog-logo.png`;
 
 interface PostSEOProps {
   post: BlogPost;
@@ -14,10 +14,14 @@ export default function PostSEO({ post }: PostSEOProps) {
   const description = post.meta_description || post.subtitle || "";
   const dateModified = post.last_edit_date || post.date;
 
-  const rawImage = post.thumbnail || defaultOgImage;
-  const imageUrl = rawImage.startsWith("http")
-    ? rawImage
-    : `${siteUrl}${basePath}${rawImage}`;
+  // og:image must be a real URL. Thumbnails are stored as base64 data: URIs, which are
+  // invalid for crawlers/social cards (and huge), so fall back to a real default for those.
+  const thumb = post.thumbnail || "";
+  const imageUrl = thumb.startsWith("http")
+    ? thumb
+    : thumb.startsWith("/")
+    ? `${siteUrl}${basePath}${thumb}`
+    : defaultOgImage;
 
   const jsonLd = {
     "@context": "https://schema.org",

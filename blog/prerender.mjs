@@ -4,10 +4,10 @@
  * Run after `vite build`: node prerender.mjs
  *
  * For each published post this script:
- *   1. Creates dist/blog/{slug}/index.html with full SEO metadata in <head>
+ *   1. Creates dist/{slug}/index.html with full SEO metadata in <head>
  *      and a pre-rendered article preview in #root (for Googlebot)
- *   2. Improves dist/blog/index.html homepage metadata
- *   3. Generates dist/blog/sitemap.xml with all post URLs
+ *   2. Improves dist/index.html homepage metadata
+ *   3. Generates dist/sitemap.xml with all post URLs
  *
  * Reads env vars: VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, VITE_SITE_URL
  * Railway injects all service vars into the build environment regardless of prefix.
@@ -61,18 +61,40 @@ function excerpt(content = '', maxLen = 400) {
   return plain.length > maxLen ? plain.slice(0, maxLen) + '…' : plain;
 }
 
-function resolveImage(thumbnail, siteUrl, basePath) {
-  if (!thumbnail) return `${siteUrl}${basePath}/og-default.jpg`;
-  return thumbnail.startsWith('http') ? thumbnail : `${siteUrl}${basePath}${thumbnail}`;
+// og:image / twitter:image / JSON-LD image must be a real, crawlable URL — never a
+// base64 data: URI (invalid for crawlers & social cards, and it bloats the prerendered
+// HTML by megabytes). For a data: URI thumbnail we decode it to a real file in the
+// post's own dist dir and link that; http(s) URLs and site-relative paths pass through.
+const MIME_EXT = {
+  'image/png': 'png', 'image/jpeg': 'jpg', 'image/jpg': 'jpg', 'image/webp': 'webp',
+  'image/gif': 'gif', 'image/svg+xml': 'svg', 'image/avif': 'avif',
+};
+
+function materializeImage(thumbnail, slug, dir) {
+  const fallback = `${SITE_URL}${BASE_PATH}/blog-logo.png`;
+  if (!thumbnail) return fallback;
+  if (thumbnail.startsWith('http')) return thumbnail;
+  if (thumbnail.startsWith('/')) return `${SITE_URL}${BASE_PATH}${thumbnail}`;
+
+  const m = /^data:(image\/[a-z0-9.+-]+);base64,(.+)$/is.exec(thumbnail.trim());
+  if (!m) return fallback;
+  const ext = MIME_EXT[m[1].toLowerCase()] || 'png';
+  try {
+    const file = `og-thumb.${ext}`;
+    fs.writeFileSync(path.join(dir, file), Buffer.from(m[2], 'base64'));
+    return `${SITE_URL}${BASE_PATH}/${slug}/${file}`;
+  } catch (err) {
+    console.warn(`[prerender] could not write OG image for ${slug}: ${err.message}`);
+    return fallback;
+  }
 }
 
 // ── Head injection for a single post ─────────────────────────────────────────
 
-function postHeadTags(post) {
+function postHeadTags(post, image) {
   const canonical  = `${SITE_URL}${BASE_PATH}/${post.slug}`;
   const title      = esc(`${post.title} | Toaletna.com Блог`);
   const desc       = esc(post.meta_description || post.subtitle || '');
-  const image      = resolveImage(post.thumbnail, SITE_URL, BASE_PATH);
   const dateModified = post.last_edit_date || post.date;
 
   const jsonLd = JSON.stringify({
@@ -179,15 +201,13 @@ function buildSitemap(posts) {
 // ── Patch a shell HTML with new head tags and optional root content ───────────
 
 function patchShell(shell, headTags, rootContent = null) {
-  // Replace everything between <title> and the last </script> in the <head>
-  // Strategy: replace the existing <title>...</title> block (including adjacent meta/script tags
-  // that were there before) with the new head tags.
-  // We identify the section to replace using the SSR_PLACEHOLDER comment if present,
-  // otherwise fall back to simple title replacement.
-  let html = shell;
-
-  // Replace <title> block — works whether it's a single <title> or multi-line
-  html = html.replace(/<title>[\s\S]*?<\/title>/, headTags);
+  // The shell carries a single <!-- SEO_HEAD --> marker (blog/index.html); we swap
+  // it wholesale for this page's head tags, so each page ends up with exactly one
+  // <title>, one canonical and one JSON-LD block (no leftover shell SEO tags).
+  if (!shell.includes('<!-- SEO_HEAD -->')) {
+    console.warn('[prerender] WARNING: <!-- SEO_HEAD --> marker not found in shell — SEO tags not injected.');
+  }
+  let html = shell.replace('<!-- SEO_HEAD -->', headTags);
 
   if (rootContent !== null) {
     // Replace the SSR placeholder comment (preferred) or the empty root div
@@ -241,7 +261,8 @@ async function main() {
     if (!post.slug) { console.warn(`[prerender] Skipping post ${post.id} — no slug`); continue; }
     const dir = path.join(DIST_DIR, post.slug);
     fs.mkdirSync(dir, { recursive: true });
-    const postHtml = patchShell(shell, postHeadTags(post), postRootContent(post));
+    const image = materializeImage(post.thumbnail, post.slug, dir);
+    const postHtml = patchShell(shell, postHeadTags(post, image), postRootContent(post));
     fs.writeFileSync(path.join(dir, 'index.html'), postHtml, 'utf8');
     console.log(`[prerender]   dist/${post.slug}/index.html`);
   }
