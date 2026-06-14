@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
-import { Switch, Route } from "wouter";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { Switch, Route, useLocation } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { ConfirmDialogHost, confirmDialog } from "@/components/ui/confirm-dialog";
@@ -900,11 +900,35 @@ function AppContent() {
   );
 }
 
+// Send a GA4 page_view on wouter route changes. gtag('config') only fires a
+// page_view on the initial full load, so SPA navigations would otherwise be
+// invisible. No-op until consent loads gtag (window.gtag is undefined before
+// then), so no consent-gate change is needed here.
+function usePageViews() {
+  const [location] = useLocation();
+  const first = useRef(true);
+  useEffect(() => {
+    // Skip the first render: gtag('config') already sent that page_view.
+    if (first.current) {
+      first.current = false;
+      return;
+    }
+    const w = window as any;
+    if (typeof w.gtag === "function") {
+      w.gtag("event", "page_view", {
+        page_path: location,
+        page_location: window.location.href,
+      });
+    }
+  }, [location]);
+}
+
 // Main App component with Language Provider + client-side routing.
 // The map app (AppContent) is the default route; the legal/privacy pages are
 // siblings. The Express catch-all serves index.html for these paths, so deep
 // links like /privacy work. The ConsentBanner is global (shows on every page).
 function App() {
+  usePageViews();
   return (
     <LanguageProvider>
       <Switch>

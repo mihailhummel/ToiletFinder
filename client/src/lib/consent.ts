@@ -111,13 +111,21 @@ export function loadAnalytics(): void {
 
   const w = window as any;
   w.dataLayer = w.dataLayer || [];
-  function gtag(...args: any[]) {
-    w.dataLayer.push(args);
+  // Must push the `arguments` object (NOT a rest-param array) — gtag.js only
+  // executes dataLayer entries that are gtag argument-objects. A plain Array is
+  // ignored, which silently drops every hit (gtag.js loads but nothing collects).
+  // Keep this a regular function so `arguments` binds correctly (not an arrow).
+  // The rest param is only for TypeScript's call signature; we still push the
+  // real `arguments` object (which is fully populated regardless of the param).
+  function gtag(..._args: any[]) {
+    // eslint-disable-next-line prefer-rest-params
+    w.dataLayer.push(arguments);
   }
   w.gtag = gtag;
   gtag("js", new Date());
+  // No anonymize_ip: that's a Universal Analytics option GA4 ignores (GA4
+  // anonymizes IPs by default).
   gtag("config", GA_MEASUREMENT_ID, {
-    anonymize_ip: true,
     allow_google_signals: false,
     allow_ad_personalization_signals: false,
   });
