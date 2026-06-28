@@ -19,6 +19,7 @@ interface NewToiletData {
   accessibility?: string;
   accessType?: string;
   hasBabyChanging?: boolean;
+  isDomestos?: boolean;
   userId: string;
   source?: string;
   addedByUserName?: string;
@@ -61,6 +62,7 @@ async function addToilet(toiletData: NewToiletData): Promise<Toilet> {
     accessibility: toiletData.accessibility || 'unknown',
     accessType: toiletData.accessType || 'unknown',
     hasBabyChanging: toiletData.hasBabyChanging || false,
+    isDomestos: toiletData.isDomestos || false,
     userId: toiletData.userId,
     source: toiletData.source || 'user',
     addedByUserName: toiletData.addedByUserName
@@ -194,6 +196,7 @@ export function useAddToiletOptimized() {
         accessibility: toiletData.accessibility || 'unknown',
         accessType: toiletData.accessType || 'unknown',
         hasBabyChanging: toiletData.hasBabyChanging || false,
+        isDomestos: toiletData.isDomestos || false,
         userId: toiletData.userId,
         source: 'user',
         addedByUserName: toiletData.addedByUserName,

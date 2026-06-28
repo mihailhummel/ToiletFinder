@@ -43,6 +43,7 @@ export const toilets = pgTable("toilets", {
   accessibility: text("accessibility").$type<z.infer<typeof accessibilitySchema>>().default('unknown'),
   accessType: text("access_type").$type<z.infer<typeof accessTypeSchema>>().default('unknown'),
   hasBabyChanging: boolean("has_baby_changing").default(false).notNull(),
+  isDomestos: boolean("is_domestos").default(false).notNull(),
   userId: text("user_id").notNull(),
   source: text("source", { enum: ['osm', 'user'] }).notNull().default('osm'),
   addedByUserName: text("added_by_user_name"),
@@ -126,6 +127,8 @@ export const insertToiletSchema = z.object({
   accessibility: accessibilitySchema.default('unknown'),
   accessType: accessTypeSchema.default('unknown'),
   hasBabyChanging: z.boolean().default(false),
+  // Admin-only: the route forces this to false for non-admins (see server/routes.ts).
+  isDomestos: z.boolean().default(false),
   userId: z.string(),
   source: z.enum(['osm', 'user']).default('user'),
   addedByUserName: z.string().max(80).optional(),
@@ -140,6 +143,8 @@ export const updateToiletSchema = z.object({
   accessibility: accessibilitySchema.optional(),
   accessType: accessTypeSchema.optional(),
   hasBabyChanging: z.boolean().optional(),
+  // Admin-only: the route strips this for non-admins (see server/routes.ts).
+  isDomestos: z.boolean().optional(),
   notes: z.string().max(1000).optional(),
   coordinates: bulgariaCoordinatesSchema.optional(),
 });

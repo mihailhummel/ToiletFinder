@@ -52,6 +52,8 @@ interface Translations {
   'addToilet.accessibility': string;
   'addToilet.accessType': string;
   'addToilet.hasBabyChanging': string;
+  'addToilet.isDomestos': string;
+  'addToilet.isDomestosHint': string;
   'addToilet.requestLocation': string;
   'addToilet.templateHint': string;
   'addToilet.success': string;
@@ -226,6 +228,7 @@ interface Translations {
   'popup.availability': string;
   'popup.accessibility': string;
   'popup.rateThisToilet': string;
+  'popup.rateCleanliness': string;
   'popup.shareExperience': string;
   'popup.submitReview': string;
   'popup.cancel': string;
@@ -339,6 +342,8 @@ const translations: Record<Language, Translations> = {
     'addToilet.accessibility': 'Accessibility',
     'addToilet.accessType': 'Access',
     'addToilet.hasBabyChanging': 'Has baby changing facility',
+    'addToilet.isDomestos': 'Domestos location',
+    'addToilet.isDomestosHint': 'Admin only — marks this as a Domestos campaign partner location',
     'addToilet.requestLocation': 'Request Location',
     'addToilet.templateHint': 'Accessibility and access type will be automatically set based on your selection',
     'addToilet.success': 'Toilet Added Successfully!',
@@ -514,6 +519,7 @@ const translations: Record<Language, Translations> = {
     'popup.availability': 'Availability:',
     'popup.accessibility': 'Accessibility:',
     'popup.rateThisToilet': 'Rate this toilet',
+    'popup.rateCleanliness': 'How clean was this toilet?',
     'popup.shareExperience': 'Share your experience with this toilet...',
     'popup.submitReview': 'Submit Review',
     'popup.cancel': 'Cancel',
@@ -622,6 +628,8 @@ const translations: Record<Language, Translations> = {
     'addToilet.accessibility': 'Достъпност',
     'addToilet.accessType': 'Достъп',
     'addToilet.hasBabyChanging': 'Място за повиване/смяна на пелени',
+    'addToilet.isDomestos': 'Domestos локация',
+    'addToilet.isDomestosHint': 'Само за админи — отбелязва локацията като партньорска за кампанията Domestos',
     'addToilet.requestLocation': 'Заяви Локация',
     'addToilet.templateHint': 'Достъпността и типът достъп ще бъдат автоматично зададени според вашия избор',
     'addToilet.success': 'Тоалетната е Добавена Успешно!',
@@ -797,6 +805,7 @@ const translations: Record<Language, Translations> = {
     'popup.availability': 'Достъп:',
     'popup.accessibility': 'Достъпност:',
     'popup.rateThisToilet': 'Оценете тази тоалетна',
+    'popup.rateCleanliness': 'Оценете чистотата на тази тоалетна',
     'popup.shareExperience': 'Споделете вашето преживяване с тази тоалетна...',
     'popup.submitReview': 'Изпрати Отзив',
     'popup.cancel': 'Отказ',

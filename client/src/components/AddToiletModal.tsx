@@ -26,8 +26,9 @@ interface AddToiletModalProps {
     accessibility: Accessibility;
     accessType: AccessType;
     hasBabyChanging: boolean;
+    isDomestos?: boolean;
   };
-  onRequestLocationSelection?: (type: ToiletType, title: string, accessibility: Accessibility, accessType: AccessType, hasBabyChanging: boolean) => void;
+  onRequestLocationSelection?: (type: ToiletType, title: string, accessibility: Accessibility, accessType: AccessType, hasBabyChanging: boolean, isDomestos: boolean) => void;
   onCloseForLocationSelection?: () => void;
   onToiletAdded?: (toilet: any) => void;
 }
@@ -49,12 +50,13 @@ export const AddToiletModal = ({ isOpen, onClose, location, initialData, onReque
   const [accessibility, setAccessibility] = useState<Accessibility>(initialData?.accessibility || "unknown");
   const [accessType, setAccessType] = useState<AccessType>(initialData?.accessType || "unknown");
   const [hasBabyChanging, setHasBabyChanging] = useState(initialData?.hasBabyChanging || false);
+  const [isDomestos, setIsDomestos] = useState(initialData?.isDomestos || false);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const { t } = useLanguage();
   const addToiletMutation = useAddToiletOptimized(); // Uses optimized caching
   
@@ -100,6 +102,7 @@ export const AddToiletModal = ({ isOpen, onClose, location, initialData, onReque
       setAccessibility(initialData.accessibility);
       setAccessType(initialData.accessType);
       setHasBabyChanging(initialData.hasBabyChanging);
+      setIsDomestos(initialData.isDomestos || false);
       console.log('🚽 AddToiletModal: Restored state from initialData, hasBabyChanging =', initialData.hasBabyChanging);
     }
   }, [isOpen, initialData]);
@@ -131,7 +134,7 @@ export const AddToiletModal = ({ isOpen, onClose, location, initialData, onReque
         // Close the modal first, then request location selection
         onClose();
         setTimeout(() => {
-          onRequestLocationSelection(type, title, accessibility, accessType, hasBabyChanging);
+          onRequestLocationSelection(type, title, accessibility, accessType, hasBabyChanging, isDomestos);
         }, 100);
       }
       return;
@@ -147,6 +150,7 @@ export const AddToiletModal = ({ isOpen, onClose, location, initialData, onReque
         accessibility,
         accessType,
         hasBabyChanging,
+        isDomestos,
         userId: user.uid,
         source: 'user' as const,
         addedByUserName: user.displayName || 'Anonymous User'
@@ -200,6 +204,7 @@ export const AddToiletModal = ({ isOpen, onClose, location, initialData, onReque
     accessibility: Accessibility;
     accessType: AccessType;
     hasBabyChanging: boolean;
+    isDomestos?: boolean;
   }) => {
     // Update the form data with the edited values
     setType(data.type);
@@ -207,7 +212,8 @@ export const AddToiletModal = ({ isOpen, onClose, location, initialData, onReque
     setAccessibility(data.accessibility);
     setAccessType(data.accessType);
     setHasBabyChanging(data.hasBabyChanging);
-    
+    setIsDomestos(data.isDomestos || false);
+
     // Close the edit modal
     setShowEditModal(false);
   };
@@ -218,6 +224,7 @@ export const AddToiletModal = ({ isOpen, onClose, location, initialData, onReque
     setAccessibility("unknown");
     setAccessType("unknown");
     setHasBabyChanging(false);
+    setIsDomestos(false);
     setShowConfirmation(false);
     setIsEditing(false);
     setFormError(null);
@@ -248,7 +255,8 @@ export const AddToiletModal = ({ isOpen, onClose, location, initialData, onReque
           title,
           accessibility,
           accessType,
-          hasBabyChanging
+          hasBabyChanging,
+          isDomestos
         }}
         onConfirm={handleEditConfirm}
       />
@@ -338,6 +346,15 @@ export const AddToiletModal = ({ isOpen, onClose, location, initialData, onReque
                 </div>
               )}
 
+              {isDomestos && (
+                <div className="flex justify-between items-center">
+                  <span className="text-xs font-medium text-gray-700">{t('addToilet.isDomestos')}:</span>
+                  <span className="text-xs px-2 py-1 rounded-full font-medium bg-[#2D6BFF]/10 text-[#2D6BFF]">
+                    ✓ Domestos
+                  </span>
+                </div>
+              )}
+
             </div>
 
             <form onSubmit={handleSubmit}>
@@ -402,6 +419,22 @@ export const AddToiletModal = ({ isOpen, onClose, location, initialData, onReque
                 {t('addToilet.hasBabyChanging')}
               </Label>
             </div>
+
+            {/* Admin-only: mark this as a Domestos campaign partner location */}
+            {isAdmin && (
+              <div className="flex items-center gap-2 rounded-lg border border-[#2D6BFF]/30 bg-[#2D6BFF]/5 px-2.5 py-2">
+                <Checkbox
+                  id="is-domestos"
+                  checked={isDomestos}
+                  onCheckedChange={(checked) => setIsDomestos(!!checked)}
+                  className="!min-h-0 !min-w-0 h-4 w-4 shrink-0"
+                />
+                <Label htmlFor="is-domestos" className="flex cursor-pointer select-none items-center gap-1.5 text-xs font-bold text-[#2D6BFF]">
+                  {t('addToilet.isDomestos')}
+                  <span className="rounded bg-[#2D6BFF] px-1 py-0.5 text-[8px] font-bold uppercase tracking-wider text-white">Admin</span>
+                </Label>
+              </div>
+            )}
 
             <div>
               <Label htmlFor="toilet-title" className="text-xs font-medium text-gray-700">{t('addToilet.toiletTitle')}</Label>

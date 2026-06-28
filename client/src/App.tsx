@@ -25,6 +25,7 @@ import { LoginModal } from "./components/LoginModal";
 import { ReportModal } from "./components/ReportModal";
 import { LanguageSwitch } from "./components/LanguageSwitch";
 import { WelcomeModal } from "./components/WelcomeModal";
+import { DomestosCampaignModal } from "./components/DomestosCampaignModal";
 import { LoadingScreen } from "./components/LoadingScreen";
 import { DesktopNavLinks, ProfileMenu, InfoModals, type InfoModalType } from "./components/NavMenu";
 import ErrorBoundary, { MapErrorBoundary } from "./components/ErrorBoundary";
@@ -51,7 +52,7 @@ import { haptics } from "@/lib/haptics";
 // Global state as backup to React state
 let globalAddingState = {
   isAdding: false,
-  pendingData: null as {type: ToiletType; title: string; accessibility: Accessibility; accessType: AccessType} | null
+  pendingData: null as {type: ToiletType; title: string; accessibility: Accessibility; accessType: AccessType; hasBabyChanging: boolean; isDomestos: boolean} | null
 };
 
 // Enhanced QueryClient with better garbage collection
@@ -134,6 +135,7 @@ function AppContent() {
     accessibility: string;
     accessType: string;
     hasBabyChanging: boolean;
+    isDomestos: boolean;
     originalLocation: { lat: number; lng: number };
     toiletId: string;
     originalToilet: Toilet;
@@ -144,13 +146,18 @@ function AppContent() {
   const [showLogin, setShowLogin] = useState(false);
   const [activeInfoModal, setActiveInfoModal] = useState<InfoModalType>(null);
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
+  const [showDomestosCampaign, setShowDomestosCampaign] = useState(false);
+  // True only while the campaign modal is showing as part of the first-run
+  // sequence (campaign → then welcome). Opening it later from the floating
+  // button / a branded pin must NOT chain into the welcome modal.
+  const domestosFirstRunRef = useRef(false);
   const [showReport, setShowReport] = useState(false);
   const [reportToilet, setReportToilet] = useState<Toilet | null>(null);
   const [isAddingToilet, setIsAddingToilet] = useState(false); // Track if user is in add toilet mode
   const [searchToiletId, setSearchToiletId] = useState('');
   const [flyToToiletFn, setFlyToToiletFn] = useState<((toiletId: string) => boolean) | null>(null);
   const [pendingToiletLocation, setPendingToiletLocation] = useState<MapLocation | undefined>(undefined);
-  const [pendingToiletData, setPendingToiletData] = useState<{type: ToiletType; title: string; accessibility: Accessibility; accessType: AccessType; hasBabyChanging: boolean} | null>(null);
+  const [pendingToiletData, setPendingToiletData] = useState<{type: ToiletType; title: string; accessibility: Accessibility; accessType: AccessType; hasBabyChanging: boolean; isDomestos: boolean} | null>(null);
   const [isTransitioningToLocationMode, setIsTransitioningToLocationMode] = useState(false);
   const [mapCenter, setMapCenter] = useState<MapLocation>({ lat: 42.6977, lng: 23.3219 });
   const [filters, setFilters] = useState<FilterOptions>({
@@ -168,6 +175,7 @@ function AppContent() {
     accessibility: string;
     accessType: string;
     hasBabyChanging: boolean;
+    isDomestos?: boolean;
     coordinates?: { lat: number; lng: number };
   }) => {
     if (!editingToilet || !user) return;
@@ -239,7 +247,10 @@ function AppContent() {
         // which indicates the map and toilet system is ready
         if (typeof window !== 'undefined' && window.refreshToilets) {
           setTimeout(() => {
-            setShowWelcomeModal(true);
+            // First-run sequence: show the Domestos campaign modal first; the
+            // welcome modal opens after it's dismissed (see onClose below).
+            domestosFirstRunRef.current = true;
+            setShowDomestosCampaign(true);
             localStorage.setItem('toilet-map-visited', 'true');
           }, 1000); // Small delay to ensure everything is loaded
         } else if (attempts < maxAttempts) {
@@ -248,7 +259,10 @@ function AppContent() {
         } else {
           // Fallback: show modal after timeout regardless
           setTimeout(() => {
-            setShowWelcomeModal(true);
+            // First-run sequence: show the Domestos campaign modal first; the
+            // welcome modal opens after it's dismissed (see onClose below).
+            domestosFirstRunRef.current = true;
+            setShowDomestosCampaign(true);
             localStorage.setItem('toilet-map-visited', 'true');
           }, 2000);
         }
@@ -261,7 +275,7 @@ function AppContent() {
 
   // Add/remove modal-open class to body when modals are open
   useEffect(() => {
-    const isAnyModalOpen = showAddToilet || showFilter || showLogin || !!activeInfoModal || showWelcomeModal;
+    const isAnyModalOpen = showAddToilet || showFilter || showLogin || !!activeInfoModal || showWelcomeModal || showDomestosCampaign;
     if (isAnyModalOpen) {
       document.body.classList.add('modal-open');
     } else {
@@ -271,7 +285,7 @@ function AppContent() {
     return () => {
       document.body.classList.remove('modal-open');
     };
-  }, [showAddToilet, showFilter, showLogin, activeInfoModal, showWelcomeModal]);
+  }, [showAddToilet, showFilter, showLogin, activeInfoModal, showWelcomeModal, showDomestosCampaign]);
 
   // Get user location on mount
   useEffect(() => {
@@ -302,6 +316,18 @@ function AppContent() {
     return () => window.removeEventListener('openEditModal', handleEditModal);
   }, [user, isAdmin, toast]);
 
+  // Open the Domestos campaign modal on demand — fired by the floating campaign
+  // button and the branded popup logo (window.openDomestosModal in Map.tsx).
+  // This is NOT the first-run path, so dismissing it must not open the welcome modal.
+  useEffect(() => {
+    const openCampaign = () => {
+      domestosFirstRunRef.current = false;
+      setShowDomestosCampaign(true);
+    };
+    window.addEventListener('toaletna:open-domestos', openCampaign);
+    return () => window.removeEventListener('toaletna:open-domestos', openCampaign);
+  }, []);
+
   // Cache management and development tools
   useEffect(() => {
     // Add keyboard shortcuts for development
@@ -331,6 +357,13 @@ function AppContent() {
         });
       }
       
+      // Add shortcut to preview the Domestos campaign modal (Ctrl+Shift+D)
+      if (event.ctrlKey && event.shiftKey && event.key === 'D') {
+        event.preventDefault();
+        domestosFirstRunRef.current = false;
+        setShowDomestosCampaign(true);
+      }
+
       // Add shortcut to reset first visit flag (Ctrl+Shift+R)
       if (event.ctrlKey && event.shiftKey && event.key === 'R') {
         event.preventDefault();
@@ -466,14 +499,14 @@ function AppContent() {
     }
   }, [isAddingToilet, pendingToiletData, isEditingLocation, editLocationData, editingToilet, toast]);
 
-  const handleLocationSelectionRequest = useCallback((type: ToiletType, title: string, accessibility: Accessibility, accessType: AccessType, hasBabyChanging: boolean) => {
+  const handleLocationSelectionRequest = useCallback((type: ToiletType, title: string, accessibility: Accessibility, accessType: AccessType, hasBabyChanging: boolean, isDomestos: boolean) => {
     // Set global state immediately
     globalAddingState.isAdding = true;
-    globalAddingState.pendingData = { type, title, accessibility, accessType, hasBabyChanging };
-    
+    globalAddingState.pendingData = { type, title, accessibility, accessType, hasBabyChanging, isDomestos };
+
     // Set React states
     setIsTransitioningToLocationMode(true);
-    setPendingToiletData({ type, title, accessibility, accessType, hasBabyChanging });
+    setPendingToiletData({ type, title, accessibility, accessType, hasBabyChanging, isDomestos });
     setIsAddingToilet(true);
     setPendingToiletLocation(undefined);
     setShowAddToilet(false);
@@ -491,11 +524,12 @@ function AppContent() {
   }, [toast]);
 
   const handleEditLocationSelectionRequest = useCallback((
-    type: string, 
-    title: string, 
-    accessibility: string, 
+    type: string,
+    title: string,
+    accessibility: string,
     accessType: string,
     hasBabyChanging: boolean,
+    isDomestos: boolean,
     originalLocation: { lat: number; lng: number }
   ) => {
     // Store the edit data and switch to location selection mode
@@ -506,6 +540,7 @@ function AppContent() {
         accessibility,
         accessType,
         hasBabyChanging,
+        isDomestos,
         originalLocation,
         toiletId: editingToilet.id,
         originalToilet: editingToilet
@@ -771,6 +806,38 @@ function AppContent() {
             </MapErrorBoundary>
             
             
+            {/* Floating Domestos campaign button — sits just above the add (+)
+                button on the right. Opens the campaign modal (not first-run). */}
+            <button
+              onClick={() => {
+                haptics.light();
+                domestosFirstRunRef.current = false;
+                setShowDomestosCampaign(true);
+              }}
+              aria-label="Domestos"
+              className="floating-button transition-transform duration-200 hover:scale-110 active:scale-95"
+              style={{
+                position: 'fixed',
+                bottom: '103px',
+                right: '24px',
+                zIndex: 1000,
+                width: '65px',
+                height: '65px',
+                padding: 0,
+                background: 'transparent',
+                border: 'none',
+              }}
+            >
+              {/* Image is intentionally larger than the 55px tap target so the
+                  badge artwork reads at the same visible width as the + button
+                  (the FAB is a solid 55px circle; the badge has transparent margins). */}
+              <img
+                src="/domestos-pin.png"
+                alt="Domestos"
+                style={{ width: '64px', height: '70px', objectFit: 'contain', filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.3))' }}
+              />
+            </button>
+
             {/* Floating Action Button with Attention Animation */}
             <Button
               onClick={(e) => {
@@ -866,6 +933,19 @@ function AppContent() {
             onClose={() => setShowWelcomeModal(false)}
           />
 
+          <DomestosCampaignModal
+            isOpen={showDomestosCampaign}
+            onClose={() => {
+              setShowDomestosCampaign(false);
+              // First-run sequence: chain into the welcome modal once the
+              // campaign modal is dismissed. Re-opens from the button do not.
+              if (domestosFirstRunRef.current) {
+                domestosFirstRunRef.current = false;
+                setTimeout(() => setShowWelcomeModal(true), 200);
+              }
+            }}
+          />
+
           {/* Edit Toilet Modal */}
           {editingToilet && (
             <EditToiletModal
@@ -882,7 +962,8 @@ function AppContent() {
                 title: editingToilet.title || '',
                 accessibility: editingToilet.accessibility as any,
                 accessType: editingToilet.accessType as any,
-                hasBabyChanging: editingToilet.hasBabyChanging || false
+                hasBabyChanging: editingToilet.hasBabyChanging || false,
+                isDomestos: (editingToilet as any).isDomestos || false
               }}
               onConfirm={handleEditToiletConfirm}
               onRequestLocationSelection={handleEditLocationSelectionRequest}

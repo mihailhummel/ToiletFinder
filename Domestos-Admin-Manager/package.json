@@ -1,0 +1,41 @@
+{
+  "name": "domestos-admin-manager",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Read-only campaign dashboard for the Domestos x toaletna.com initiative. Standalone Railway service, served at domestos.toaletna.com. Delete the service to disable.",
+  "scripts": {
+    "dev": "concurrently -k -n server,vite -c blue,magenta \"node server.mjs\" \"vite --port 4001 --host 0.0.0.0\"",
+    "dev:client": "vite --port 4001 --host 0.0.0.0",
+    "build": "vite build",
+    "start": "node server.mjs",
+    "lint": "tsc --noEmit",
+    "test:ranking": "node lib/ranking.test.mjs"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.53.0",
+    "dotenv": "^17.3.1",
+    "express": "^4.21.2",
+    "firebase": "^10.14.0",
+    "firebase-admin": "^12.0.0",
+    "lucide-react": "^0.546.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.1.14",
+    "concurrently": "^9.1.2",
+    "@types/node": "^22.14.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.0.4",
+    "tailwindcss": "^4.1.14",
+    "typescript": "~5.8.2",
+    "vite": "^6.2.0"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=9.0.0"
+  }
+}

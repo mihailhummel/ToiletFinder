@@ -296,6 +296,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const toilet = insertToiletSchema.parse({ ...req.body, userId: authUser.uid });
 
+      // "Domestos location" is an admin-only designation (campaign partner pins).
+      // Force it off for everyone else so a normal user can't self-brand a pin
+      // by POSTing isDomestos:true.
+      if (authUser.admin !== true) toilet.isDomestos = false;
+
       // Leave the title empty when the user didn't supply one. The client
       // renders a localized fallback from the type (getProperTitle in
       // Map.tsx) based on the active language — so we must NOT bake an
@@ -481,6 +486,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Only admins may relocate a toilet (e.g. fix an OSM import); a regular
       // creator can edit details but not move the pin.
       if (!isAdmin) delete (updateData as { coordinates?: unknown }).coordinates;
+
+      // "Domestos location" is an admin-only designation — a regular creator
+      // editing their own toilet must not be able to set/clear the campaign flag.
+      if (!isAdmin) delete (updateData as { isDomestos?: unknown }).isDomestos;
 
       await storage.updateToilet(id, updateData);
       clearToiletsCache();

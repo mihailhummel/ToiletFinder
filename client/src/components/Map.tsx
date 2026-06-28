@@ -58,6 +58,7 @@ declare global {
     editToilet: (toiletId: string) => void;
     deleteToilet: (toiletId: string) => void;
     refreshMapData: () => void;
+    openDomestosModal: () => void;
     testAPI: () => Promise<any>;
     forceRefreshToilets: () => void;
     refreshToilets: () => void;
@@ -238,6 +239,13 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, onReportC
       
       // No cache clearing shortcut - caching removed
 
+      // Opens the Domestos campaign modal (used by the branded popup logo and the
+      // floating campaign button). App.tsx owns the modal state and listens for this.
+      window.openDomestosModal = () => {
+        haptics.light();
+        window.dispatchEvent(new CustomEvent('toaletna:open-domestos'));
+      };
+
       window.getDirections = (lat, lng) => {
         haptics.medium();
         
@@ -275,6 +283,12 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, onReportC
           const rounded = Math.round(avg);
           const reviewLabel = count === 1 ? t('popup.review') : t('popup.reviews');
 
+          // Brand the average-rating number for Domestos partner locations.
+          const isDomestosToilet = !!(toilets.find(t => t.id === toiletId) as any)?.isDomestos;
+          const ratingNumberClass = isDomestosToilet
+            ? 'bg-gradient-to-br from-[#2D6BFF] to-[#FF3B4E] text-transparent bg-clip-text'
+            : 'text-slate-900';
+
           const summaryStars = [1, 2, 3, 4, 5]
             .map(i => i <= rounded
               ? `<span>★</span>`
@@ -305,7 +319,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, onReportC
             <div ${count > 0 ? `onclick="window.toggleReviews('${toiletId}')"` : ''} class="mx-4 mt-3 mb-2 px-3 py-2.5 bg-slate-50/50 border border-slate-100 rounded-xl ${count > 0 ? 'cursor-pointer hover:bg-slate-100/50 transition-colors group shadow-sm' : ''}">
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-3">
-                  <div class="text-[34px] font-bold text-slate-900 leading-[0.8] tracking-tight">${avg > 0 ? avg.toFixed(1) : '0.0'}</div>
+                  <div class="text-[34px] font-bold ${ratingNumberClass} leading-[0.8] tracking-tight">${avg > 0 ? avg.toFixed(1) : '0.0'}</div>
                   <div class="flex flex-col justify-center gap-[4px] mt-1">
                     <div class="flex text-amber-400 text-[15px] leading-none">${summaryStars}</div>
                     <div class="text-[11px] text-slate-500 font-medium leading-none">${count} ${reviewLabel}</div>
@@ -1106,7 +1120,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, onReportC
           marker.bindPopup(createToiletPopupHTML(toilet), {
             maxWidth: 300,
             minWidth: 300,
-            className: 'modern-toilet-popup',
+            className: `modern-toilet-popup${toilet.isDomestos ? ' domestos-popup' : ''}`,
             closeButton: true,
             offset: [0, -20],
             autoPan: true,
@@ -1232,6 +1246,21 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, onReportC
   };
 
   const createToiletMarkerHTML = (toilet: any, markerColor: string, useSimpleMarker = false) => {
+    // Domestos campaign partner — branded image pin (overrides the category color).
+    // The asset is hosted locally (client/public/domestos-pin.png) so it passes the
+    // CSP img-src 'self' policy; the external mockup URL would be blocked.
+    if (toilet?.isDomestos) {
+      if (useSimpleMarker) {
+        return `<img src="/domestos-pin.png" alt="Domestos" style="width:24px;height:24px;object-fit:contain;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.35));" />`;
+      }
+      return `
+        <div class="relative w-[44px] h-[54px] flex justify-center cursor-pointer group origin-bottom transition-transform duration-200">
+          <div class="absolute bottom-[3px] left-1/2 -translate-x-1/2 w-[14px] h-[4px] bg-slate-900/40 rounded-[100%] blur-[1.5px] group-hover:w-[20px] group-hover:bg-slate-900/25 transition-all duration-300 pointer-events-none"></div>
+          <img src="/domestos-pin.png" alt="Domestos" class="w-full h-full object-contain drop-shadow-[0_5px_8px_rgba(0,0,0,0.3)] group-hover:-translate-y-[3px] transition-transform duration-300" />
+        </div>
+      `;
+    }
+
     // Simple marker for performance at low zoom levels
     if (useSimpleMarker) {
       return `
@@ -1263,6 +1292,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, onReportC
 
   const createToiletPopupHTML = (toilet: Toilet) => {
     const tags = toilet.tags as any || {};
+    const isDomestos = !!(toilet as any).isDomestos;
     
     // The old server baked hardcoded ENGLISH auto-titles into the DB
     // ("Public Toilet", "Mall Toilet", …). Treat those as "no custom title"
@@ -1324,8 +1354,9 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, onReportC
     const reportIcon = `<svg width="14" height="14" class="mb-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`;
     const deleteIcon = `<svg width="14" height="14" class="mb-0.5 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>`;
 
-    // Header gradient by category
-    const headerClasses = toilet.hasBabyChanging ? 'from-pink-50/70 to-white' :
+    // Header gradient by category (Domestos partners get a branded blue→red wash)
+    const headerClasses = isDomestos ? 'from-[#2D6BFF]/12 via-white to-[#FF3B4E]/10' :
+                          toilet.hasBabyChanging ? 'from-pink-50/70 to-white' :
                           toilet.type === 'gas-station' ? 'from-red-50/50 to-white' :
                           toilet.type === 'EKOTOI' ? 'from-emerald-50/50 to-white' :
                           'from-indigo-50/40 to-white';
@@ -1365,19 +1396,24 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, onReportC
           <div class="overflow-y-auto no-scrollbar pb-2">
 
             <!-- Header -->
-            <div class="relative px-4 pt-3 pb-3 bg-gradient-to-br ${headerClasses}">
-              <div class="flex items-start justify-between gap-3 mb-2 pr-6">
-                <h3 class="text-[16px] font-bold text-slate-900 leading-tight tracking-tight">${escapeHtml(properTitle)}</h3>
+            <div class="relative pt-3 pb-3 bg-gradient-to-br ${headerClasses} ${isDomestos ? 'flex gap-2.5 items-center pl-2.5 pr-6' : 'px-4'}">
+              ${isDomestos ? `
+              <img src="/domestos-pin.png" alt="Domestos" class="shrink-0 w-[58px] h-[66px] object-contain drop-shadow-md cursor-pointer hover:scale-[1.05] active:scale-95 transition-transform" onclick="window.openDomestosModal(); event.stopPropagation();" />
+              ` : ''}
+              <div class="${isDomestos ? 'flex-1 min-w-0' : ''}">
+                <div class="flex items-start justify-between gap-3 mb-2 ${isDomestos ? '' : 'pr-6'}">
+                  <h3 class="text-[16px] font-bold leading-tight tracking-tight text-slate-900">${escapeHtml(properTitle)}</h3>
+                </div>
+                <div class="flex flex-wrap gap-1.5 mb-2">
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-[10px] font-bold uppercase tracking-wider bg-blue-600 text-white shadow-sm border border-blue-700/20">${translateToiletType(toilet.type)}</span>
+                  ${toilet.hasBabyChanging ? `<span class="inline-flex items-center px-1.5 py-0.5 rounded-sm text-[10px] font-bold uppercase tracking-wider bg-pink-100 text-pink-700 border border-pink-200/60 shadow-sm">👶 ${t('toiletType.hasBabyChangingBadge')}</span>` : ''}
+                </div>
+                ${(toilet.source === 'user' && toilet.addedByUserName) ? `
+                <div class="flex items-center gap-1.5 text-[10px] text-slate-500 font-semibold mt-1">
+                  <div class="w-1.5 h-1.5 rounded-full bg-indigo-500 shadow-[0_0_4px_rgba(99,102,241,0.5)]"></div>
+                  ${t('popup.addedBy')} ${escapeHtml(toilet.addedByUserName)}
+                </div>` : ''}
               </div>
-              <div class="flex flex-wrap gap-1.5 mb-2">
-                <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-[10px] font-bold uppercase tracking-wider bg-blue-600 text-white shadow-sm border border-blue-700/20">${translateToiletType(toilet.type)}</span>
-                ${toilet.hasBabyChanging ? `<span class="inline-flex items-center px-1.5 py-0.5 rounded-sm text-[10px] font-bold uppercase tracking-wider bg-pink-100 text-pink-700 border border-pink-200/60 shadow-sm">👶 ${t('toiletType.hasBabyChangingBadge')}</span>` : ''}
-              </div>
-              ${(toilet.source === 'user' && toilet.addedByUserName) ? `
-              <div class="flex items-center gap-1.5 text-[10px] text-slate-500 font-semibold mt-1">
-                <div class="w-1.5 h-1.5 rounded-full bg-indigo-500 shadow-[0_0_4px_rgba(99,102,241,0.5)]"></div>
-                ${t('popup.addedBy')} ${escapeHtml(toilet.addedByUserName)}
-              </div>` : ''}
             </div>
 
             <!-- Availability & Access -->
@@ -1397,7 +1433,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, onReportC
               <div class="mx-4 mt-3 mb-2 px-3 py-2.5 bg-slate-50/50 border border-slate-100 rounded-xl">
                 <div class="flex items-center justify-between">
                   <div class="flex items-center gap-3">
-                    <div class="text-[34px] font-bold text-slate-900 leading-[0.8] tracking-tight">0.0</div>
+                    <div class="text-[34px] font-bold ${isDomestos ? 'bg-gradient-to-br from-[#2D6BFF] to-[#FF3B4E] text-transparent bg-clip-text' : 'text-slate-900'} leading-[0.8] tracking-tight">0.0</div>
                     <div class="flex flex-col justify-center gap-[4px] mt-1">
                       <div class="flex text-amber-400 text-[15px] leading-none">${'<span class="text-slate-200">★</span>'.repeat(5)}</div>
                       <div class="text-[11px] text-slate-500 font-medium leading-none">0 ${t('popup.reviews')}</div>
@@ -1409,7 +1445,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, onReportC
 
             <!-- Divider -->
             <div class="h-px bg-slate-100 mx-4 w-[calc(100%-32px)] mt-5 mb-3 relative">
-              <span class="absolute left-1/2 -top-[7px] -translate-x-1/2 bg-white px-1.5 whitespace-nowrap text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-none">${t('popup.rateThisToilet')}</span>
+              <span class="absolute left-1/2 -top-[7px] -translate-x-1/2 bg-white px-1.5 whitespace-nowrap text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-none">${isDomestos ? t('popup.rateCleanliness') : t('popup.rateThisToilet')}</span>
             </div>
 
             <!-- Rate Section -->

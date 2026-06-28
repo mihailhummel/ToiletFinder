@@ -1,0 +1,16 @@
+# Standalone Railway service for the Domestos campaign dashboard (domestos.toaletna.com).
+# Mirrors blog/railway.toml. To disable the dashboard when the campaign ends:
+# delete this Railway service and its custom domain — no changes to the main app.
+[build]
+builder = "nixpacks"
+buildCommand = "npm install && npm run build"
+
+[build.nixpacksPlan.phases.setup]
+nixPkgs = ["nodejs_20"]
+
+[deploy]
+startCommand = "npm start"
+healthcheckPath = "/healthz"
+healthcheckTimeout = 60
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 5

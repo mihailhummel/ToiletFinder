@@ -272,6 +272,25 @@
   margin: 0;
 }
 
+/* Domestos campaign partner popups — branded blue→red gradient border + glow.
+   Same shape as the standard popup, but the white border becomes a bright
+   Domestos gradient (kept brighter than the logo navy/red on purpose so the
+   accent reads well; easy to retune the two hex values later). */
+.modern-toilet-popup.domestos-popup .leaflet-popup-content-wrapper {
+  border: 4px solid transparent !important;
+  background:
+    linear-gradient(#ffffff, #ffffff) padding-box,
+    linear-gradient(135deg, #2d6bff, #ff3b4e) border-box !important;
+  box-shadow: 0 22px 44px -12px rgba(45, 107, 255, 0.45),
+    0 0 0 1px rgba(0, 0, 0, 0.04) !important;
+}
+
+.modern-toilet-popup.domestos-popup .leaflet-popup-tip {
+  background: linear-gradient(135deg, #2d6bff, #ff3b4e) !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
 /* Keep the redesigned popup pixel-identical on mobile.
    The global mobile rules below force min-height/min-width and a .9rem font
    size onto every button/input, which distorts the popup (especially the

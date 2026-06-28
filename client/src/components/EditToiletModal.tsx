@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { InlineMessage } from "@/components/ui/inline-message";
 import { haptics } from "@/lib/haptics";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useAuth } from "@/hooks/useAuth";
 import type { ToiletType, Accessibility, AccessType, MapLocation } from "@/types/toilet";
 
 interface EditToiletModalProps {
@@ -21,6 +22,7 @@ interface EditToiletModalProps {
     accessibility: Accessibility;
     accessType: AccessType;
     hasBabyChanging: boolean;
+    isDomestos?: boolean;
   };
   onConfirm: (data: {
     type: ToiletType;
@@ -28,9 +30,10 @@ interface EditToiletModalProps {
     accessibility: Accessibility;
     accessType: AccessType;
     hasBabyChanging: boolean;
+    isDomestos?: boolean;
     coordinates?: MapLocation;
   }) => void;
-  onRequestLocationSelection?: (type: ToiletType, title: string, accessibility: Accessibility, accessType: AccessType, hasBabyChanging: boolean, originalLocation: MapLocation) => void;
+  onRequestLocationSelection?: (type: ToiletType, title: string, accessibility: Accessibility, accessType: AccessType, hasBabyChanging: boolean, isDomestos: boolean, originalLocation: MapLocation) => void;
 }
 
 // Toilet type templates for automatic assignment (same as AddToiletModal)
@@ -50,10 +53,12 @@ export const EditToiletModal = ({ isOpen, onClose, location, initialData, onConf
   const [accessibility, setAccessibility] = useState<Accessibility>(initialData.accessibility);
   const [accessType, setAccessType] = useState<AccessType>(initialData.accessType);
   const [hasBabyChanging, setHasBabyChanging] = useState(initialData.hasBabyChanging);
+  const [isDomestos, setIsDomestos] = useState(initialData.isDomestos || false);
   const [editableLocation, setEditableLocation] = useState(location || { lat: 0, lng: 0 });
   const [formError, setFormError] = useState<string | null>(null);
 
   const { t } = useLanguage();
+  const { isAdmin } = useAuth();
   
   // Dynamic toilet types with translations
   const toiletTypes: { value: ToiletType; label: string }[] = [
@@ -97,6 +102,7 @@ export const EditToiletModal = ({ isOpen, onClose, location, initialData, onConf
       setAccessibility(initialData.accessibility);
       setAccessType(initialData.accessType);
       setHasBabyChanging(initialData.hasBabyChanging);
+      setIsDomestos(initialData.isDomestos || false);
       if (location) {
         setEditableLocation(location);
       }
@@ -123,6 +129,7 @@ export const EditToiletModal = ({ isOpen, onClose, location, initialData, onConf
       accessibility,
       accessType,
       hasBabyChanging,
+      isDomestos,
       coordinates: editableLocation
     });
 
@@ -185,7 +192,7 @@ export const EditToiletModal = ({ isOpen, onClose, location, initialData, onConf
                 size="sm"
                 onClick={() => {
                   if (onRequestLocationSelection) {
-                    onRequestLocationSelection(type, title, accessibility, accessType, hasBabyChanging, editableLocation);
+                    onRequestLocationSelection(type, title, accessibility, accessType, hasBabyChanging, isDomestos, editableLocation);
                   }
                 }}
                 className="h-7 px-3 text-xs text-blue-600 border-blue-300 hover:bg-blue-100"
@@ -225,7 +232,7 @@ export const EditToiletModal = ({ isOpen, onClose, location, initialData, onConf
                   size="sm"
                   onClick={() => {
                     if (onRequestLocationSelection) {
-                      onRequestLocationSelection(type, title, accessibility, accessType, hasBabyChanging, editableLocation);
+                      onRequestLocationSelection(type, title, accessibility, accessType, hasBabyChanging, isDomestos, editableLocation);
                     }
                   }}
                   className="h-8 px-2 text-xs text-blue-600 border-blue-300 hover:bg-blue-100 whitespace-nowrap"
@@ -270,6 +277,22 @@ export const EditToiletModal = ({ isOpen, onClose, location, initialData, onConf
               {t('addToilet.hasBabyChanging')}
             </Label>
           </div>
+
+          {/* Admin-only: Domestos campaign partner location */}
+          {isAdmin && (
+            <div className="flex items-center gap-2 rounded-lg border border-[#2D6BFF]/30 bg-[#2D6BFF]/5 px-2.5 py-2">
+              <Checkbox
+                id="is-domestos-edit"
+                checked={isDomestos}
+                onCheckedChange={(checked) => setIsDomestos(!!checked)}
+                className="!min-h-0 !min-w-0 h-4 w-4 shrink-0"
+              />
+              <Label htmlFor="is-domestos-edit" className="flex cursor-pointer select-none items-center gap-1.5 text-xs font-bold text-[#2D6BFF]">
+                {t('addToilet.isDomestos')}
+                <span className="rounded bg-[#2D6BFF] px-1 py-0.5 text-[8px] font-bold uppercase tracking-wider text-white">Admin</span>
+              </Label>
+            </div>
+          )}
 
           <div className="min-w-0">
             <Label htmlFor="toilet-title" className="text-xs font-medium text-gray-700">{t('addToilet.toiletTitle')}</Label>

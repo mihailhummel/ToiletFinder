@@ -43,6 +43,7 @@ export class SupabaseStorage implements IStorage {
         accessibility: toilet.accessibility || 'unknown',
         access_type: toilet.accessType || 'unknown',
         has_baby_changing: toilet.hasBabyChanging || false,
+        is_domestos: toilet.isDomestos || false,
         user_id: toilet.userId,
         added_by_user_name: toilet.addedByUserName || null,
         is_removed: false,
@@ -378,6 +379,7 @@ export class SupabaseStorage implements IStorage {
       if (updateData.accessibility) updatePayload.accessibility = updateData.accessibility;
       if (updateData.accessType) updatePayload.access_type = updateData.accessType;
       if (updateData.hasBabyChanging !== undefined) updatePayload.has_baby_changing = updateData.hasBabyChanging;
+      if (updateData.isDomestos !== undefined) updatePayload.is_domestos = updateData.isDomestos;
       if (updateData.notes !== undefined) updatePayload.notes = updateData.notes;
       if (updateData.coordinates) updatePayload.coordinates = updateData.coordinates;
       
@@ -651,6 +653,7 @@ export class SupabaseStorage implements IStorage {
       accessibility: data.accessibility || 'unknown',
       accessType: data.access_type || 'unknown',
       hasBabyChanging: data.has_baby_changing || false,
+      isDomestos: data.is_domestos || false,
       userId: data.user_id || 'unknown',
       addedByUserName: data.added_by_user_name,
       osmId: data.osm_id || null,
