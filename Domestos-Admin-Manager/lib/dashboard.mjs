@@ -11,7 +11,7 @@ import { auth } from './firebase-admin.mjs';
 import { rankLocations, setPrior, DEFAULT_M } from './ranking.mjs';
 
 const RANKING_M = Number(process.env.RANKING_M) || DEFAULT_M;
-const CAMPAIGN_START = process.env.CAMPAIGN_START || '2026-07-01';
+const CAMPAIGN_START = process.env.CAMPAIGN_START || '2026-06-29';
 const CAMPAIGN_END = process.env.CAMPAIGN_END || '2026-08-30';
 const USERS_LIMIT = 50; // top slice returned for the most-active-users board
 const RECENT_LIMIT = 20; // recent activity feed length (per column)

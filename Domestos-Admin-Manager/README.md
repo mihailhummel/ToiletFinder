@@ -1,7 +1,7 @@
 # Domestos Admin Manager
 
 A **read-only campaign dashboard** for the Domestos × toaletna.com initiative
-(01.07–30.08.2026), served at **domestos.toaletna.com**. It lets the Domestos /
+(29.06–30.08.2026), served at **domestos.toaletna.com**. It lets the Domestos /
 agency team self-serve track the campaign: new locations, reviews, active
 participants, and — the centrepiece — a fair **leaderboard** of how locations are
 performing.
