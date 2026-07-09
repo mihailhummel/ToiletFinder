@@ -133,6 +133,9 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, onReportC
     }
   }, [isAddingToilet, onAddToiletClick]);
   const openPopupToiletIdRef = useRef<string | null>(null);
+  // Admin search sets this before flying; kept separate from openPopupToiletIdRef
+  // so marker rendering isn't blocked while the map moves to an off-screen toilet.
+  const pendingFlyToToiletIdRef = useRef<string | null>(null);
   const manuallyClosedPopupRef = useRef<boolean>(false);
   const isReopeningPopupRef = useRef<boolean>(false);
 
@@ -854,6 +857,10 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, onReportC
 
       console.log('✅ Toilet found! Flying to:', toilet.title, toilet.coordinates);
 
+      // Close any open popup so openPopupToiletIdRef doesn't block marker rendering
+      map.current?.closePopup();
+      openPopupToiletIdRef.current = null;
+
       // Fly to the toilet location
       map.current?.flyTo(
         [toilet.coordinates.lat, toilet.coordinates.lng],
@@ -864,19 +871,10 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, onReportC
         }
       );
 
-      // Mark this toilet as the one to open. The marker-restore logic reopens it
-      // once its marker is rendered for the new viewport (handles the case where
-      // the marker doesn't exist yet because the toilet was off-screen).
+      // Queue popup open for after markers render at the new viewport. Do NOT set
+      // openPopupToiletIdRef here — that ref blocks marker re-rendering.
       manuallyClosedPopupRef.current = false;
-      openPopupToiletIdRef.current = toiletId;
-
-      // Also try directly after the fly animation, in case the marker already exists.
-      setTimeout(() => {
-        const marker = toiletMarkers.current.find(m => m.toiletId === toiletId);
-        if (marker && marker.marker) {
-          marker.marker.openPopup();
-        }
-      }, 1600);
+      pendingFlyToToiletIdRef.current = toiletId;
 
       return true;
     };
@@ -891,6 +889,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, onReportC
     const closePopups = () => {
       manuallyClosedPopupRef.current = true;
       openPopupToiletIdRef.current = null;
+      pendingFlyToToiletIdRef.current = null;
       map.current?.closePopup();
     };
     window.addEventListener('toaletna:close-popups', closePopups);
@@ -1216,10 +1215,23 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, onReportC
           }
         }, 100);
       }
+
+      // Admin search: open popup once the target marker exists in the new viewport
+      const pendingFlyTo = pendingFlyToToiletIdRef.current;
+      if (pendingFlyTo && !manuallyClosedPopupRef.current) {
+        const pendingMarker = toiletMarkers.current.find(m => m.toiletId === pendingFlyTo)?.marker;
+        if (pendingMarker) {
+          pendingFlyToToiletIdRef.current = null;
+          setTimeout(() => {
+            pendingMarker.openPopup();
+            setTimeout(() => window.loadReviews(pendingFlyTo), 200);
+          }, 100);
+        }
+      }
     } else {
       console.error('❌ Cannot add markers layer - map or layer not available');
     }
-  }, [toilets, leafletLoaded]);
+  }, [toilets, leafletLoaded, isMapMoving]);
 
   // Helper functions for marker and popup creation
   const createClusterMarkerHTML = (count: number, style: { size: number; color: string; textColor: string; fontSize: string }) => {

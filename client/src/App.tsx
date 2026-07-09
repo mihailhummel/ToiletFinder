@@ -567,7 +567,16 @@ function AppContent() {
 
   const handleToiletSearch = useCallback((e: React.FormEvent) => {
     e.preventDefault();
-    if (!searchToiletId.trim() || !flyToToiletFn) return;
+    if (!searchToiletId.trim()) return;
+
+    if (!flyToToiletFn) {
+      toast({
+        title: t('admin.toiletNotFound'),
+        description: 'Map is still loading. Please try again.',
+        variant: "error"
+      });
+      return;
+    }
 
     const found = flyToToiletFn(searchToiletId.trim());
     if (found) {
