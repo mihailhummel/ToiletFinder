@@ -94,9 +94,16 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, onReportC
       'bus_station': t('toiletType.busStation'),
       'busStation': t('toiletType.busStation'),
       'mall': t('toiletType.mall'),
-      'other': t('toiletType.other')
+      'other': t('toiletType.other'),
+      // Without these the fallback below returns the raw stored value, which the
+      // badge renders uppercase — so the type chip read "EKOTOI" regardless of
+      // language. Legacy casings are mapped too: 05_normalize_types.sql folds
+      // them to 'EKOTOI', but rows predating it may still hold either form.
+      'EKOTOI': t('toiletType.EKOTOI'),
+      'ekotoi': t('toiletType.EKOTOI'),
+      'portable': t('toiletType.EKOTOI')
     };
-    
+
     return typeMap[type] || typeMap[type.replace('-', '_')] || type.replace('-', ' ');
   };
   const map = useRef<any>(null);

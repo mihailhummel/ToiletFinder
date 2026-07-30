@@ -19,10 +19,11 @@ export interface IStorage {
   // Toilet operations
   createToilet(toilet: InsertToilet): Promise<string>;
   getToilets(): Promise<Toilet[]>;
+  getToiletById(toiletId: string): Promise<Toilet | null>;
   getToiletsNearby(lat: number, lng: number, radiusKm?: number): Promise<Toilet[]>;
   
   // Review operations
-  createReview(review: InsertReview): Promise<void>;
+  createReview(review: InsertReview): Promise<Review>;
   getReviewsForToilet(toiletId: string): Promise<Review[]>;
   hasUserReviewedToilet(toiletId: string, userId: string): Promise<boolean>;
   

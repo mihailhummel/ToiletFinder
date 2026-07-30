@@ -360,7 +360,9 @@ const translations: Record<Language, Translations> = {
     'toiletType.busStation': 'Bus Station',
     'toiletType.mall': 'Shop | Mall',
     'toiletType.other': 'Other',
-    'toiletType.EKOTOI': 'EKOTOI',
+    // Key stays 'EKOTOI' — that's the stored enum value in shared/schema.ts and
+    // in every existing toilet row. Only the user-facing label is de-branded.
+    'toiletType.EKOTOI': 'Mobile',
     'toiletType.hasBabyChangingBadge': 'Baby Changing Facility',
     
     // Accessibility
@@ -542,8 +544,8 @@ const translations: Record<Language, Translations> = {
     'welcome.pinTypes': 'Pin Types:',
     'welcome.redPin': 'Auto-generated toilet location',
     'welcome.redPinDescription': 'These locations are automatically imported and may not always be accurate or currently available.',
-    'welcome.greenPin': 'EkoToi toilet',
-    'welcome.greenPinDescription': 'Ecological portable toilets provided by EkoToi.',
+    'welcome.greenPin': 'Mobile toilet',
+    'welcome.greenPinDescription': 'Ecological portable toilets.',
     'welcome.bluePin': 'User-generated toilet location',
     'welcome.bluePinDescription': 'These locations have been added and verified by our community members and are generally more reliable.',
     'welcome.pinkPin': 'Baby changing facility',
@@ -624,7 +626,7 @@ const translations: Record<Language, Translations> = {
     'addToilet.selectLocation': 'Избери Локация',
     'addToilet.toiletType': 'Тип Тоалетна',
     'addToilet.toiletTitle': 'Заглавие (Незадължително)',
-    'addToilet.titlePlaceholder': 'напр. "EKOTOI"',
+    'addToilet.titlePlaceholder': 'напр. "Мобилна тоалетна"',
     'addToilet.accessibility': 'Достъпност',
     'addToilet.accessType': 'Достъп',
     'addToilet.hasBabyChanging': 'Място за повиване/смяна на пелени',
@@ -646,7 +648,7 @@ const translations: Record<Language, Translations> = {
     'toiletType.busStation': 'Автогара',
     'toiletType.mall': 'Магазин | Мол',
     'toiletType.other': 'Друго',
-    'toiletType.EKOTOI': 'EKOTOI',
+    'toiletType.EKOTOI': 'Мобилна',
     'toiletType.hasBabyChangingBadge': 'Място за смяна на пелени',
     
     // Accessibility
@@ -828,8 +830,8 @@ const translations: Record<Language, Translations> = {
     'welcome.pinTypes': 'Типове маркери:',
     'welcome.redPin': 'Автоматично генерирана локация',
     'welcome.redPinDescription': 'Тези локации са автоматично импортирани и може да не са винаги точни или налични в момента.',
-    'welcome.greenPin': 'ЕкоТой тоалетна',
-    'welcome.greenPinDescription': 'Екологични преносими тоалетни предоставени от ЕкоТой.',
+    'welcome.greenPin': 'Мобилна тоалетна',
+    'welcome.greenPinDescription': 'Екологични преносими тоалетни.',
     'welcome.bluePin': 'Локация добавена от потребител',
     'welcome.bluePinDescription': 'Тези локации са добавени от членове на нашата общност и обикновено са по-надеждни.',
     'welcome.pinkPin': 'Място за повиване на бебета',

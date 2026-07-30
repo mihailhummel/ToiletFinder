@@ -40,23 +40,41 @@ export function validatePostMetadata(post: Partial<BlogPost>, label?: string): v
   }
 }
 
-// ── Public read operations (use anon key, governed by RLS) ──
+// ── Public read operations ──
+//
+// These go through the blog's own Express server (blog/server.mjs), not straight
+// to Supabase. Querying PostgREST from the browser meant one uncached `select('*')`
+// per page view — every article body, and every base64 thumbnail — for every
+// reader AND every crawler. The server route caches for 10 minutes and omits
+// `content` from list responses, turning ~8-10 MB per view into ~40 KB.
+//
+// Still anon-key/RLS-governed: server.mjs uses the anon key too.
+//
+// The main app proxies /blog/* to this service and strips the prefix, so the
+// browser must call `${API_BASE}/api/posts` while the server sees `/api/posts`.
+const API_BASE = import.meta.env.VITE_BASE_PATH ?? '/blog';
+
+async function apiGet<T>(path: string): Promise<T | null> {
+  try {
+    const res = await fetch(`${API_BASE}${path}`);
+    if (!res.ok) {
+      if (res.status !== 404) console.error(`Failed to fetch ${path}: HTTP ${res.status}`);
+      return null;
+    }
+    return (await res.json()) as T;
+  } catch (err) {
+    console.error(`Failed to fetch ${path}:`, err);
+    return null;
+  }
+}
 
 export const getPosts = async (): Promise<BlogPost[]> => {
-  const { data, error } = await supabase
-    .from('blog_posts')
-    .select('*')
-    .eq('is_published', true)
-    .order('date', { ascending: false });
-
-  if (error) {
-    console.error('Failed to fetch posts:', error.message);
-    return [];
-  }
-  return (data ?? []).map((d) => normalizePost(d as Record<string, unknown>));
+  const data = await apiGet<Record<string, unknown>[]>('/api/posts');
+  return (data ?? []).map((d) => normalizePost(d));
 };
 
 export const getPost = async (id: string): Promise<BlogPost | null> => {
+  // Only used for admin-side lookups; slug is the public entry point.
   const { data, error } = await supabase
     .from('blog_posts')
     .select('*')
@@ -69,18 +87,29 @@ export const getPost = async (id: string): Promise<BlogPost | null> => {
 };
 
 export const getPostBySlug = async (slug: string): Promise<BlogPost | null> => {
-  const { data, error } = await supabase
-    .from('blog_posts')
-    .select('*')
-    .eq('slug', slug)
-    .eq('is_published', true)
-    .single();
-
-  if (error) return null;
-  return normalizePost(data as Record<string, unknown>);
+  const data = await apiGet<Record<string, unknown>>(`/api/posts/${encodeURIComponent(slug)}`);
+  return data ? normalizePost(data) : null;
 };
 
 // ── Admin operations (require Supabase auth session) ──
+
+// Admin writes go straight to Supabase, so the server's 10-minute read cache
+// would otherwise hold a stale list. Flushing it keeps publishing instant.
+// Best-effort: a failed flush costs freshness, never the write itself.
+async function flushServerCache(): Promise<void> {
+  try {
+    const { data } = await supabase.auth.getSession();
+    const token = data.session?.access_token;
+    if (!token) return;
+
+    await fetch(`${API_BASE}/api/posts/flush`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  } catch (err) {
+    console.warn('Could not flush the blog cache; changes appear within 10 minutes.', err);
+  }
+}
 
 export const getAllPostsAdmin = async (): Promise<BlogPost[]> => {
   const { data, error } = await supabase
@@ -124,6 +153,7 @@ export const savePost = async (post: Partial<BlogPost> & { title: string; conten
       console.error('Failed to update post:', error.message);
       return null;
     }
+    await flushServerCache();
     return normalizePost(data as Record<string, unknown>);
   }
 
@@ -137,6 +167,7 @@ export const savePost = async (post: Partial<BlogPost> & { title: string; conten
     console.error('Failed to create post:', error.message);
     return null;
   }
+  await flushServerCache();
   return normalizePost(data as Record<string, unknown>);
 };
 
@@ -150,6 +181,7 @@ export const deletePost = async (id: string): Promise<boolean> => {
     console.error('Failed to delete post:', error.message);
     return false;
   }
+  await flushServerCache();
   return true;
 };
 

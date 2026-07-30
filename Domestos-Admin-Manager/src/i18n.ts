@@ -117,7 +117,8 @@ export const t = {
 
 const TYPE_LABELS: Record<string, string> = {
   public: 'Обществена',
-  EKOTOI: 'EKOTOI',
+  // Key is the stored type value; only the displayed label is de-branded.
+  EKOTOI: 'Мобилна',
   restaurant: 'Ресторант',
   cafe: 'Кафене',
   'gas-station': 'Бензиностанция',

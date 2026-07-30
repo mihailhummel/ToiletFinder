@@ -30,6 +30,7 @@ import {
   BlogPost,
 } from "../store";
 import { generateSlug } from "../lib/slugify";
+import { uploadThumbnail } from "../lib/uploadImage";
 import ConfirmModal from "../components/ConfirmModal";
 
 const siteUrl = import.meta.env.VITE_SITE_URL || "https://toaletna.com";
@@ -46,6 +47,8 @@ export default function Admin() {
   const [loading, setLoading] = useState(true);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const parseTags = (value: string): string[] =>
@@ -115,14 +118,24 @@ export default function Admin() {
     await refreshPosts();
   };
 
-  const handleThumbnailUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Uploads to Supabase Storage and stores the resulting URL. This used to
+  // readAsDataURL() into the thumbnail column, which put multi-MB base64 blobs in
+  // Postgres and made every blog page view re-download all of them uncached.
+  const handleThumbnailUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setCurrentPost({ ...currentPost, thumbnail: reader.result as string });
-      };
-      reader.readAsDataURL(file);
+    if (!file) return;
+
+    setUploadError(null);
+    setIsUploading(true);
+    try {
+      const slugHint = currentPost.slug || (currentPost.title ? generateSlug(currentPost.title) : "");
+      const url = await uploadThumbnail(file, slugHint);
+      setCurrentPost((prev) => ({ ...prev, thumbnail: url }));
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : "Качването се провали.");
+    } finally {
+      setIsUploading(false);
+      e.target.value = ""; // allow re-picking the same file after a failure
     }
   };
 
@@ -392,12 +405,30 @@ export default function Admin() {
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                     placeholder="Въведете URL адрес на снимка..."
                   />
-                  <label className="shrink-0 bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg cursor-pointer flex items-center gap-2 transition-colors border border-gray-300">
+                  <label
+                    className={`shrink-0 px-4 py-2 rounded-lg flex items-center gap-2 transition-colors border border-gray-300 ${
+                      isUploading
+                        ? "bg-gray-200 text-gray-400 cursor-wait"
+                        : "bg-gray-100 hover:bg-gray-200 text-gray-700 cursor-pointer"
+                    }`}
+                  >
                     <ImageIcon size={18} />
-                    <span>Качи</span>
-                    <input type="file" accept="image/*" onChange={handleThumbnailUpload} className="hidden" />
+                    <span>{isUploading ? "Качване…" : "Качи"}</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleThumbnailUpload}
+                      disabled={isUploading}
+                      className="hidden"
+                    />
                   </label>
                 </div>
+                {uploadError && (
+                  <p className="flex items-center gap-2 text-sm text-red-600">
+                    <AlertTriangle size={16} />
+                    {uploadError}
+                  </p>
+                )}
                 {currentPost.thumbnail && (
                   <div className="relative w-full h-48 rounded-lg overflow-hidden border border-gray-200 bg-gray-50">
                     <img src={currentPost.thumbnail} alt="Preview" className="w-full h-full object-contain" />

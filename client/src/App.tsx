@@ -198,17 +198,27 @@ function AppContent() {
         throw new Error(errorData.error || 'Failed to update toilet');
       }
 
+      const result = await response.json().catch(() => ({} as { toilet?: Toilet }));
+
       toast({
         title: "Toilet updated",
         description: "The toilet information has been updated successfully.",
         variant: "success"
       });
 
+      const editedId = editingToilet.id;
       setEditingToilet(null);
 
-      // The map renders from the 'all-toilets' query cache. window.refreshToilets
-      // is a no-op, so invalidate the query directly to refresh markers after edit.
-      queryClient.invalidateQueries({ queryKey: ['all-toilets'] });
+      // The map renders from the 'all-toilets' query cache. Patch the edited entry
+      // directly instead of invalidating: invalidating refetches /api/toilets,
+      // whose `max-age=30` lets the browser answer from its own HTTP cache, so the
+      // edit could appear not to have applied. We use the row the server echoes
+      // back — it strips coordinates/isDomestos for non-admins.
+      if (result?.toilet) {
+        queryClient.setQueryData(['all-toilets'], (old: Toilet[] | undefined) =>
+          old?.map((t) => (t.id === editedId ? result.toilet : t))
+        );
+      }
     } catch (error) {
       console.error("❌ App edit toilet error:", error);
       toast({

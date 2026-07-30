@@ -21,10 +21,14 @@ export default function Post() {
     if (!slug) return;
 
     const load = async () => {
-      const foundPost = await getPostBySlug(slug);
+      // Both come from the cached /api/posts routes, and the list response has no
+      // `content` — this used to be two full `select('*')` round trips to Supabase,
+      // the second one downloading every article just to pick six cards.
+      // Run them together so the page isn't gated on a sequential pair.
+      const [foundPost, allPosts] = await Promise.all([getPostBySlug(slug), getPosts()]);
+
       if (foundPost) {
         setPost(foundPost);
-        const allPosts = await getPosts();
         setSimilarPosts(allPosts.filter((p) => p.id !== foundPost.id).slice(0, 6));
       } else {
         navigate("/");

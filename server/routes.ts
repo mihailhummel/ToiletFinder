@@ -25,11 +25,24 @@ let lastResetTime = Date.now();
 // excessive DB load: Express's built-in weak ETag returns 304s, but only AFTER the
 // route has run the full Supabase query + transform — so the 304 saves bandwidth,
 // not database reads. Caching here caps reads to ~1 per TTL regardless of how many
-// clients ask. Invalidated on every toilet-mutating route via clearToiletsCache().
-// NOTE: per-process — with N Railway replicas you get up to N reads per TTL.
+// clients ask.
+//
+// Writes PATCH this list in place (upsertToiletInCache / removeToiletFromCache)
+// rather than discarding it. Discarding forced the very next request — usually the
+// same user's post-write refetch — to block on a full ~3,620-row, 4-round-trip
+// pull. Patching keeps the list correct the instant a write commits, costs ~1 KB
+// instead of ~3-5 MB, and means the TTL below governs nothing a user can observe:
+// it only bounds how stale we get from OUT-OF-BAND changes (the Domestos admin
+// service, or SQL run by hand), which never invalidated this cache at any TTL.
+//
+// NOTE: per-process. railway.toml sets no replica count, so Railway runs ONE
+// instance and every patch reaches every reader. At 2+ replicas a write patched on
+// A would not exist on B until B's TTL lapsed — tolerable at 60s, not at 10min.
+// Move this to Redis before scaling out.
 type ToiletList = Awaited<ReturnType<typeof storage.getToilets>>;
+type CachedToilet = ToiletList[number];
 let toiletListCache: { data: ToiletList; ts: number } | null = null;
-const TOILET_CACHE_TTL_MS = 60 * 1000;
+const TOILET_CACHE_TTL_MS = 10 * 60 * 1000;
 
 async function getCachedToilets(): Promise<ToiletList> {
   if (toiletListCache && Date.now() - toiletListCache.ts < TOILET_CACHE_TTL_MS) {
@@ -40,8 +53,65 @@ async function getCachedToilets(): Promise<ToiletList> {
   return data;
 }
 
+// Re-read the single changed row and splice it into the cached list. A cold cache
+// is left alone — the next read populates it fresh, so skipping is always safe.
+// Never throws: a failed patch must not fail the write that already committed.
+async function upsertToiletInCache(toiletId: string): Promise<void> {
+  if (!toiletListCache) return;
+  try {
+    const toilet = await storage.getToiletById(toiletId);
+
+    // Gone or soft-removed (e.g. an edit that set is_removed) — drop it instead,
+    // so a removed pin can never be re-inserted into the list.
+    if (!toilet || (toilet as CachedToilet & { isRemoved?: boolean }).isRemoved) {
+      removeToiletFromCache(toiletId);
+      return;
+    }
+
+    const list = toiletListCache.data;
+    const i = list.findIndex((t) => t.id === toiletId);
+    if (i >= 0) list[i] = toilet;
+    else list.push(toilet);
+  } catch (err) {
+    // Fall back to the old behaviour rather than serving a wrong list.
+    console.warn(`⚠️ Could not patch toilet ${toiletId} into cache, dropping cache:`, err);
+    clearToiletsCache();
+  }
+}
+
+// Pure splice — no DB read at all.
+function removeToiletFromCache(toiletId: string): void {
+  if (!toiletListCache) return;
+  toiletListCache.data = toiletListCache.data.filter((t) => t.id !== toiletId);
+}
+
 function clearToiletsCache() {
   toiletListCache = null;
+}
+
+// Radius query served from the cached list when it is ALREADY warm, else falls
+// through to the existing bbox query. The guard matters: on a cold cache, going
+// through getCachedToilets() would pull the whole table where the DB path only
+// fetches a small bounding box — so this is never slower than before, while
+// removing the Supabase read entirely in the common (warm) case.
+//
+// Output matches the DB path: both apply is_removed = false, both use the same
+// transformToilet, and rows whose raw coordinates were invalid are dropped here
+// exactly as the Postgres `coordinates->lat` comparisons drop them.
+async function getToiletsNearbyMaybeCached(
+  lat: number,
+  lng: number,
+  radiusKm: number
+): Promise<ToiletList> {
+  if (!toiletListCache || Date.now() - toiletListCache.ts >= TOILET_CACHE_TTL_MS) {
+    return storage.getToiletsNearby(lat, lng, radiusKm);
+  }
+
+  return toiletListCache.data.filter((t) => {
+    if ((t as CachedToilet & { coordinatesValid?: boolean }).coordinatesValid === false) return false;
+    if ((t as CachedToilet & { isRemoved?: boolean }).isRemoved) return false;
+    return calculateDistance(lat, lng, t.coordinates.lat, t.coordinates.lng) <= radiusKm;
+  });
 }
 
 // Verify a Firebase ID token from the Authorization: Bearer <token> header.
@@ -113,7 +183,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         try {
           logDatabaseRequest('/api/toilets', `spatial`);
-          const toilets = await storage.getToiletsNearby(centerLat, centerLng, Math.max(radiusKm, 15));
+          const toilets = await getToiletsNearbyMaybeCached(centerLat, centerLng, Math.max(radiusKm, 15));
 
           // Filter to exact requested radius
           const filteredToilets = toilets.filter(toilet => {
@@ -185,7 +255,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       try {
         logDatabaseRequest('/api/toilets-in-area', 'bounds');
-        const toilets = await storage.getToiletsNearby(centerLat, centerLng, Math.min(radiusKm * 1.5, 50));
+        const toilets = await getToiletsNearbyMaybeCached(centerLat, centerLng, Math.min(radiusKm * 1.5, 50));
         
         // Filter to exact area bounds
         const filteredToilets = toilets.filter(toilet => 
@@ -253,7 +323,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       try {
         logDatabaseRequest(`/api/toilets/chunk/${chunkKey}`, 'chunk');
-        const toilets = await storage.getToiletsNearby(centerLat, centerLng, radiusKm * 1.2); // Add 20% buffer
+        const toilets = await getToiletsNearbyMaybeCached(centerLat, centerLng, radiusKm * 1.2); // Add 20% buffer
         
         // Filter to exact chunk bounds
         const chunkToilets = toilets.filter(toilet => 
@@ -311,7 +381,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const id = await storage.createToilet(toilet);
-      clearToiletsCache();
+      await upsertToiletInCache(id);
       const response = { id, ...toilet };
       res.json(response);
     } catch (error) {
@@ -356,8 +426,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(409).json({ error: "You have already reviewed this toilet" });
       }
 
-      await storage.createReview(review);
-      res.json({ message: "Review created successfully" });
+      const created = await storage.createReview(review);
+
+      // The DB trigger has already recomputed average_rating / review_count on the
+      // toilet row. Patch our cached list from it, then hand the fresh aggregates
+      // back so the client can update the marker with no refetch at all.
+      await upsertToiletInCache(id);
+      const toilet = toiletListCache?.data.find((t) => t.id === id) ?? null;
+
+      res.json({
+        message: "Review created successfully",
+        review: created,
+        toilet: toilet
+          ? { id, averageRating: toilet.averageRating, reviewCount: toilet.reviewCount }
+          : null,
+      });
     } catch (error) {
       if (error instanceof z.ZodError) {
         res.status(400).json({ error: "Invalid review data" });
@@ -407,7 +490,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const reportCount = await storage.getToiletReportCount(report.toiletId);
         if (reportCount >= 5) {
           await storage.removeToiletFromReports(report.toiletId);
-          clearToiletsCache(); // toilet was soft-removed — drop the stale list
+          removeToiletFromCache(report.toiletId); // soft-removed — drop just this pin
+        } else {
+          // report_count changed on the toilet row; refresh that one entry so the
+          // cached list is correct even below the removal threshold.
+          await upsertToiletInCache(report.toiletId);
         }
 
         res.json({ message: "Report submitted successfully", reportCount });
@@ -446,7 +533,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const reportCount = await storage.getToiletReportCount(id);
       if (reportCount >= 5) {
         await storage.removeToiletFromReports(id);
-        clearToiletsCache(); // toilet was soft-removed — drop the stale list
+        removeToiletFromCache(id); // soft-removed — drop just this pin
+      } else {
+        await upsertToiletInCache(id);
       }
 
       res.json({ message: "Toilet reported successfully", reportCount });
@@ -492,8 +581,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!isAdmin) delete (updateData as { isDomestos?: unknown }).isDomestos;
 
       await storage.updateToilet(id, updateData);
-      clearToiletsCache();
-      res.json({ message: "Toilet updated successfully", id });
+      await upsertToiletInCache(id);
+
+      // Return the canonical row so the client can patch its map cache with what
+      // was actually persisted. The rules above strip `coordinates`/`isDomestos`
+      // for non-admins, so echoing back the request body could show an edit that
+      // did not happen.
+      const updated = toiletListCache?.data.find((t) => t.id === id) ?? null;
+      res.json({ message: "Toilet updated successfully", id, toilet: updated });
     } catch (error: any) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ error: "Invalid toilet data" });
@@ -526,7 +621,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       await storage.deleteToilet(id);
-      clearToiletsCache();
+      removeToiletFromCache(id); // pure splice — no DB read
 
       res.json({ message: "Toilet deleted successfully" });
     } catch (error) {

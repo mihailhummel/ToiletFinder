@@ -1,307 +1,12 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+﻿import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { auth } from "@/lib/firebase";
-import type { Toilet, InsertToilet, InsertReview, InsertReport, Review, MapLocation } from "@/types/toilet";
-import { useCallback, useRef, useState, useMemo, useEffect } from 'react';
+import type { Toilet, InsertReview, InsertReport, Review } from "@/types/toilet";
 
-// SIMPLIFIED CACHING - Let React Query handle it
-// Removed complex localStorage caching that was causing conflicts
-
+// Caching is React Query's job. The only localStorage remnant is the key below,
+// cleared on delete so a removed toilet can't be resurrected from an old cache
+// written by a previous version of the app.
 const CACHE_KEY = 'toilet-map-cache';
-const CACHE_EXPIRY_HOURS = 24;
-const STALE_SERVE_DAYS = 7;
-
-interface CachedToiletData {
-  chunks: Record<string, { 
-    toilets: Toilet[]; 
-    timestamp: number; 
-    bounds: { minLat: number; maxLat: number; minLng: number; maxLng: number };
-  }>;
-  lastUpdate: number;
-}
-
-// Pending requests tracker to prevent duplicate API calls
-const pendingRequests = new Map<string, Promise<Toilet[]>>();
-
-// Get chunk key for spatial caching (larger chunks)
-function getChunkKey(lat: number, lng: number): string {
-  const chunkLat = Math.floor(lat * 4) / 4; // 0.25 degree chunks (~28km)
-  const chunkLng = Math.floor(lng * 4) / 4;
-  return `${chunkLat},${chunkLng}`;
-}
-
-// Get cache for area
-function getCachedData(): CachedToiletData {
-  try {
-    const cached = localStorage.getItem(CACHE_KEY);
-    if (!cached) return { chunks: {}, lastUpdate: 0 };
-    return JSON.parse(cached) as CachedToiletData;
-  } catch {
-    return { chunks: {}, lastUpdate: 0 };
-  }
-}
-
-// Update cache
-function setCachedData(data: CachedToiletData): void {
-  try {
-    localStorage.setItem(CACHE_KEY, JSON.stringify(data));
-  } catch (error) {
-    console.warn('Failed to cache toilet data:', error);
-  }
-}
-
-// Check if cached data covers viewport (with overlap tolerance)
-function findCoveringCache(viewport: { minLat: number; maxLat: number; minLng: number; maxLng: number }): Toilet[] | null {
-  const cached = getCachedData();
-  const now = Date.now();
-  const expiryTime = CACHE_EXPIRY_HOURS * 60 * 60 * 1000;
-  const staleTime = STALE_SERVE_DAYS * 24 * 60 * 60 * 1000;
-  
-  // Look for any chunk that covers the viewport
-  for (const [key, chunk] of Object.entries(cached.chunks)) {
-    const age = now - chunk.timestamp;
-    
-    // Skip expired chunks unless we're desperate
-    if (age > staleTime) continue;
-    
-    // Check if this chunk covers our viewport
-    const buffer = 0.01; // Small buffer for overlap
-    if (chunk.bounds && 
-        chunk.bounds.minLat <= viewport.minLat + buffer &&
-        chunk.bounds.maxLat >= viewport.maxLat - buffer &&
-        chunk.bounds.minLng <= viewport.minLng + buffer &&
-        chunk.bounds.maxLng >= viewport.maxLng - buffer) {
-      
-      // Serving from cache
-      
-      // Filter to exact viewport
-      return chunk.toilets.filter(toilet => 
-        toilet.coordinates.lat >= viewport.minLat &&
-        toilet.coordinates.lat <= viewport.maxLat &&
-        toilet.coordinates.lng >= viewport.minLng &&
-        toilet.coordinates.lng <= viewport.maxLng &&
-        !toilet.isRemoved
-      );
-    }
-  }
-  
-  // Try to piece together from multiple chunks
-  const allCachedToilets: Toilet[] = [];
-  for (const chunk of Object.values(cached.chunks)) {
-    if (now - chunk.timestamp < staleTime) {
-      allCachedToilets.push(...chunk.toilets);
-    }
-  }
-  
-  if (allCachedToilets.length > 0) {
-    const viewportToilets = allCachedToilets.filter(toilet => 
-      toilet.coordinates.lat >= viewport.minLat &&
-      toilet.coordinates.lat <= viewport.maxLat &&
-      toilet.coordinates.lng >= viewport.minLng &&
-      toilet.coordinates.lng <= viewport.maxLng &&
-      !toilet.isRemoved
-    );
-    
-    if (viewportToilets.length > 10) { // If we have reasonable coverage
-      // Serving from pieced cache
-      return viewportToilets;
-    }
-  }
-  
-  return null;
-}
-
-// Save toilets to cache with expanded bounds
-function cacheToilets(toilets: Toilet[], viewport: { minLat: number; maxLat: number; minLng: number; maxLng: number }): void {
-  const cached = getCachedData();
-  const centerLat = (viewport.minLat + viewport.maxLat) / 2;
-  const centerLng = (viewport.minLng + viewport.maxLng) / 2;
-  const chunkKey = getChunkKey(centerLat, centerLng);
-  
-  // Expand bounds for future coverage
-  const expandedBounds = {
-    minLat: viewport.minLat - 0.02,
-    maxLat: viewport.maxLat + 0.02,
-    minLng: viewport.minLng - 0.02,
-    maxLng: viewport.maxLng + 0.02
-  };
-  
-  cached.chunks[chunkKey] = {
-    toilets,
-    timestamp: Date.now(),
-    bounds: expandedBounds
-  };
-  cached.lastUpdate = Date.now();
-  
-  // Limit cache size
-  const chunks = Object.entries(cached.chunks);
-  if (chunks.length > 20) {
-    // Keep only the 15 newest chunks
-    const sorted = chunks.sort((a, b) => b[1].timestamp - a[1].timestamp);
-    cached.chunks = Object.fromEntries(sorted.slice(0, 15));
-  }
-  
-  setCachedData(cached);
-  // Cached toilets for area
-}
-
-// Debounced viewport hook with EXTREME caching
-export const useToiletsInViewport = (viewport?: { 
-  minLat: number; 
-  maxLat: number; 
-  minLng: number; 
-  maxLng: number; 
-}) => {
-  const [stableViewport, setStableViewport] = useState<typeof viewport | null>(null);
-  const lastFetchTime = useRef<number>(0);
-  const debounceTimer = useRef<NodeJS.Timeout | null>(null);
-  
-  // Aggressive debouncing - only update viewport after 500ms of no changes
-  useEffect(() => {
-    if (!viewport) return;
-    
-    if (debounceTimer.current) {
-      clearTimeout(debounceTimer.current);
-    }
-    
-    debounceTimer.current = setTimeout(() => {
-      const now = Date.now();
-      
-      // Only update if viewport changed significantly OR it's been a while
-      if (!stableViewport || now - lastFetchTime.current > 30000) { // 30 seconds minimum
-        const latDiff = Math.abs(stableViewport?.minLat || 0 - viewport.minLat);
-        const lngDiff = Math.abs(stableViewport?.minLng || 0 - viewport.minLng);
-        
-        if (!stableViewport || latDiff > 0.01 || lngDiff > 0.01) {
-          // Viewport changed, checking cache
-          setStableViewport(viewport);
-          lastFetchTime.current = now;
-        }
-      }
-    }, 500);
-    
-    return () => {
-      if (debounceTimer.current) {
-        clearTimeout(debounceTimer.current);
-      }
-    };
-  }, [viewport, stableViewport]);
-  
-  return useQuery({
-    queryKey: ['toilets-viewport-v2', stableViewport],
-    queryFn: async () => {
-      if (!stableViewport) return [];
-      
-      // STEP 1: Try to serve from cache AGGRESSIVELY
-      const cachedToilets = findCoveringCache(stableViewport);
-      if (cachedToilets) {
-        return cachedToilets;
-      }
-      
-      // STEP 2: Check for pending request for same area
-      const requestKey = `${stableViewport.minLat}-${stableViewport.maxLat}-${stableViewport.minLng}-${stableViewport.maxLng}`;
-      if (pendingRequests.has(requestKey)) {
-        // Using pending request
-        return await pendingRequests.get(requestKey)!;
-      }
-      
-      // STEP 3: Make new request only if absolutely necessary
-      // Making database request
-      
-      const requestPromise = (async () => {
-        try {
-          const url = `/api/toilets-in-area?minLat=${stableViewport.minLat}&maxLat=${stableViewport.maxLat}&minLng=${stableViewport.minLng}&maxLng=${stableViewport.maxLng}`;
-          const response = await fetch(url);
-          
-          if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-          }
-          
-          const toilets = await response.json() as Toilet[];
-          
-          // Cache immediately for future use
-          cacheToilets(toilets, stableViewport);
-          
-          return toilets.filter(toilet => !toilet.isRemoved);
-        } finally {
-          pendingRequests.delete(requestKey);
-        }
-      })();
-      
-      pendingRequests.set(requestKey, requestPromise);
-      return await requestPromise;
-    },
-    enabled: !!stableViewport,
-    staleTime: 60 * 60 * 1000, // 1 hour stale time
-    gcTime: 4 * 60 * 60 * 1000, // 4 hours garbage collection
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
-    refetchInterval: false,
-    retry: (failureCount, error) => {
-      // Don't retry on 503 (quota exceeded)
-      if ((error as any)?.message?.includes('503')) return false;
-      return failureCount < 2;
-    },
-  });
-};
-
-// Legacy hook - now with minimal database usage
-export const useToilets = (location?: MapLocation) => {
-  return useQuery({
-    queryKey: ["toilets", "legacy-v2", location?.lat, location?.lng],
-    queryFn: async () => {
-      
-      if (!location) {
-        // Return empty for now to avoid loading all toilets
-        return [];
-      }
-      
-      // Try to serve from cache first
-      const cached = getCachedData();
-      const chunkKey = getChunkKey(location.lat, location.lng);
-      
-      if (cached.chunks[chunkKey]) {
-        const age = Date.now() - cached.chunks[chunkKey].timestamp;
-        if (age < CACHE_EXPIRY_HOURS * 60 * 60 * 1000) {
-          return cached.chunks[chunkKey].toilets.filter(toilet => !toilet.isRemoved);
-        }
-      }
-      
-      // Fallback to nearby API
-      const params = new URLSearchParams({
-          lat: location.lat.toString(),
-          lng: location.lng.toString(),
-        radius: '15' // Reduced radius
-      });
-      
-      const response = await fetch(`/api/toilets?${params}`);
-      if (!response.ok) throw new Error('Failed to fetch toilets');
-      
-      const toilets = await response.json() as Toilet[];
-      
-      // Cache the result
-      const bounds = {
-        minLat: location.lat - 0.1,
-        maxLat: location.lat + 0.1,
-        minLng: location.lng - 0.1,
-        maxLng: location.lng + 0.1
-      };
-      
-      cached.chunks[chunkKey] = {
-        toilets,
-        timestamp: Date.now(),
-        bounds
-      };
-      setCachedData(cached);
-      
-      return toilets.filter(toilet => !toilet.isRemoved);
-    },
-    staleTime: 2 * 60 * 60 * 1000, // 2 hours
-    gcTime: 4 * 60 * 60 * 1000, // 4 hours
-    refetchOnWindowFocus: false,
-    retry: 1,
-  });
-};
 
 export const useUpdateToilet = () => {
   const queryClient = useQueryClient();
@@ -327,36 +32,19 @@ export const useUpdateToilet = () => {
       
       return response.json();
     },
-    onSuccess: () => {
-      // Invalidate queries to refresh the data, but don't remove them
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['toilets'] });
-      queryClient.invalidateQueries({ queryKey: ['all-toilets'] });
-      
-    },
-  });
-};
 
-export const useAddToilet = () => {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: async (toilet: InsertToilet): Promise<Toilet> => {
-      const response = await apiRequest("POST", "/api/toilets", toilet);
-      const result = await response.json();
-      return result;
-    },
-    onSuccess: (newToilet) => {
-      // Force a complete refresh of all toilet data - minimal logging
-      setTimeout(() => {
-        // Remove all queries from cache
-        queryClient.removeQueries();
-        
-        // Force refetch all toilet data
-        queryClient.refetchQueries({ queryKey: ["toilets-supabase"] });
-      }, 500);
-    },
-    onError: (error) => {
-      console.error("Failed to add toilet:", error);
+      // Patch the map's cache in place rather than invalidating it. Invalidating
+      // triggers a refetch of /api/toilets, which the browser may answer from its
+      // own 30s HTTP cache вЂ” so the edit could appear not to have applied. We use
+      // the row the server echoes back, not the request body, because the server
+      // strips coordinates/isDomestos for non-admins.
+      if (data?.toilet) {
+        queryClient.setQueryData(['all-toilets'], (old: Toilet[] | undefined) =>
+          old?.map((t) => (t.id === variables.toiletId ? data.toilet : t))
+        );
+      }
     },
   });
 };
@@ -377,17 +65,53 @@ export const useAddReview = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async ({ toiletId, review }: { toiletId: string; review: InsertReview }): Promise<Review> => {
+    mutationFn: async ({ toiletId, review }: { toiletId: string; review: InsertReview }): Promise<{
+      review: Review;
+      toilet: { id: string; averageRating: number; reviewCount: number } | null;
+    }> => {
       const response = await apiRequest("POST", `/api/toilets/${toiletId}/reviews`, review);
       return await response.json();
     },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["toilets", variables.toiletId, "reviews"] });
+    // Both caches are patched from the POST response вЂ” no refetch anywhere.
+    //
+    // This previously invalidated ["toilets", id, "reviews"] and ["all-toilets"],
+    // but both routes send `Cache-Control: max-age=30`, and the fetches don't set
+    // a cache mode, so the browser answered the refetch from its own HTTP cache.
+    // In the normal flow (open a toilet, read the reviews, then write one) that
+    // response is only seconds old вЂ” so the user could not see their own review,
+    // or the marker's updated rating, for up to 30 seconds.
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["toilets"] });
       queryClient.invalidateQueries({ queryKey: ["toilets-supabase"] });
-      // The map renders from the 'all-toilets' cache — refresh it so the marker's
-      // rating/review-count aggregates update after a new review.
-      queryClient.invalidateQueries({ queryKey: ["all-toilets"] });
+
+      if (data?.review) {
+        // Insert exactly what the server sent вЂ” same shape the GET route yields
+        // (createdAt is an ISO string over JSON). Converting it here would make
+        // this one entry differ from every other review in the list.
+        queryClient.setQueryData(
+          ["toilets", variables.toiletId, "reviews"],
+          (old: Review[] | undefined) => (old ? [data.review, ...old] : [data.review])
+        );
+      }
+
+      // The map renders from 'all-toilets' вЂ” patch this marker's aggregates, which
+      // the DB trigger recomputed and the server returned to us.
+      if (data?.toilet) {
+        queryClient.setQueryData(['all-toilets'], (old: Toilet[] | undefined) =>
+          old?.map((t) =>
+            t.id === variables.toiletId
+              ? { ...t, averageRating: data.toilet!.averageRating, reviewCount: data.toilet!.reviewCount }
+              : t
+          )
+        );
+      }
+
+      // The user just reviewed this toilet вЂ” reflect that without a round trip so
+      // the "already reviewed" guard is correct immediately.
+      queryClient.setQueryData(
+        ["user-review-status", variables.toiletId, variables.review.userId],
+        { hasReviewed: true }
+      );
     },
   });
 };
@@ -438,25 +162,30 @@ export const useDeleteToilet = () => {
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        console.error("❌ Delete failed:", errorData);
+        console.error("вќЊ Delete failed:", errorData);
         throw new Error(errorData.error || 'Failed to delete toilet');
       }
       
     },
-    onSuccess: () => {
-      // Invalidate and refetch toilet queries
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["toilets"] });
       queryClient.invalidateQueries({ queryKey: ["toilets-supabase"] });
-      // The map renders from 'all-toilets' — invalidate it so the deleted
-      // marker actually disappears instead of lingering until staleTime.
-      queryClient.invalidateQueries({ queryKey: ["all-toilets"] });
+
+      // The map renders from 'all-toilets' вЂ” splice the marker out directly. This
+      // used to invalidate, which refetches /api/toilets; that response carries
+      // `max-age=30`, so the browser could serve a pre-delete list from its own
+      // HTTP cache and the pin would reappear. The server has already removed it
+      // from its cached list, so no round trip is needed to agree.
+      queryClient.setQueryData(['all-toilets'], (old: Toilet[] | undefined) =>
+        old?.filter((t) => t.id !== variables.toiletId)
+      );
 
       // Clear cache to ensure deleted toilet doesn't show up
       clearToiletCache();
 
     },
     onError: (error) => {
-      console.error("❌ Failed to delete toilet:", error);
+      console.error("вќЊ Failed to delete toilet:", error);
     },
   });
 };
@@ -470,48 +199,3 @@ export const clearToiletCache = () => {
   }
 };
 
-// Preload function - now much more conservative
-export const preloadToiletsForRegion = async (lat: number, lng: number, radiusKm: number = 15) => {
-  const cached = getCachedData();
-  const chunkKey = getChunkKey(lat, lng);
-  
-  // Check if we already have recent data for this region
-  if (cached.chunks[chunkKey]) {
-    const age = Date.now() - cached.chunks[chunkKey].timestamp;
-    if (age < 60 * 60 * 1000) { // 1 hour
-      return;
-    }
-  }
-  
-  
-  try {
-    const params = new URLSearchParams({
-      lat: lat.toString(),
-      lng: lng.toString(),
-      radius: Math.min(radiusKm, 20).toString() // Cap at 20km
-    });
-    
-    const response = await fetch(`/api/toilets?${params}`);
-    if (!response.ok) return;
-    
-    const toilets = await response.json() as Toilet[];
-    
-    // Cache with bounds
-    const bounds = {
-      minLat: lat - radiusKm / 111,
-      maxLat: lat + radiusKm / 111,
-      minLng: lng - radiusKm / (111 * Math.cos(lat * Math.PI / 180)),
-      maxLng: lng + radiusKm / (111 * Math.cos(lat * Math.PI / 180))
-    };
-    
-    cached.chunks[chunkKey] = {
-      toilets,
-      timestamp: Date.now(),
-      bounds
-    };
-    setCachedData(cached);
-    
-  } catch (error) {
-    console.error('Failed to preload region:', error);
-  }
-};

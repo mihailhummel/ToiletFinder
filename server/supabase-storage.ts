@@ -103,8 +103,11 @@ export class SupabaseStorage implements IStorage {
         if (data && data.length > 0) {
           allToilets = allToilets.concat(data);
           from += pageSize;
-          // Silent for performance
-        } else {
+        }
+
+        // A short page means we've reached the end. Stopping only on an empty
+        // page would always cost one extra round trip past the last real row.
+        if (!data || data.length < pageSize) {
           hasMore = false;
         }
       }
@@ -124,6 +127,31 @@ export class SupabaseStorage implements IStorage {
       return transformedToilets;
     } catch (error) {
       console.error('❌ Failed to fetch toilets:', error);
+      throw error;
+    }
+  }
+
+  // Single-row read, used to patch one entry of the cached toilet list after a
+  // write instead of discarding the whole list. ~1 KB per call versus a ~3-5 MB
+  // full-table refetch, and it keeps the cached aggregates (average_rating /
+  // review_count, maintained by DB triggers) correct the moment a write commits.
+  async getToiletById(toiletId: string): Promise<Toilet | null> {
+    try {
+      const { data, error } = await supabase
+        .from('toilets')
+        .select('*')
+        .eq('id', toiletId)
+        .maybeSingle();
+
+      if (error) {
+        console.error('❌ Error fetching toilet by id:', error);
+        throw error;
+      }
+      if (!data) return null;
+
+      return this.transformToilet(data);
+    } catch (error) {
+      console.error('❌ Failed to fetch toilet by id:', error);
       throw error;
     }
   }
@@ -174,9 +202,13 @@ export class SupabaseStorage implements IStorage {
     }
   }
 
-  async createReview(review: InsertReview): Promise<void> {
+  // Returns the created row so the caller can hand it straight back to the client,
+  // which appends it to its own cache instead of refetching the review list. That
+  // refetch was subject to the route's `max-age=30`, so a user could not see their
+  // own review for up to 30 seconds.
+  async createReview(review: InsertReview): Promise<Review> {
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('reviews')
         .insert([{
           toilet_id: review.toiletId,
@@ -185,7 +217,9 @@ export class SupabaseStorage implements IStorage {
           rating: review.rating,
           text: review.text,
           created_at: new Date().toISOString()
-        }]);
+        }])
+        .select()
+        .single();
 
       if (error) {
         console.error('❌ Error creating review:', error);
@@ -196,6 +230,15 @@ export class SupabaseStorage implements IStorage {
       // DB trigger `trigger_update_toilet_rating` on the reviews table. Do NOT
       // update them here (the old manual count was computed from a limit(1) probe
       // and was wrong).
+      return {
+        id: data.id,
+        toiletId: data.toilet_id,
+        userId: data.user_id,
+        userName: data.user_name,
+        rating: data.rating,
+        text: data.text,
+        createdAt: new Date(data.created_at)
+      };
     } catch (error) {
       console.error('❌ Failed to create review:', error);
       throw error;
@@ -628,7 +671,16 @@ export class SupabaseStorage implements IStorage {
     
     // Try to fix coordinates if they're invalid
     let coordinates = data.coordinates;
-    if (!coordinates || typeof coordinates.lat !== 'number' || typeof coordinates.lng !== 'number') {
+    // Recorded before the fallback below overwrites them. Postgres bbox filters
+    // (`coordinates->lat` etc.) drop these rows because NULL comparisons are false,
+    // so anything filtering spatially in memory must drop them too — otherwise the
+    // Sofia-centre fallback would make them materialise in central-Sofia results.
+    const coordinatesValid = !!(
+      coordinates &&
+      typeof coordinates.lat === 'number' &&
+      typeof coordinates.lng === 'number'
+    );
+    if (!coordinatesValid) {
       console.warn(`⚠️ Toilet ${data.id} has invalid coordinates:`, coordinates);
       
       // Try to use a default coordinate if none exists
@@ -643,6 +695,7 @@ export class SupabaseStorage implements IStorage {
     const transformed = {
       id: data.id,
       coordinates: coordinates,
+      coordinatesValid,
       lat: coordinates.lat,
       lng: coordinates.lng,
       type: data.type || 'other',
