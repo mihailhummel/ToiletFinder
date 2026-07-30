@@ -54,6 +54,12 @@ app.use(
           "'self'",
           "data:",
           "blob:",
+          // Blog thumbnails are Supabase Storage objects. They used to be base64
+          // data: URIs, which "data:" above already covered — moving them out of
+          // Postgres changed their ORIGIN, so this entry is what keeps them
+          // loading. Matches the connect-src wildcard below. This CSP applies to
+          // /blog too, since the blog service is proxied through this app.
+          "https://*.supabase.co",
           "https://*.basemaps.cartocdn.com",
           "https://*.googleusercontent.com",
           "https://www.google-analytics.com",
