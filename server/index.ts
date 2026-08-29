@@ -30,6 +30,54 @@ app.set("trust proxy", 1);
 // NOTE: script-src still allows 'unsafe-inline' because index.html currently has
 // inline scripts (GA bootstrap + window config). Branch B (B3) moves those into
 // the bundle / consent-gated loader; once done, REMOVE 'unsafe-inline' here.
+// ADSENSE: extra origins that AdSense and the Funding Choices CMP need. Gated on
+// ADS_ENABLED (same env-presence pattern as the /blog proxy further down) so
+// that unsetting the variable restores the previous CSP exactly, leaving no
+// permanent widening behind. This CSP also covers /blog, where the ads live.
+//
+// Treat this list as a starting point, not a spec: ad-tech allowlists reliably
+// need a second pass. The binding requirement is zero CSP violations in the
+// built app — amend these arrays to whatever the console actually reports.
+const adsEnabled = process.env.ADS_ENABLED === "true";
+const withAds = <T,>(origins: T[]): T[] => (adsEnabled ? origins : []);
+
+const ADS_SCRIPT_SRC = [
+  "https://pagead2.googlesyndication.com",
+  "https://tpc.googlesyndication.com",
+  "https://partner.googleadservices.com",
+  "https://adservice.google.com",
+  "https://www.googletagservices.com",
+  "https://fundingchoicesmessages.google.com",
+  "https://ep2.adtrafficquality.google",
+];
+const ADS_FRAME_SRC = [
+  // NOTE: frame-src below is an explicit allowlist with no 'self', so AdSense's
+  // own same-origin iframes need 'self' added back here.
+  "'self'",
+  "https://googleads.g.doubleclick.net",
+  "https://tpc.googlesyndication.com",
+  "https://pagead2.googlesyndication.com",
+  "https://www.google.com",
+  "https://fundingchoicesmessages.google.com",
+  "https://ep2.adtrafficquality.google",
+];
+const ADS_IMG_SRC = [
+  "https://pagead2.googlesyndication.com",
+  "https://tpc.googlesyndication.com",
+  "https://googleads.g.doubleclick.net",
+  "https://www.google.com",
+  "https://*.gstatic.com",
+  "https://ep1.adtrafficquality.google",
+  "https://fundingchoicesmessages.google.com",
+];
+const ADS_CONNECT_SRC = [
+  "https://pagead2.googlesyndication.com",
+  "https://googleads.g.doubleclick.net",
+  "https://ep1.adtrafficquality.google",
+  "https://csi.gstatic.com",
+  "https://fundingchoicesmessages.google.com",
+];
+
 app.use(
   helmet({
     contentSecurityPolicy: {
@@ -43,6 +91,7 @@ app.use(
           "https://www.google-analytics.com",
           "https://apis.google.com",
           "https://accounts.google.com",
+          ...withAds(ADS_SCRIPT_SRC),
         ],
         // Leaflet map popups use inline onclick= handlers (window.getDirections,
         // window.setRating, etc.). helmet's default is script-src-attr 'none',
@@ -66,6 +115,7 @@ app.use(
           // server-side, which means "'self'" above already covers them.
           "https://*.googleusercontent.com",
           "https://www.google-analytics.com",
+          ...withAds(ADS_IMG_SRC),
         ],
         "connect-src": [
           "'self'",
@@ -76,11 +126,13 @@ app.use(
           "https://*.analytics.google.com",
           "https://www.googletagmanager.com",
           "https://*.googleusercontent.com", // SW fetches Google profile avatars
+          ...withAds(ADS_CONNECT_SRC),
         ],
         "frame-src": [
           "https://accounts.google.com",
           "https://apis.google.com",
           "https://*.firebaseapp.com",
+          ...withAds(ADS_FRAME_SRC),
         ],
         "worker-src": ["'self'"],
         "manifest-src": ["'self'"],

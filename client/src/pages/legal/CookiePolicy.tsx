@@ -77,6 +77,41 @@ export default function CookiePolicy() {
         </div>
       </LegalSection>
 
+      {/* ADSENSE: required disclosure for serving Google ads. Remove with the rest. */}
+      <LegalSection heading={bg ? "Реклами (Google AdSense)" : "Advertising (Google AdSense)"}>
+        <p>
+          {bg
+            ? "В блога показваме реклами чрез Google AdSense. Google и негови партньори използват бисквитки, за да показват реклами и да ограничават колко пъти виждате една и съща реклама, както и за защита от измами."
+            : "We show ads on the blog through Google AdSense. Google and its partners use cookies to serve ads, to cap how often you see the same ad, and for fraud protection."}
+        </p>
+        <p>
+          {bg
+            ? "Ако не дадете съгласие, не показваме персонализирани реклами — Google получава сигнал да сервира само неперсонализирани реклами без проследяване."
+            : "If you do not consent, we do not show personalised ads — Google is signalled to serve non-personalised ads only, without tracking."}
+        </p>
+        <p>
+          {bg ? "Повече от " : "More at "}
+          <a
+            href="https://policies.google.com/technologies/ads"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-600 underline font-semibold"
+          >
+            {bg ? "правилата на Google за реклами" : "Google's advertising policies"}
+          </a>
+          {bg ? " и " : " and "}
+          <a
+            href="https://myadcenter.google.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-600 underline font-semibold"
+          >
+            {bg ? "Google My Ad Center" : "Google My Ad Center"}
+          </a>
+          .
+        </p>
+      </LegalSection>
+
       <LegalSection heading={bg ? "Управление на съгласието" : "Managing consent"}>
         <p>
           {bg ? "Можете да промените или оттеглите съгласието си от " : "You can change or withdraw your consent from the "}
@@ -84,8 +119,8 @@ export default function CookiePolicy() {
             {bg ? "настройките за бисквитки" : "cookie settings"}
           </Link>
           {bg
-            ? ". Промяната влиза в сила веднага — при отказ спираме Google Analytics и изтриваме неговите бисквитки."
-            : ". Changes take effect immediately — on reject we stop Google Analytics and delete its cookies."}
+            ? ". Промяната влиза в сила веднага — при отказ спираме Google Analytics, изтриваме неговите бисквитки и рекламите остават неперсонализирани."
+            : ". Changes take effect immediately — on reject we stop Google Analytics, delete its cookies, and ads stay non-personalised."}
         </p>
       </LegalSection>
     </LegalLayout>

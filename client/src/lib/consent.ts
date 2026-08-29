@@ -16,8 +16,13 @@ export interface ConsentRecord {
 const CONSENT_KEY = "toaletna-cookie-consent";
 
 // Bump this when the cookie/privacy terms change materially — older stored
-// decisions become stale and the banner re-prompts (and a new consent row is
-// recorded on the server, see /api/consent).
+// decisions become stale and the banner re-prompts.
+//
+// NOTE: cookie consent is stored ONLY here, in localStorage, and is anonymous.
+// It is unrelated to POST /api/consent, which records a *signed-in* user's
+// terms/privacy acceptance keyed by firebase_uid (see server/routes.ts and
+// storage.recordConsent). Do not conflate the two: they cover different legal
+// purposes, and /api/consent cannot represent logged-out visitors at all.
 export const CONSENT_VERSION = 1;
 
 // Re-ask users who *rejected* after this many days (CNIL-aligned "reasonable

@@ -57,17 +57,20 @@ export default function Post() {
     const parts = content.split(/(\{insert_ad_1\}|\{insert_ad_2\})/g);
 
     return parts.map((part, index) => {
+      // ADSENSE: in-article units render at every breakpoint (in-content is the strongest
+      // AdSense placement). The wrapper reserves its height so neither the ad
+      // filling in nor a fallback swap moves the surrounding text.
       if (part === "{insert_ad_1}") {
         return (
-          <div key={index} className="my-8 lg:hidden block">
-            <Ad1 className="w-full h-auto py-8" />
+          <div key={index} className="my-8 block not-prose">
+            <Ad1 placement="in-article" />
           </div>
         );
       }
       if (part === "{insert_ad_2}") {
         return (
-          <div key={index} className="my-8 lg:hidden block">
-            <Ad2 className="w-full h-auto py-8" />
+          <div key={index} className="my-8 block not-prose">
+            <Ad2 placement="in-article" />
           </div>
         );
       }
@@ -89,9 +92,9 @@ export default function Post() {
       <PostSEO post={post} />
       <div className="w-full px-4 xl:px-8 mt-8 flex items-start justify-between gap-8">
         
-        {/* Left Ad Banner */}
-        <aside className="hidden lg:block w-[160px] xl:w-[10%] sticky top-24 shrink-0">
-          <Ad1 className="h-[calc(100vh-8rem)]" />
+        {/* ADSENSE: Left Ad Banner (.ad-rail sets the height) */}
+        <aside className="hidden lg:block w-[160px] 2xl:w-[300px] sticky top-24 shrink-0 ad-rail">
+          <Ad1 placement="sidebar" />
         </aside>
 
         {/* Article Content */}
@@ -207,9 +210,9 @@ export default function Post() {
           )}
         </article>
 
-        {/* Right Ad Banner */}
-        <aside className="hidden lg:block w-[160px] xl:w-[10%] sticky top-24 shrink-0">
-          <Ad2 className="h-[calc(100vh-8rem)]" />
+        {/* ADSENSE: Right Ad Banner (.ad-rail sets the height) */}
+        <aside className="hidden lg:block w-[160px] 2xl:w-[300px] sticky top-24 shrink-0 ad-rail">
+          <Ad2 placement="sidebar" />
         </aside>
         
       </div>

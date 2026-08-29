@@ -3,11 +3,18 @@ import { Check, X } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { LegalLayout, LegalSection } from "./LegalLayout";
 import { getConsent, setConsent, CONSENT_EVENT, type ConsentRecord } from "@/lib/consent";
+// ADSENSE: when Google's CMP owns consent, this page delegates to it instead of
+// setting the decision directly. Remove this import and the cmpOwns branch below.
+import { useCmpState, showConsentUi, ADS_ENABLED } from "@/lib/cmp";
 
 export default function CookieSettings() {
   const { language } = useLanguage();
   const bg = language === "bg";
   const [consent, setConsentState] = useState<ConsentRecord | null>(null);
+  const cmpState = useCmpState();
+  // If the CMP is blocked we must keep offering the built-in controls, or the
+  // visitor has no way to change their mind at all.
+  const cmpOwns = ADS_ENABLED && cmpState !== "unavailable";
 
   useEffect(() => {
     setConsentState(getConsent());
@@ -40,7 +47,17 @@ export default function CookieSettings() {
         </p>
       </LegalSection>
 
-      <LegalSection heading={bg ? "Аналитични бисквитки (Google Analytics)" : "Analytics cookies (Google Analytics)"}>
+      <LegalSection
+        heading={
+          cmpOwns
+            ? bg
+              ? "Аналитични и рекламни бисквитки"
+              : "Analytics and advertising cookies"
+            : bg
+              ? "Аналитични бисквитки (Google Analytics)"
+              : "Analytics cookies (Google Analytics)"
+        }
+      >
         <div className="rounded-xl border border-slate-200 bg-white p-4">
           <p className="text-[14px] font-bold text-slate-900">
             {bg ? "Текущо състояние: " : "Current status: "}
@@ -53,6 +70,23 @@ export default function CookieSettings() {
               ? "Помага ни да разберем как се ползва картата. Нищо не се проследява без Вашето съгласие."
               : "Helps us understand how the map is used. Nothing is tracked without your consent."}
           </p>
+          {cmpOwns ? (
+            <div className="mt-4">
+              <button
+                type="button"
+                onClick={showConsentUi}
+                className="w-full sm:w-auto sm:min-w-[220px] inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 text-white font-bold text-[14px] hover:bg-blue-700 active:scale-[0.98] transition-all"
+              >
+                <Check className="w-4 h-4" />
+                {bg ? "Промени настройките" : "Change your choice"}
+              </button>
+              <p className="mt-2 text-[12px] text-slate-500">
+                {bg
+                  ? "Отваря диалога за съгласие на Google, който управлява рекламите и анализа."
+                  : "Opens Google's consent dialog, which governs both advertising and analytics."}
+              </p>
+            </div>
+          ) : (
           <div className="mt-4 flex gap-2.5">
             <button
               type="button"
@@ -81,6 +115,7 @@ export default function CookieSettings() {
               {bg ? "Разреши" : "Accept"}
             </button>
           </div>
+          )}
         </div>
         {consent && (
           <p className="mt-2 text-[12px] text-slate-400">

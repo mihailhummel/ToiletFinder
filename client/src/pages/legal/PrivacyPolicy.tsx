@@ -83,6 +83,8 @@ export default function PrivacyPolicy() {
           <li>{bg ? "Supabase — база данни и съхранение на данни (регион ЕС, Франкфурт)." : "Supabase — database and data storage (EU region, Frankfurt)."}</li>
           <li>{bg ? "Firebase Authentication (Google) — вход с Google." : "Firebase Authentication (Google) — Google sign-in."}</li>
           <li>{bg ? "Google Analytics — анализ на употребата (само със съгласие)." : "Google Analytics — usage analytics (with consent only)."}</li>
+          {/* ADSENSE */}
+          <li>{bg ? "Google AdSense — реклами в блога (само с Ваше съгласие за персонализирани реклами)." : "Google AdSense — advertising on the blog (personalised only with your consent)."}</li>
           <li>{bg ? "CARTO — картови плочки (basemap)." : "CARTO — map tiles (basemap)."}</li>
           <li>{bg ? "Railway — хостинг на приложението." : "Railway — application hosting."}</li>
         </ul>
@@ -91,8 +93,8 @@ export default function PrivacyPolicy() {
       <LegalSection heading={bg ? "Международни трансфери" : "International transfers"}>
         <p>
           {bg
-            ? "Данните в базата се съхраняват в ЕС (Франкфурт). Google Analytics може да прехвърля данни към Google в САЩ; Google разчита на стандартни договорни клаузи и/или рамката Data Privacy Framework като защита."
-            : "Database data is stored in the EU (Frankfurt). Google Analytics may transfer data to Google in the USA; Google relies on Standard Contractual Clauses and/or the EU-US Data Privacy Framework as safeguards."}
+            ? "Данните в базата се съхраняват в ЕС (Франкфурт). Google Analytics и Google AdSense могат да прехвърлят данни към Google в САЩ; Google разчита на стандартни договорни клаузи и/или рамката Data Privacy Framework като защита."
+            : "Database data is stored in the EU (Frankfurt). Google Analytics and Google AdSense may transfer data to Google in the USA; Google relies on Standard Contractual Clauses and/or the EU-US Data Privacy Framework as safeguards."}
         </p>
       </LegalSection>
 

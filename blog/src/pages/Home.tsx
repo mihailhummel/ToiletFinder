@@ -44,9 +44,9 @@ export default function Home() {
     <div className="w-full pb-16">
       <div className="w-full px-4 xl:px-8 mt-8 flex items-start justify-between gap-8">
         
-        {/* Left Ad Banner */}
-        <aside className="hidden lg:block w-[160px] xl:w-[10%] sticky top-24 shrink-0">
-          <Ad1 className="h-[calc(100vh-8em)]" />
+        {/* ADSENSE: Left Ad Banner (.ad-rail sets the height) */}
+        <aside className="hidden lg:block w-[160px] 2xl:w-[300px] sticky top-24 shrink-0 ad-rail">
+          <Ad1 placement="sidebar" />
         </aside>
 
         {/* Main Content */}
@@ -163,10 +163,10 @@ export default function Home() {
                     </Link>
                   </motion.article>
                   
-                  {/* Mobile Ad after 3rd post */}
+                  {/* ADSENSE: Mobile Ad after 3rd post */}
                   {index === 2 && (
                     <div className="block lg:hidden w-full col-span-1 md:col-span-2 my-2">
-                      <Ad1 className="w-full h-[250px]" />
+                      <Ad1 placement="card" className="w-full h-[250px]" />
                     </div>
                   )}
                 </React.Fragment>
@@ -185,16 +185,16 @@ export default function Home() {
               </div>
             )}
 
-            {/* Mobile Ad before footer */}
+            {/* ADSENSE: Mobile Ad before footer */}
             <div className="block lg:hidden w-full mt-12">
-              <Ad2 className="w-full h-[250px]" />
+              <Ad2 placement="card" className="w-full h-[250px]" />
             </div>
           </section>
         </main>
 
-        {/* Right Ad Banner */}
-        <aside className="hidden lg:block w-[160px] xl:w-[10%] sticky top-24 shrink-0">
-          <Ad2 className="h-[calc(100vh-8rem)]" />
+        {/* ADSENSE: Right Ad Banner (.ad-rail sets the height) */}
+        <aside className="hidden lg:block w-[160px] 2xl:w-[300px] sticky top-24 shrink-0 ad-rail">
+          <Ad2 placement="sidebar" />
         </aside>
         
       </div>

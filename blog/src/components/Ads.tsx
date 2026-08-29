@@ -1,41 +1,85 @@
-const VerticalAd = ({ className = "" }: { className?: string }) => (
-  <a
-    href="https://toaletna.com"
-    target="_blank"
-    rel="noopener noreferrer"
-    className={`relative flex items-center justify-center rounded-xl overflow-hidden group block ${className}`}
-  >
-    {/* Ad image fills the entire slot */}
-    <img
-      src="/blog/ad-vertical.png"
-      alt="Toaletna.com — Интерактивна карта на тоалетните в България"
-      className="absolute inset-0 w-full h-full object-cover object-top"
-      draggable={false}
-    />
+// ADSENSE: this file is the switch between real AdSense units and the original
+// house creative.
+//
+// TO REMOVE ADSENSE ENTIRELY: replace this file's body with
+//   export { HouseAd as Ad1, HouseAd as Ad2 } from "./HouseAd";
+// and delete AdSenseUnit.tsx + lib/adSlots.ts. Nothing else in the blog imports
+// them. Setting VITE_ADS_ENABLED to anything but "true" already achieves the
+// same behaviour at runtime without touching code.
+import { AdSenseUnit } from "./AdSenseUnit";
+import { HouseAd } from "./HouseAd";
+import { AD_SLOTS } from "../lib/adSlots";
 
-    {/* Subtle dark overlay on hover for depth */}
-    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
+export type AdPlacement = "sidebar" | "in-article" | "card";
 
-    {/* CTA button centered */}
-    <span className="relative z-10 inline-flex items-center justify-center px-5 py-2.5 rounded-full text-sm font-bold text-white top-3.5
-      bg-blue-600
-      shadow-[0_0_16px_rgba(37,99,235,0.7)]
-      group-hover:bg-blue-500
-      group-hover:shadow-[0_0_28px_rgba(37,99,235,0.95)]
-      group-hover:scale-105
-      transition-all duration-300 ease-out
-      select-none
-      whitespace-nowrap
-    ">
-      Към Картата
-    </span>
-  </a>
-);
+interface AdProps {
+  className?: string;
+  placement?: AdPlacement;
+}
 
-export const Ad1 = ({ className = "" }: { className?: string }) => (
-  <VerticalAd className={className} />
-);
+// Each placement pins its own unit id, ad format and reserved box. The reserved
+// box is what keeps the layout from shifting: it is identical whether the slot
+// ends up holding a real ad, the house ad, or nothing yet.
+const PLACEMENTS = {
+  // Sticky desktop side rails. The <aside> supplies the height (see .ad-rail in
+  // index.css, which drops to 300px on short viewports), so the box is definite
+  // and h-full resolves against it.
+  sidebar: {
+    slot: AD_SLOTS.sidebar,
+    format: "vertical",
+    layout: undefined,
+    wrapper: "w-full h-full flex",
+    unit: "w-full h-full",
+    fallback: "w-full h-full",
+  },
+  // {insert_ad_1} / {insert_ad_2} inside the article body. Fluid in-article is
+  // the best-performing format but also the least predictable in height, hence
+  // the reserved min-height.
+  //
+  // The height here is a MINIMUM, not a fixed value, so the box is indefinite
+  // and h-full on a child would collapse to content height. The unit is left
+  // unconstrained (fluid sizes itself) and the fallback uses self-stretch, which
+  // — unlike height:100% — does stretch a flex item to an indefinite container's
+  // cross size, so the house ad fills the reserved 280px instead of shrinking to
+  // the height of its CTA button.
+  "in-article": {
+    slot: AD_SLOTS.inArticle,
+    format: "fluid",
+    layout: "in-article",
+    wrapper: "w-full min-h-[280px] flex",
+    unit: "w-full",
+    fallback: "w-full self-stretch",
+  },
+  // Blog home mobile slots. Call sites pass their own h-[250px], so the wrapper
+  // deliberately sets no height of its own — two competing Tailwind height
+  // classes would be resolved by stylesheet order, not by class-attribute order.
+  card: {
+    slot: AD_SLOTS.homeCard,
+    format: "rectangle",
+    layout: undefined,
+    wrapper: "w-full flex",
+    unit: "w-full h-full",
+    fallback: "w-full h-full",
+  },
+} as const;
 
-export const Ad2 = ({ className = "" }: { className?: string }) => (
-  <VerticalAd className={className} />
-);
+function Ad({ className = "", placement = "sidebar" }: AdProps) {
+  const config = PLACEMENTS[placement];
+
+  return (
+    <div className={`${config.wrapper} ${className}`}>
+      <AdSenseUnit
+        slot={config.slot}
+        format={config.format}
+        layout={config.layout}
+        className={config.unit}
+        fallback={<HouseAd className={config.fallback} />}
+      />
+    </div>
+  );
+}
+
+// Ad1 / Ad2 keep their original signatures so existing call sites in Post.tsx
+// and Home.tsx keep working. They render the same unit, exactly as before.
+export const Ad1 = (props: AdProps) => <Ad {...props} />;
+export const Ad2 = (props: AdProps) => <Ad {...props} />;

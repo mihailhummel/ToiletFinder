@@ -28,6 +28,7 @@ export default defineConfig({
           /^\/blog(\/|$)/,
           /^\/sitemap\.xml$/,
           /^\/robots\.txt$/,
+          /^\/ads\.txt$/, // ADSENSE: must return the real file, never the map shell
         ],
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
         runtimeCaching: [

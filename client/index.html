@@ -106,7 +106,12 @@
     <!-- Performance Optimizations -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <!-- No googletagmanager preconnect: we must not even open a connection to
-         Google before cookie consent. GA is loaded on demand by lib/consent.ts. -->
+         Google before cookie consent. GA is loaded on demand by lib/consent.ts.
+         ADSENSE exception: lib/cmp.ts does load Google's Funding Choices CMP
+         before a decision exists. That is permitted and unavoidable — a consent
+         mechanism is strictly necessary, and it is what collects the decision.
+         It is still injected at runtime behind VITE_ADS_ENABLED, never inlined
+         here, so the flag alone removes it. -->
     <link rel="preconnect" href="/api" crossorigin>
     <link rel="dns-prefetch" href="https://toaletna.com">
 

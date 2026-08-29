@@ -11,6 +11,22 @@
   }
 }
 
+/* ADSENSE: sticky side-rail sizing. Remove this block to drop AdSense.
+   The rail sits at top: 6rem (top-24), so a 600px unit needs a ~700px tall
+   viewport. On shorter laptop screens serve a 300px unit instead — an ad that
+   can never be scrolled fully into view earns nothing and risks a viewability
+   policy flag. Shrink it rather than clipping it: AdSense does not allow
+   creatives to be cropped, so max-height is not an option here. */
+.ad-rail {
+  height: 600px;
+}
+
+@media (max-height: 760px) {
+  .ad-rail {
+    height: 300px;
+  }
+}
+
 ::-webkit-scrollbar {
   width: 8px;
 }
