@@ -703,14 +703,21 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, onReportC
     // Start with user location if available, otherwise Sofia center
     const initialCenter = stableUserLocation || { lat: 42.6977, lng: 23.3219 };
 
-    map.current = L.map(mapContainer.current).setView(
+    // attributionControl is off because Leaflet anchors it to the bottom of the
+    // MAP CONTAINER, which extends past the bottom of the viewport on mobile —
+    // the credit rendered correctly but permanently off screen. It's replaced by
+    // a position:fixed box below, the same trick the floating buttons use.
+    map.current = L.map(mapContainer.current, { attributionControl: false }).setView(
       [initialCenter.lat, initialCenter.lng], 
       stableUserLocation ? 16 : 13
     );
 
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-      attribution: '© OpenStreetMap contributors © CARTO',
-      subdomains: 'abcd',
+    // Tiles come from our own origin, not basemaps.cartocdn.com directly: the
+    // server appends the CARTO API key so it never ships to the browser.
+    // Subdomain sharding is gone with it — same-origin over HTTP/2 doesn't need it.
+    // No `attribution` here: the credit is rendered by the fixed box in the JSX
+    // below instead, so it survives the map container running off screen.
+    L.tileLayer('/tiles/{z}/{x}/{y}{r}.png', {
       maxZoom: 19
     }).addTo(map.current);
 
@@ -1779,6 +1786,51 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, onReportC
         >
           <Crosshair className="w-6 h-6" />
         </Button>
+      </div>
+
+      {/* Basemap credit. Required by CARTO's free tier (carto.com/attributions)
+          and by OpenStreetMap's licence, so it is permanent — no dismiss, no
+          timer. position:fixed pins it to the viewport rather than to the map
+          container, whose bottom edge sits below the fold. It rides in the gap
+          UNDER the floating + button (that button starts 36px up), so it never
+          collides with the controls. Sits under the recenter button, mirroring how the right-side version sat under the + button. */}
+      <div
+        style={{
+          position: 'fixed',
+          bottom: 'calc(6px + env(safe-area-inset-bottom, 0px))',
+          left: '8px',
+          zIndex: 1000,
+          padding: '2px 7px',
+          borderRadius: '4px',
+          background: 'rgba(255, 255, 255, 0.82)',
+          backdropFilter: 'blur(2px)',
+          WebkitBackdropFilter: 'blur(2px)',
+          border: '1px solid rgba(0, 0, 0, 0.06)',
+          fontSize: '10px',
+          lineHeight: '14px',
+          color: '#4b5563',
+          whiteSpace: 'nowrap',
+          pointerEvents: 'auto',
+        }}
+      >
+        &copy;{' '}
+        <a
+          href="https://www.openstreetmap.org/copyright"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ color: '#2563eb', textDecoration: 'none' }}
+        >
+          OpenStreetMap
+        </a>{' '}
+        contributors &copy;{' '}
+        <a
+          href="https://carto.com/attributions"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ color: '#2563eb', textDecoration: 'none' }}
+        >
+          CARTO
+        </a>
       </div>
 
       {fetchError && (

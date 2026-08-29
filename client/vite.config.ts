@@ -43,6 +43,18 @@ export default defineConfig({
             },
           },
           {
+            // Basemap tiles proxied through our server. CacheFirst because a tile
+            // never changes, and every cache hit is one request the tile proxy
+            // (and CARTO's free-tier quota) doesn't have to serve.
+            urlPattern: ({ url, sameOrigin }) => sameOrigin && url.pathname.startsWith('/tiles/'),
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'map-tiles',
+              expiration: { maxEntries: 600, maxAgeSeconds: 30 * 24 * 60 * 60 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+          {
             // Google profile avatars — cache after first success so repeated
             // auth re-renders don't hammer lh3.googleusercontent.com (429s).
             urlPattern: ({ url }) => url.hostname === 'lh3.googleusercontent.com',
@@ -71,6 +83,12 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': {
+        target: 'http://localhost:5001',
+        changeOrigin: true,
+        secure: false,
+      },
+      // Basemap tiles are served by the Express tile proxy (it holds the CARTO key).
+      '/tiles': {
         target: 'http://localhost:5001',
         changeOrigin: true,
         secure: false,

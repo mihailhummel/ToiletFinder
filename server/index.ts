@@ -4,6 +4,7 @@ import { createProxyMiddleware } from "http-proxy-middleware";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import { registerRoutes } from "./routes";
+import { registerTileProxy } from "./tile-proxy";
 import { setupVite, serveStatic, log } from "./vite";
 import path from "path";
 import fs from "fs";
@@ -60,7 +61,9 @@ app.use(
           // loading. Matches the connect-src wildcard below. This CSP applies to
           // /blog too, since the blog service is proxied through this app.
           "https://*.supabase.co",
-          "https://*.basemaps.cartocdn.com",
+          // NOTE: basemaps.cartocdn.com is deliberately absent. Map tiles are now
+          // proxied through this server (/tiles/...) so the CARTO API key stays
+          // server-side, which means "'self'" above already covers them.
           "https://*.googleusercontent.com",
           "https://www.google-analytics.com",
         ],
@@ -135,6 +138,11 @@ app.use("/api/toilets", (req: Request, res: Response, next: NextFunction) => {
   if (["POST", "PUT", "DELETE"].includes(req.method)) return writeLimiter(req, res, next);
   next();
 });
+
+// Map tiles. Mounted before the body parsers (nothing to parse) and outside
+// /api so the API rate limiter does not throttle the basemap. The CARTO key
+// lives in this process only — see server/tile-proxy.ts.
+registerTileProxy(app);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
