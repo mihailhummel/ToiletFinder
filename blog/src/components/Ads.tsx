@@ -26,7 +26,11 @@ const PLACEMENTS = {
   // and h-full resolves against it.
   sidebar: {
     slot: AD_SLOTS.sidebar,
-    format: "vertical",
+    // "auto", matching how the unit was created in AdSense (responsive display).
+    // A "vertical" shape hint would be valid too, but it restricts which sizes
+    // may fill and so lowers fill rate; the 160px-wide rail already constrains
+    // the shape physically, so there is nothing to gain by narrowing it further.
+    format: "auto",
     layout: undefined,
     wrapper: "w-full h-full flex",
     unit: "w-full h-full",
@@ -55,7 +59,8 @@ const PLACEMENTS = {
   // classes would be resolved by stylesheet order, not by class-attribute order.
   card: {
     slot: AD_SLOTS.homeCard,
-    format: "rectangle",
+    // "auto", matching the responsive display unit created in AdSense.
+    format: "auto",
     layout: undefined,
     wrapper: "w-full flex",
     unit: "w-full h-full",

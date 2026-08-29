@@ -75,11 +75,17 @@ Ad unit ids live in `blog/src/lib/adSlots.ts`. They are public values, so a
 constants file is used rather than env vars. **An empty id makes that placement
 render the house ad**, which is why this ships before the units exist.
 
-| Key | Placement | Format |
-|---|---|---|
-| `sidebar` | Sticky desktop side rails on the blog home and posts | display, vertical (160x600 / 300x600) |
-| `inArticle` | `{insert_ad_1}` / `{insert_ad_2}` tokens in post bodies | fluid, in-article |
-| `homeCard` | Blog home mobile slots | display, rectangle (300x250) |
+| Key | Unit id | Placement | Format |
+|---|---|---|---|
+| `sidebar` | `3174863176` | Sticky desktop side rails on the blog home and posts | responsive display (`auto`) |
+| `inArticle` | *not created yet* | `{insert_ad_1}` / `{insert_ad_2}` tokens in post bodies | fluid, in-article |
+| `homeCard` | `3643540535` | Blog home mobile slots | responsive display (`auto`) |
+
+`inArticle` needs an **In-article ad** unit (AdSense → Ads → By ad unit → In-article
+ad), not a Display ad — the format is `fluid` with `data-ad-layout="in-article"`,
+which a Display unit does not serve. Until it exists those two slots show the
+house ad. This is the highest-value placement of the three, so it is worth
+creating.
 
 Leave Auto ads **off** — they place units wherever they like and will break the
 sticky rail layout.

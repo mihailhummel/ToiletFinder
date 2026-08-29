@@ -11,12 +11,16 @@
 export const AD_CLIENT = "ca-pub-5144798032380350";
 
 export const AD_SLOTS = {
-  /** Display unit, vertical — the sticky desktop side rails (160x600 / 300x600). */
-  sidebar: "",
-  /** In-article (fluid) unit — the {insert_ad_1} / {insert_ad_2} body slots. */
+  /** "sidebar" — responsive display unit. Sticky desktop side rails. */
+  sidebar: "3174863176",
+  /**
+   * In-article (fluid) unit for the {insert_ad_1} / {insert_ad_2} body slots.
+   * NOT CREATED YET — create an "In-article ad" unit (not a Display ad) in
+   * AdSense and paste its id here. Until then these slots show the house ad.
+   */
   inArticle: "",
-  /** Display unit, rectangle — the blog home mobile slots (300x250). */
-  homeCard: "",
+  /** "Home Card" — responsive display unit. Blog home mobile slots. */
+  homeCard: "3643540535",
 } as const;
 
 /** Master switch. Build with VITE_ADS_ENABLED=true to serve real ads. */
