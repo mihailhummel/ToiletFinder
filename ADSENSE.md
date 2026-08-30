@@ -34,35 +34,53 @@ then set `VITE_ADS_ENABLED` / `ADS_ENABLED` to `true` on Railway.
 
 | Variable | Where | Effect |
 |---|---|---|
-| `VITE_ADS_ENABLED` | root `.env`, `Dockerfile` ARG/ENV, Railway (main service) | Client bundle: loads the CMP, hands consent to Google |
+| `VITE_ADS_ENABLED` | root `.env`, `Dockerfile` ARG/ENV, Railway (main service) | Unused by the map app since consent was split by surface — the main bundle no longer loads the CMP. Harmless to leave set. |
 | `VITE_ADS_ENABLED` | `blog/.env`, Railway (blog service) | Blog bundle: renders real ad units + loads the CMP |
-| `ADS_ENABLED` | root `.env`, Railway (main service) | Express: widens the CSP to Google's ad origins |
+| `ADS_ENABLED` | root `.env`, Railway (main service) | Express: widens the CSP to Google's ad origins **and** sets `Referrer-Policy: strict-origin-when-cross-origin` (see below — without it Google serves nothing). Required, because `/blog` is proxied through this app. |
 
 Anything other than the literal string `"true"` means off. An unset variable is
 off, which is the correct failure mode — a missed Railway variable degrades to
 house ads rather than breaking the page.
 
-**Turning all three off restores the previous behaviour exactly**, including the
-site's own cookie banner and the house-ad creative. No code changes needed.
+**Turning them off restores the previous behaviour exactly**, including the
+house-ad creative and helmet's `no-referrer` default. No code changes needed.
+The map app's own cookie banner is unaffected either way — it is no longer tied
+to the ads flags at all.
 
 ## Consent model
 
-Google's Funding Choices CMP is the consent surface. It is IAB TCF certified,
-which is required to serve ads to EEA visitors (Bulgaria included).
+Consent is split by surface, on purpose:
 
-This is **TCF gating, not Google Consent Mode v2**. `client/src/lib/cmp.ts` reads
-the TCF signal and calls the existing `setConsent()` in `lib/consent.ts`, which
-already writes the shared localStorage record, loads/unloads gtag and clears
-`_ga*` cookies. The consent engine was not rewritten — the CMP is just a new
-front end on it. Consent Mode v2 was rejected because it requires loading
-`gtag.js` before a decision exists; what that gives up is conversion modelling,
-an advertiser feature irrelevant to a publisher. Ad serving is governed by TCF,
-so revenue is unaffected.
+| Surface | Consent UI | Covers |
+|---|---|---|
+| `toaletna.com` (map) | the site's own cookie banner (`ConsentBanner`) | Google Analytics only |
+| `toaletna.com/blog`, `/blog/*` | Google's Funding Choices CMP | advertising + analytics |
+
+The map app carries no ad units, so it needs no ad consent and never loads the
+CMP — `client/src/lib/cmp.ts` does not exist, and `client/src/main.tsx` only
+calls `initAnalytics()`. `/cookie-settings` governs analytics alone. Readers
+reopen the ad-consent dialog from the **"Настройки за реклами"** link in the blog
+footer, which only renders once the CMP is actually loaded so it is never a dead
+button.
+
+Both surfaces are same-origin, so they share the `toaletna-cookie-consent`
+record in localStorage: a decision made on either satisfies analytics on both,
+and a visitor who accepted on the map does not get the blog's fallback banner
+too. Ad personalisation is governed separately by Google's own TCF string.
+
+The blog's CMP adapter (`blog/src/lib/cmp.ts`) is **TCF gating, not Google
+Consent Mode v2**. It reads the TCF signal and decides whether analytics may run,
+deliberately not loading `gtag.js` before a decision, so there are no cookieless
+pings. Consent Mode v2 was rejected because it requires contacting Google before
+consent exists; what that gives up is conversion modelling, an advertiser feature
+irrelevant to a publisher. Ad serving is governed by TCF, so revenue is
+unaffected.
 
 `fundingchoicesmessages.google.com` is blocked by uBlock Origin and Brave. When
-the CMP fails to resolve within 5s, both apps fall back to their own banner
-(`ConsentBanner` / `ConsentFallbackBanner`), so those visitors keep a way to opt
-in. Without that fallback they would have had no consent surface at all.
+the CMP fails to resolve within 5s the blog falls back to its own banner
+(`ConsentFallbackBanner`) so those readers keep a way to opt in. Watching
+continues for 30s, so a merely slow CMP still takes over and retracts the
+fallback rather than leaving two banners on screen.
 
 Refusing consent does **not** hide ads: Google serves cookieless "limited ads"
 instead, which is real revenue. The house ad is only for genuinely-can't-serve
@@ -113,6 +131,46 @@ The origin alone is enough, so `server/index.ts` sets
 `no-referrer` when it is off. That is also the modern browser default and what
 `client/public/_headers` already documented as the intended policy.
 
+## Size ad containers with `min-height`, never `height`
+
+`adsbygoogle.js` walks up the DOM from its `<ins>` and stamps
+`height: auto !important` inline onto ancestor elements, so a responsive unit can
+size itself. A plain `height` on the rail was therefore wiped out at runtime and
+the box collapsed to ~40px — the height of the house ad's button — which is why
+the tall creative looked half-height on some screens. AdSense does not touch
+`min-height`, so `.tlt-rail` uses that.
+
+Two consequences worth remembering:
+
+- The element carrying the min-height must be a **flex container**, because
+  `height: 100%` on a child resolves against a min-height-only parent as `auto`
+  and collapses. Children use `self-stretch` instead of `h-full`.
+- `.tlt-rail` sits on the wrapper inside `Ads.tsx`, not on the `<aside>` in the
+  page, so the sizing element is one this component fully controls.
+
+The height is `clamp(300px, calc(100vh - 7rem), 600px)`: the standard 600px
+skyscraper when it fits under the sticky 64px header, shrinking smoothly on short
+screens. It replaced a hard `@media (max-height:760px)` step that was far too
+blunt — a 1080p display at 150% Windows scaling reports a ~633px viewport, so
+ordinary desktops fell off the cliff to 300px.
+
+## Ads are placed automatically when an article has no tags
+
+Authors can position in-article units with `{insert_ad_1}` / `{insert_ad_2}`.
+Where a post contains neither, `Post.tsx` inserts them itself, so every article
+carries in-content ads:
+
+- The body is split on blank lines into blocks.
+- Insertion points prefer the break directly above a markdown heading — the most
+  natural pause in an article — falling back to a paragraph boundary in posts
+  with no headings.
+- Posts of 30+ blocks get two units (at roughly 33% and 66%); shorter ones get a
+  single mid-article unit; posts under 6 blocks get none.
+- Ads are kept at least 4 blocks apart, and never in the first 3 or last 2 blocks.
+
+Authored tags always win: if a post contains even one, its placement is used
+verbatim and nothing is added.
+
 ## Never name your own elements `ad-*`
 
 The side rails were originally given the class `ad-rail`. That name is matched by
@@ -137,11 +195,11 @@ the content pinned to the left edge.
 1. Unset `VITE_ADS_ENABLED` (both services) and `ADS_ENABLED`. This alone
    restores previous behaviour; the rest is cleanup.
 2. Delete these files:
-   - `client/src/lib/cmp.ts`
    - `client/public/ads.txt`, `blog/public/ads.txt`
    - `blog/src/lib/cmp.ts`, `blog/src/lib/adSlots.ts`
    - `blog/src/components/AdSenseUnit.tsx`
    - `blog/src/components/ConsentFallbackBanner.tsx`
+   - the "Настройки за реклами" button in `blog/src/components/Layout.tsx`
 3. Replace the body of `blog/src/components/Ads.tsx` with:
    ```ts
    export { HouseAd as Ad1, HouseAd as Ad2 } from "./HouseAd";

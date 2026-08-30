@@ -53,38 +53,84 @@ export default function Post() {
     );
   }
 
+  // One chunk of post body — admin-authored HTML or markdown.
+  const renderBody = (part: string, key: React.Key) => {
+    const isHtml = /<[a-z][\s\S]*>/i.test(part);
+    if (isHtml) {
+      // Sanitize before injecting: blog HTML is admin-authored, but defense in
+      // depth means we never render raw HTML straight from the DB.
+      const clean = DOMPurify.sanitize(part);
+      return <div key={key} dangerouslySetInnerHTML={{ __html: clean }} />;
+    }
+    return <Markdown key={key}>{part}</Markdown>;
+  };
+
+  // ADSENSE: in-article units render at every breakpoint (in-content is the
+  // strongest AdSense placement). The wrapper reserves its height so neither the
+  // ad filling in nor a fallback swap moves the surrounding text.
+  const inArticleAd = (key: React.Key, n: number) => (
+    <div key={key} className="my-8 block not-prose">
+      {n % 2 === 0 ? <Ad2 placement="in-article" /> : <Ad1 placement="in-article" />}
+    </div>
+  );
+
+  // ADSENSE: where to drop ads in a post whose author never added {insert_ad_N}.
+  // Returns block indices to insert *before*. Prefers the break just above a
+  // markdown heading — the most natural pause in an article — and falls back to
+  // a plain paragraph boundary when a post has no headings.
+  const autoAdBoundaries = (blocks: string[]): number[] => {
+    const n = blocks.length;
+    if (n < 6) return []; // too short to interrupt
+    const first = 3; // never right under the intro
+    const last = n - 2; // nor among the closing lines
+    if (last <= first) return [];
+
+    const headings = blocks
+      .map((_, i) => i)
+      .filter((i) => i >= first && i <= last && /^#{1,6}\s/.test(blocks[i].trim()));
+
+    // Long reads get two units, shorter ones a single mid-article slot.
+    const targets =
+      n >= 30 ? [Math.round(n * 0.33), Math.round(n * 0.66)] : [Math.round(n * 0.5)];
+
+    const chosen: number[] = [];
+    for (const target of targets) {
+      const clamped = Math.min(Math.max(target, first), last);
+      const nearestHeading = headings
+        .filter((i) => !chosen.some((c) => Math.abs(c - i) < 4))
+        .sort((a, b) => Math.abs(a - clamped) - Math.abs(b - clamped))[0];
+      const pick = nearestHeading ?? clamped;
+      // Keep ads well apart so two never land in the same screenful.
+      if (!chosen.some((c) => Math.abs(c - pick) < 4)) chosen.push(pick);
+    }
+    return chosen.sort((a, b) => a - b);
+  };
+
   const renderContentWithAds = (content: string) => {
-    const parts = content.split(/(\{insert_ad_1\}|\{insert_ad_2\})/g);
+    // Authored slots win: if the writer placed {insert_ad_N} themselves, respect
+    // exactly where they put them and add nothing else.
+    if (/\{insert_ad_[12]\}/.test(content)) {
+      return content.split(/(\{insert_ad_1\}|\{insert_ad_2\})/g).map((part, index) => {
+        if (part === "{insert_ad_1}") return inArticleAd(index, 1);
+        if (part === "{insert_ad_2}") return inArticleAd(index, 2);
+        return renderBody(part, index);
+      });
+    }
 
-    return parts.map((part, index) => {
-      // ADSENSE: in-article units render at every breakpoint (in-content is the strongest
-      // AdSense placement). The wrapper reserves its height so neither the ad
-      // filling in nor a fallback swap moves the surrounding text.
-      if (part === "{insert_ad_1}") {
-        return (
-          <div key={index} className="my-8 block not-prose">
-            <Ad1 placement="in-article" />
-          </div>
-        );
-      }
-      if (part === "{insert_ad_2}") {
-        return (
-          <div key={index} className="my-8 block not-prose">
-            <Ad2 placement="in-article" />
-          </div>
-        );
-      }
+    // No authored slots — place them automatically so every article carries ads.
+    const blocks = content.split(/\n\s*\n/);
+    const boundaries = autoAdBoundaries(blocks);
+    if (boundaries.length === 0) return [renderBody(content, "body")];
 
-      const isHtml = /<[a-z][\s\S]*>/i.test(part);
-      if (isHtml) {
-        // Sanitize before injecting: blog HTML is admin-authored, but defense in
-        // depth means we never render raw HTML straight from the DB.
-        const clean = DOMPurify.sanitize(part);
-        return <div key={index} dangerouslySetInnerHTML={{ __html: clean }} />;
-      }
-
-      return <Markdown key={index}>{part}</Markdown>;
+    const out: React.ReactNode[] = [];
+    let cursor = 0;
+    boundaries.forEach((boundary, i) => {
+      out.push(renderBody(blocks.slice(cursor, boundary).join("\n\n"), `chunk-${i}`));
+      out.push(inArticleAd(`auto-ad-${i}`, i + 1));
+      cursor = boundary;
     });
+    out.push(renderBody(blocks.slice(cursor).join("\n\n"), "chunk-last"));
+    return out;
   };
 
   return (
@@ -93,7 +139,7 @@ export default function Post() {
       <div className="w-full px-4 xl:px-8 mt-8 flex items-start justify-center gap-8">
         
         {/* ADSENSE: Left Ad Banner (.tlt-rail sets the height) */}
-        <aside className="hidden lg:block w-[160px] 2xl:w-[300px] sticky top-24 shrink-0 tlt-rail">
+        <aside className="hidden lg:block w-[160px] 2xl:w-[300px] sticky top-24 shrink-0">
           <Ad1 placement="sidebar" />
         </aside>
 
@@ -211,7 +257,7 @@ export default function Post() {
         </article>
 
         {/* ADSENSE: Right Ad Banner (.tlt-rail sets the height) */}
-        <aside className="hidden lg:block w-[160px] 2xl:w-[300px] sticky top-24 shrink-0 tlt-rail">
+        <aside className="hidden lg:block w-[160px] 2xl:w-[300px] sticky top-24 shrink-0">
           <Ad2 placement="sidebar" />
         </aside>
         

@@ -10,9 +10,6 @@ import { LanguageProvider, useLanguage } from "@/contexts/LanguageContext";
 
 // Privacy / legal pages (lazy-free: small static components)
 import { ConsentBanner } from "./components/ConsentBanner";
-// ADSENSE: consent moves to Google's CMP when ads are on. Remove this import
-// and restore the bare <ConsentBanner /> below to undo.
-import { useCmpState, ADS_ENABLED } from "./lib/cmp";
 import PrivacyPolicy from "./pages/legal/PrivacyPolicy";
 import TermsOfService from "./pages/legal/TermsOfService";
 import CookiePolicy from "./pages/legal/CookiePolicy";
@@ -1032,12 +1029,6 @@ function usePageViews() {
 // links like /privacy work. The consent UI is global (shows on every page).
 function App() {
   usePageViews();
-  // ADSENSE: with ads enabled, Google's CMP is the consent surface. Our own
-  // banner stands in only when the CMP is blocked (uBlock/Brave block
-  // fundingchoicesmessages.google.com by default) — otherwise those visitors
-  // would get no prompt at all and no way to opt in.
-  const cmpState = useCmpState();
-  const showOwnBanner = !ADS_ENABLED || cmpState === "unavailable";
   return (
     <LanguageProvider>
       <Switch>
@@ -1048,7 +1039,7 @@ function App() {
         {/* No path = default: the map application */}
         <Route component={AppContent} />
       </Switch>
-      {showOwnBanner && <ConsentBanner />}
+      <ConsentBanner />
     </LanguageProvider>
   );
 }

@@ -19,19 +19,27 @@
    ".ad-rail" here was matched by a filter rule applying
    "position:absolute !important", which tore both rails out of the flex row and
    dumped the article flush-left. Keep this name project-specific.
-   The rail sits at top: 6rem (top-24), so a 600px unit needs a ~700px tall
-   viewport. On shorter laptop screens serve a 300px unit instead — an ad that
-   can never be scrolled fully into view earns nothing and risks a viewability
-   policy flag. Shrink it rather than clipping it: AdSense does not allow
-   creatives to be cropped, so max-height is not an option here. */
-.tlt-rail {
-  height: 600px;
-}
 
-@media (max-height: 760px) {
-  .tlt-rail {
-    height: 300px;
-  }
+   Height: 600px (the standard skyscraper / half-page unit) whenever it fits
+   under the sticky 64px header, otherwise as tall as the viewport allows.
+   The rail is offset by top-24 (96px), so reserving 7rem leaves a 16px gap at
+   the bottom and the unit is always fully scrollable into view — an ad that
+   can never be seen in full earns nothing and risks a viewability flag.
+
+   This used to be a hard "@media (max-height:760px) { height:300px }" step,
+   which was far too blunt: a 1080p screen at 150% Windows scaling reports a
+   ~633px viewport, so ordinary desktops fell off the cliff and rendered the
+   tall creative at half height. clamp() degrades smoothly instead.
+
+   MIN-height, not height, and deliberately so: adsbygoogle.js walks up from its
+   <ins> and stamps "height: auto !important" inline on ancestor elements so a
+   responsive unit can size itself. That silently collapsed this rail to ~40px
+   (the height of the house ad's button) on short viewports. It does not touch
+   min-height, so the box survives. The element carrying this class is also a
+   flex container, so its child stretches to fill — height:100% on a child would
+   collapse against a min-height-only parent. */
+.tlt-rail {
+  min-height: clamp(300px, calc(100vh - 7rem), 600px);
 }
 
 ::-webkit-scrollbar {

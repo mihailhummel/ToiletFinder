@@ -21,9 +21,8 @@ interface AdProps {
 // box is what keeps the layout from shifting: it is identical whether the slot
 // ends up holding a real ad, the house ad, or nothing yet.
 const PLACEMENTS = {
-  // Sticky desktop side rails. The <aside> supplies the height (see .tlt-rail in
-  // index.css, which drops to 300px on short viewports), so the box is definite
-  // and h-full resolves against it.
+  // Sticky desktop side rails. The wrapper carries .tlt-rail, which sets a
+  // min-height (see index.css for why min- and not plain height).
   sidebar: {
     slot: AD_SLOTS.sidebar,
     // "auto", matching how the unit was created in AdSense (responsive display).
@@ -34,9 +33,11 @@ const PLACEMENTS = {
     layout: undefined,
     responsive: true,
     style: undefined,
-    wrapper: "w-full h-full flex",
-    unit: "w-full h-full",
-    fallback: "w-full h-full",
+    // .tlt-rail carries the min-height (see index.css) — it lives here rather
+    // than on the <aside> so the sizing element is one we fully control.
+    wrapper: "w-full flex tlt-rail",
+    unit: "w-full self-stretch",
+    fallback: "w-full self-stretch",
   },
   // {insert_ad_1} / {insert_ad_2} inside the article body. Fluid in-article is
   // the best-performing format but also the least predictable in height, hence

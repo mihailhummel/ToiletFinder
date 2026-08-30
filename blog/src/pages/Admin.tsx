@@ -449,7 +449,9 @@ export default function Admin() {
             <label className="block text-sm font-medium text-gray-700 flex justify-between">
               <span>Съдържание (Markdown) *</span>
               <span className="text-gray-500 text-xs">
-                Можете да добавяте реклами чрез въвеждане на {"{insert_ad_1}"} или {"{insert_ad_2}"}
+                Можете да добавяте реклами чрез въвеждане на {"{insert_ad_1}"} или {"{insert_ad_2}"}.
+                Ако не добавите нито един таг, рекламите се вмъкват автоматично — преди
+                подходящо заглавие, 1 за кратки и 2 за дълги статии.
               </span>
             </label>
             <div className="bg-white rounded-lg overflow-hidden border border-gray-300">

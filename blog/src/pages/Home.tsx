@@ -45,7 +45,7 @@ export default function Home() {
       <div className="w-full px-4 xl:px-8 mt-8 flex items-start justify-center gap-8">
         
         {/* ADSENSE: Left Ad Banner (.tlt-rail sets the height) */}
-        <aside className="hidden lg:block w-[160px] 2xl:w-[300px] sticky top-24 shrink-0 tlt-rail">
+        <aside className="hidden lg:block w-[160px] 2xl:w-[300px] sticky top-24 shrink-0">
           <Ad1 placement="sidebar" />
         </aside>
 
@@ -193,7 +193,7 @@ export default function Home() {
         </main>
 
         {/* ADSENSE: Right Ad Banner (.tlt-rail sets the height) */}
-        <aside className="hidden lg:block w-[160px] 2xl:w-[300px] sticky top-24 shrink-0 tlt-rail">
+        <aside className="hidden lg:block w-[160px] 2xl:w-[300px] sticky top-24 shrink-0">
           <Ad2 placement="sidebar" />
         </aside>
         

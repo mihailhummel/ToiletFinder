@@ -1,11 +1,15 @@
 // ADSENSE: Google Funding Choices CMP adapter for the blog. Delete this file and
 // the initCmp() call in main.tsx to remove it.
 //
-// The blog is served same-origin at /blog, so it shares the main app's consent
-// record in localStorage under "toaletna-cookie-consent". Until now only the
-// main app could ever write that key, which meant a visitor arriving straight
-// from Google onto a blog post had no consent surface at all — no prompt, and
-// therefore no analytics, forever. Loading the CMP here fixes that.
+// Consent is split by surface, deliberately:
+//   toaletna.com        -> the site's own cookie banner (analytics only). The
+//                          map app carries no ads, so it needs no ad consent
+//                          and never loads this file.
+//   toaletna.com/blog   -> Google's CMP, which is what the ads require.
+// The blog is served same-origin at /blog, so both write the same
+// localStorage record ("toaletna-cookie-consent") and a decision made on either
+// surface satisfies analytics on both. Google's own TCF string, stored
+// separately by the CMP, is what governs ad personalisation.
 //
 // Mechanism note: this is IAB TCF gating, NOT Google Consent Mode v2. We read
 // the TCF signal and decide whether analytics may run. We deliberately do not
@@ -20,8 +24,12 @@ export const CMP_STATE_EVENT = "toaletna-cmp-state";
 
 export type CmpState = "pending" | "ready" | "unavailable";
 
-// How long to wait for the CMP to appear before assuming it was blocked.
+// How long to wait before assuming the CMP was blocked and showing our own
+// banner instead. We keep watching past this point (up to CMP_MAX_WAIT_MS) so a
+// merely slow CMP still takes over and hides the fallback, rather than leaving
+// the reader looking at two consent banners at once.
 const CMP_TIMEOUT_MS = 5000;
+const CMP_MAX_WAIT_MS = 30000;
 
 let state: CmpState = "pending";
 let started = false;
@@ -113,25 +121,40 @@ export function initCmp(): void {
   // __tcfapi only exists once the CMP has booted, so poll for it. Fail closed:
   // if it never shows up (ad blocker), analytics stays off and the consent UI
   // falls back to the site's own banner.
-  const deadline = Date.now() + CMP_TIMEOUT_MS;
+  const softDeadline = Date.now() + CMP_TIMEOUT_MS;
+  const hardDeadline = Date.now() + CMP_MAX_WAIT_MS;
   const poll = window.setInterval(() => {
     const tcfapi = (window as any).__tcfapi;
     if (typeof tcfapi === "function") {
       window.clearInterval(poll);
+      // onTcData flips state to "ready", which retracts the fallback banner if
+      // the soft deadline already put it on screen.
       tcfapi("addEventListener", 2, (tcData: any, success: boolean) => {
         if (success) onTcData(tcData);
       });
       return;
     }
-    if (Date.now() > deadline) {
-      window.clearInterval(poll);
-      setState("unavailable");
-    }
+    if (Date.now() > softDeadline) setState("unavailable");
+    if (Date.now() > hardDeadline) window.clearInterval(poll);
   }, 200);
+}
+
+// The kernel exposes the legacy `googlefc` alias as well as `__googlefc`; which
+// one carries showRevocationMessage has changed between versions, so try both.
+function revocationApi(): { showRevocationMessage: () => void } | null {
+  const w = window as any;
+  for (const candidate of [w.googlefc, w.__googlefc]) {
+    if (typeof candidate?.showRevocationMessage === "function") return candidate;
+  }
+  return null;
+}
+
+/** True once Google's CMP can reopen its dialog (drives the footer link). */
+export function canShowConsentUi(): boolean {
+  return revocationApi() !== null;
 }
 
 /** Reopen the CMP dialog so a visitor can change their mind. */
 export function showConsentUi(): void {
-  const googlefc = (window as any).googlefc;
-  if (googlefc?.showRevocationMessage) googlefc.showRevocationMessage();
+  revocationApi()?.showRevocationMessage();
 }

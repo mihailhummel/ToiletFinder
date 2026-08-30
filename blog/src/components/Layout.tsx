@@ -1,8 +1,29 @@
+import { useEffect, useState } from "react";
 import { Outlet, Link } from "react-router-dom";
 import { MapPin, LogIn, Mail, ArrowRight } from "lucide-react";
 import logoSrc from "../assets/blog-logo.png";
+// ADSENSE: lets readers reopen Google's consent dialog. The main site's
+// /cookie-settings page governs analytics only and cannot drive this, because
+// the CMP is loaded on the blog alone.
+import { canShowConsentUi, showConsentUi, CMP_STATE_EVENT } from "../lib/cmp";
 
 export default function Layout() {
+  // The link only appears once the CMP has actually loaded — offering it when
+  // Google's script is blocked would just be a dead button.
+  const [consentUiReady, setConsentUiReady] = useState(false);
+  useEffect(() => {
+    const check = () => setConsentUiReady(canShowConsentUi());
+    check();
+    window.addEventListener(CMP_STATE_EVENT, check);
+    const poll = window.setInterval(check, 1000);
+    const stop = window.setTimeout(() => window.clearInterval(poll), 15000);
+    return () => {
+      window.removeEventListener(CMP_STATE_EVENT, check);
+      window.clearInterval(poll);
+      window.clearTimeout(stop);
+    };
+  }, []);
+
   return (
     <div className="min-h-screen flex flex-col bg-gray-100 text-gray-900 font-sans">
       {/* Header */}
@@ -54,6 +75,16 @@ export default function Layout() {
             <div className="flex flex-col gap-4">
               <h3 className="text-lg font-bold text-white mb-2">Бързи Връзки:</h3>
               <Link to="/" className="hover:text-blue-400 transition-colors w-fit">Начало Блог</Link>
+              {/* ADSENSE */}
+              {consentUiReady && (
+                <button
+                  type="button"
+                  onClick={showConsentUi}
+                  className="text-left hover:text-blue-400 transition-colors w-fit"
+                >
+                  Настройки за реклами
+                </button>
+              )}
               {/* <Link to="/login" className="flex items-center gap-2 hover:text-blue-400 transition-colors w-fit">
                 <LogIn size={16} />
                 Вход за администратори
