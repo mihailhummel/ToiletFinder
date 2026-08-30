@@ -144,6 +144,17 @@ app.use(
     },
     crossOriginEmbedderPolicy: false,
     crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" },
+    // ADSENSE: helmet defaults to Referrer-Policy: no-referrer, which strips the
+    // Referer from every cross-origin request. Google identifies the publisher
+    // site from that header — with it empty, both the Funding Choices CMP and
+    // adsbygoogle.js answer 204 No Content, so no consent dialog and no ads.
+    // Sending the origin alone is enough (verified: origin-only Referer returns
+    // the full CMP payload, no Referer returns a stub). This is also the modern
+    // browser default and what client/public/_headers already documented as the
+    // intended policy.
+    referrerPolicy: {
+      policy: adsEnabled ? "strict-origin-when-cross-origin" : "no-referrer",
+    },
   })
 );
 

@@ -90,6 +90,29 @@ in-article unit `text-align:center` with **no** `data-full-width-responsive`
 Leave Auto ads **off** — they place units wherever they like and will break the
 sticky rail layout.
 
+## Referrer-Policy must not be `no-referrer`
+
+Google identifies the publisher site from the `Referer` header on the requests to
+`fundingchoicesmessages.google.com` and `pagead2.googlesyndication.com`. helmet
+defaults to `Referrer-Policy: no-referrer`, which strips it. With an empty
+Referer both endpoints answer **204 No Content** — the CMP never defines
+`__tcfapi`, no consent dialog appears, and no ad ever fills. Nothing errors and
+nothing is "blocked", so DevTools looks clean; the requests simply come back
+empty.
+
+Verified against the live publisher id:
+
+| Referer sent | Funding Choices response |
+|---|---|
+| none | 23 KB stub (204 in a browser context) |
+| `https://toaletna.com/` | 227 KB CMP kernel |
+| full post URL | 227 KB CMP kernel |
+
+The origin alone is enough, so `server/index.ts` sets
+`strict-origin-when-cross-origin` when `ADS_ENABLED` is on and keeps helmet's
+`no-referrer` when it is off. That is also the modern browser default and what
+`client/public/_headers` already documented as the intended policy.
+
 ## Never name your own elements `ad-*`
 
 The side rails were originally given the class `ad-rail`. That name is matched by
