@@ -10,6 +10,7 @@ import Admin from "./pages/Admin";
 // ADSENSE: consent plumbing. Remove these two imports and their uses below.
 import { hasAnalyticsConsent } from "./lib/cmp";
 import AnalyticsConsentBanner from "./components/AnalyticsConsentBanner";
+import ScrollToTop from "./components/ScrollToTop";
 
 const basePath = import.meta.env.VITE_BASE_PATH || "/blog";
 const gaMeasurementId = import.meta.env.VITE_GA_MEASUREMENT_ID;
@@ -76,6 +77,8 @@ export default function App() {
   return (
     <HelmetProvider>
       <BrowserRouter basename={basePath}>
+        {/* Must sit inside the router: every route change starts at the top. */}
+        <ScrollToTop />
         <AppRoutes />
         {/* ADSENSE: analytics consent. Google's CMP covers advertising separately. */}
         <AnalyticsConsentBanner />
