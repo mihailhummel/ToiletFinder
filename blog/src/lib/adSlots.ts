@@ -13,12 +13,8 @@ export const AD_CLIENT = "ca-pub-5144798032380350";
 export const AD_SLOTS = {
   /** "sidebar" — responsive display unit. Sticky desktop side rails. */
   sidebar: "3174863176",
-  /**
-   * In-article (fluid) unit for the {insert_ad_1} / {insert_ad_2} body slots.
-   * NOT CREATED YET — create an "In-article ad" unit (not a Display ad) in
-   * AdSense and paste its id here. Until then these slots show the house ad.
-   */
-  inArticle: "",
+  /** "In-article" — fluid in-article unit. The {insert_ad_1} / {insert_ad_2} body slots. */
+  inArticle: "6623153590",
   /** "Home Card" — responsive display unit. Blog home mobile slots. */
   homeCard: "3643540535",
 } as const;

@@ -90,10 +90,10 @@ export default function Post() {
   return (
     <div className="w-full min-h-screen pb-20">
       <PostSEO post={post} />
-      <div className="w-full px-4 xl:px-8 mt-8 flex items-start justify-between gap-8">
+      <div className="w-full px-4 xl:px-8 mt-8 flex items-start justify-center gap-8">
         
-        {/* ADSENSE: Left Ad Banner (.ad-rail sets the height) */}
-        <aside className="hidden lg:block w-[160px] 2xl:w-[300px] sticky top-24 shrink-0 ad-rail">
+        {/* ADSENSE: Left Ad Banner (.tlt-rail sets the height) */}
+        <aside className="hidden lg:block w-[160px] 2xl:w-[300px] sticky top-24 shrink-0 tlt-rail">
           <Ad1 placement="sidebar" />
         </aside>
 
@@ -210,8 +210,8 @@ export default function Post() {
           )}
         </article>
 
-        {/* ADSENSE: Right Ad Banner (.ad-rail sets the height) */}
-        <aside className="hidden lg:block w-[160px] 2xl:w-[300px] sticky top-24 shrink-0 ad-rail">
+        {/* ADSENSE: Right Ad Banner (.tlt-rail sets the height) */}
+        <aside className="hidden lg:block w-[160px] 2xl:w-[300px] sticky top-24 shrink-0 tlt-rail">
           <Ad2 placement="sidebar" />
         </aside>
         

@@ -12,17 +12,24 @@
 }
 
 /* ADSENSE: sticky side-rail sizing. Remove this block to drop AdSense.
+
+   The class is deliberately NOT named anything like "ad-rail"/"ad-*": public
+   ad-blocker cosmetic filter lists (EasyList & co.) match those, and Google's
+   own ad-block detection pulls that list onto the page for every visitor. A
+   ".ad-rail" here was matched by a filter rule applying
+   "position:absolute !important", which tore both rails out of the flex row and
+   dumped the article flush-left. Keep this name project-specific.
    The rail sits at top: 6rem (top-24), so a 600px unit needs a ~700px tall
    viewport. On shorter laptop screens serve a 300px unit instead — an ad that
    can never be scrolled fully into view earns nothing and risks a viewability
    policy flag. Shrink it rather than clipping it: AdSense does not allow
    creatives to be cropped, so max-height is not an option here. */
-.ad-rail {
+.tlt-rail {
   height: 600px;
 }
 
 @media (max-height: 760px) {
-  .ad-rail {
+  .tlt-rail {
     height: 300px;
   }
 }

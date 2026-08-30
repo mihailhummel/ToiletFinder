@@ -78,17 +78,36 @@ render the house ad**, which is why this ships before the units exist.
 | Key | Unit id | Placement | Format |
 |---|---|---|---|
 | `sidebar` | `3174863176` | Sticky desktop side rails on the blog home and posts | responsive display (`auto`) |
-| `inArticle` | *not created yet* | `{insert_ad_1}` / `{insert_ad_2}` tokens in post bodies | fluid, in-article |
+| `inArticle` | `6623153590` | `{insert_ad_1}` / `{insert_ad_2}` tokens in post bodies | fluid, in-article |
 | `homeCard` | `3643540535` | Blog home mobile slots | responsive display (`auto`) |
 
-`inArticle` needs an **In-article ad** unit (AdSense → Ads → By ad unit → In-article
-ad), not a Display ad — the format is `fluid` with `data-ad-layout="in-article"`,
-which a Display unit does not serve. Until it exists those two slots show the
-house ad. This is the highest-value placement of the three, so it is worth
-creating.
+All three units are created and wired. The component emits markup matching each
+unit's dashboard snippet exactly, including the differences between them:
+`data-full-width-responsive="true"` on the two display units, and on the
+in-article unit `text-align:center` with **no** `data-full-width-responsive`
+(which is what Google's generated fluid code omits).
 
 Leave Auto ads **off** — they place units wherever they like and will break the
 sticky rail layout.
+
+## Never name your own elements `ad-*`
+
+The side rails were originally given the class `ad-rail`. That name is matched by
+public ad-blocker cosmetic filter lists, and one of their rules applies
+`position: absolute !important` to it. That tore both rails out of the flex row,
+stacked them behind the article and dumped the content flush-left with no ads
+visible — on **every** visitor, not just ones running a blocker, because Google's
+own ad-block detection pulls that filter list onto the page.
+
+The rail class is now `tlt-rail`. When adding markup around ads, keep container
+class names project-specific and avoid `ad`, `ads`, `banner`, `sponsor` and
+similar. The one exception is `ins.adsbygoogle`, which Google requires and
+blockers will hide — that is exactly what the house-ad fallback exists for.
+
+Related: both blog rows use `justify-center`, not `justify-between`, so the
+article column stays centred whether or not the rails render. With
+`justify-between`, a hidden rail (ad blocker, or any viewport below `lg`) left
+the content pinned to the left edge.
 
 ## Full removal
 

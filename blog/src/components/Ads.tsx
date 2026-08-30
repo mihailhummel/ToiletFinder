@@ -21,7 +21,7 @@ interface AdProps {
 // box is what keeps the layout from shifting: it is identical whether the slot
 // ends up holding a real ad, the house ad, or nothing yet.
 const PLACEMENTS = {
-  // Sticky desktop side rails. The <aside> supplies the height (see .ad-rail in
+  // Sticky desktop side rails. The <aside> supplies the height (see .tlt-rail in
   // index.css, which drops to 300px on short viewports), so the box is definite
   // and h-full resolves against it.
   sidebar: {
@@ -32,6 +32,8 @@ const PLACEMENTS = {
     // the shape physically, so there is nothing to gain by narrowing it further.
     format: "auto",
     layout: undefined,
+    responsive: true,
+    style: undefined,
     wrapper: "w-full h-full flex",
     unit: "w-full h-full",
     fallback: "w-full h-full",
@@ -50,6 +52,10 @@ const PLACEMENTS = {
     slot: AD_SLOTS.inArticle,
     format: "fluid",
     layout: "in-article",
+    // Google's generated in-article snippet carries text-align:center and no
+    // data-full-width-responsive; match it rather than inventing our own.
+    responsive: undefined,
+    style: { textAlign: "center" as const },
     wrapper: "w-full min-h-[280px] flex",
     unit: "w-full",
     fallback: "w-full self-stretch",
@@ -62,6 +68,8 @@ const PLACEMENTS = {
     // "auto", matching the responsive display unit created in AdSense.
     format: "auto",
     layout: undefined,
+    responsive: true,
+    style: undefined,
     wrapper: "w-full flex",
     unit: "w-full h-full",
     fallback: "w-full h-full",
@@ -77,6 +85,8 @@ function Ad({ className = "", placement = "sidebar" }: AdProps) {
         slot={config.slot}
         format={config.format}
         layout={config.layout}
+        responsive={config.responsive}
+        style={config.style}
         className={config.unit}
         fallback={<HouseAd className={config.fallback} />}
       />

@@ -51,6 +51,10 @@ export interface AdSenseUnitProps {
   format?: string;
   /** e.g. 'in-article' — pairs with format="fluid". */
   layout?: string;
+  /**
+   * Emits data-full-width-responsive. Leave undefined to omit the attribute
+   * altogether, which is what Google's generated fluid/in-article code does.
+   */
   responsive?: boolean;
   className?: string;
   style?: CSSProperties;
@@ -62,7 +66,7 @@ export function AdSenseUnit({
   slot,
   format = "auto",
   layout,
-  responsive = true,
+  responsive,
   className = "",
   style,
   fallback,
@@ -137,7 +141,9 @@ export function AdSenseUnit({
       data-ad-slot={slot}
       data-ad-format={format}
       {...(layout ? { "data-ad-layout": layout } : {})}
-      data-full-width-responsive={responsive ? "true" : "false"}
+      {...(responsive === undefined
+        ? {}
+        : { "data-full-width-responsive": responsive ? "true" : "false" })}
     />
   );
 }
