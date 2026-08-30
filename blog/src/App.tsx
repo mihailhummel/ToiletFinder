@@ -9,15 +9,16 @@ import Login from "./pages/Login";
 import Admin from "./pages/Admin";
 // ADSENSE: consent plumbing. Remove these two imports and their uses below.
 import { hasAnalyticsConsent } from "./lib/cmp";
-import ConsentFallbackBanner from "./components/ConsentFallbackBanner";
+import AnalyticsConsentBanner from "./components/AnalyticsConsentBanner";
 
 const basePath = import.meta.env.VITE_BASE_PATH || "/blog";
 const gaMeasurementId = import.meta.env.VITE_GA_MEASUREMENT_ID;
 
 // The blog is served same-origin (/blog), so it shares the main app's cookie
 // consent decision in localStorage. Only load Google Analytics if the visitor
-// has accepted — otherwise no tracking (GDPR/ePrivacy hard-gate). The decision
-// now also arrives from Google's CMP (lib/cmp.ts), which is why this is
+// has accepted — otherwise no tracking (GDPR/ePrivacy hard-gate). That decision
+// comes from a cookie banner (this app's AnalyticsConsentBanner, or the map's),
+// never from Google's CMP, which covers advertising only. This is
 // re-evaluated on CONSENT_EVENT rather than read once at module load: on a first
 // visit the CMP resolves *after* this module is imported, so a module-scope
 // check would leave analytics off for the whole session.
@@ -76,8 +77,8 @@ export default function App() {
     <HelmetProvider>
       <BrowserRouter basename={basePath}>
         <AppRoutes />
-        {/* ADSENSE: only renders if Google's CMP is blocked. */}
-        <ConsentFallbackBanner />
+        {/* ADSENSE: analytics consent. Google's CMP covers advertising separately. */}
+        <AnalyticsConsentBanner />
       </BrowserRouter>
     </HelmetProvider>
   );

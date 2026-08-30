@@ -1,15 +1,17 @@
 // ADSENSE: Google Funding Choices CMP adapter for the blog. Delete this file and
 // the initCmp() call in main.tsx to remove it.
 //
-// Consent is split by surface, deliberately:
-//   toaletna.com        -> the site's own cookie banner (analytics only). The
-//                          map app carries no ads, so it needs no ad consent
-//                          and never loads this file.
-//   toaletna.com/blog   -> Google's CMP, which is what the ads require.
-// The blog is served same-origin at /blog, so both write the same
-// localStorage record ("toaletna-cookie-consent") and a decision made on either
-// surface satisfies analytics on both. Google's own TCF string, stored
-// separately by the CMP, is what governs ad personalisation.
+// Consent is split by PURPOSE, and each purpose is asked for where it is
+// actually disclosed:
+//   advertising -> Google's CMP, loaded on /blog only (the map serves no ads).
+//                  Its TCF string is the record; this file never writes ours.
+//   analytics   -> the site's own cookie banner, which is the only surface that
+//                  discloses Google Analytics. It writes the shared
+//                  "toaletna-cookie-consent" record, and because /blog is
+//                  same-origin the blog honours that same decision.
+//
+// The two never substitute for one another. A visitor who only ever answered
+// Google's ad message has given no analytics consent, so GA stays off for them.
 //
 // Mechanism note: this is IAB TCF gating, NOT Google Consent Mode v2. We read
 // the TCF signal and decide whether analytics may run. We deliberately do not
@@ -40,10 +42,23 @@ export function getCmpState(): CmpState {
 
 export const ADS_ENABLED = import.meta.env.VITE_ADS_ENABLED === "true";
 
+// Whether Google's own dialog is on screen right now. We use this to avoid
+// stacking our analytics banner on top of it.
+let cmpUiShown = false;
+
+export function isCmpUiShown(): boolean {
+  return cmpUiShown;
+}
+
+// Always emit, even when `state` is unchanged: a cmpuishown -> useractioncomplete
+// transition matters to listeners even though both end up "ready".
+function emitState() {
+  window.dispatchEvent(new CustomEvent(CMP_STATE_EVENT, { detail: { state, cmpUiShown } }));
+}
+
 function setState(next: CmpState) {
-  if (state === next) return;
   state = next;
-  window.dispatchEvent(new CustomEvent(CMP_STATE_EVENT, { detail: next }));
+  emitState();
 }
 
 /** Write the shared consent record and notify listeners (same shape the main app uses). */
@@ -57,6 +72,41 @@ export function recordConsent(status: "accepted" | "rejected"): void {
     /* storage unavailable — analytics simply won't run */
   }
   window.dispatchEvent(new CustomEvent("toaletna-consent-change", { detail: status }));
+}
+
+// Re-ask rejecters after this long, matching client/src/lib/consent.ts. Keep the
+// two in step: they read and write the same record.
+const REJECT_REPROMPT_DAYS = 180;
+
+/**
+ * Does this visitor still owe us an analytics decision? Mirrors the main app's
+ * needsConsentDecision(): no record, a record from an older policy version, or a
+ * rejection old enough to ask once more. An existing answer — accept OR reject,
+ * given on the map or on a previous blog visit — means we do not ask again.
+ */
+export function needsAnalyticsDecision(): boolean {
+  try {
+    const raw = localStorage.getItem(CONSENT_KEY);
+    if (!raw) return true;
+    const c = JSON.parse(raw);
+    if (c?.status !== "accepted" && c?.status !== "rejected") return true;
+    if ((c?.version ?? 0) < CONSENT_VERSION) return true;
+    if (c.status === "rejected") {
+      const ageMs = Date.now() - new Date(c.timestamp).getTime();
+      if (Number.isFinite(ageMs) && ageMs > REJECT_REPROMPT_DAYS * 24 * 60 * 60 * 1000) return true;
+    }
+    return false;
+  } catch {
+    return true;
+  }
+}
+
+/** Fired when the footer link asks to reopen our analytics banner. */
+export const OPEN_ANALYTICS_CONSENT_EVENT = "toaletna-open-analytics-consent";
+
+/** Let a reader revisit the analytics decision from the blog (Art. 7(3) withdrawal). */
+export function openAnalyticsConsent(): void {
+  window.dispatchEvent(new CustomEvent(OPEN_ANALYTICS_CONSENT_EVENT));
 }
 
 export function hasAnalyticsConsent(): boolean {
@@ -89,20 +139,36 @@ function signalGooglefcPresent(): void {
 function onTcData(tcData: any): void {
   if (!tcData) return;
 
-  // Outside the EEA/UK the CMP does not gather consent and none is required.
+  // NOTE: we deliberately do NOT derive analytics consent from the TCF signal.
+  //
+  // The TC string does not carry analytics consent. Google Analytics is not a
+  // TCF vendor; GA4 obeys Consent Mode's `analytics_storage`, which the TCF
+  // string does not cover. Mapping TCF Purpose 1 ("store and/or access
+  // information on a device") onto "GA may run" would be inventing a consent
+  // the reader never gave: Google's message describes advertising, and consent
+  // must be specific and informed per PURPOSE (EDPB Guidelines 05/2020).
+  //
+  // So this adapter now governs advertising only. Analytics consent comes from
+  // the site's own banner, which is where analytics is actually disclosed. A
+  // reader who has never seen that banner simply gets no analytics — fail-closed
+  // and lawful, at the cost of some blog pageview data.
   if (tcData.gdprApplies === false) {
+    cmpUiShown = false;
     setState("ready");
-    recordConsent("accepted");
+    return;
+  }
+
+  // Google is showing its message right now — hold our analytics banner back.
+  if (tcData.eventStatus === "cmpuishown") {
+    cmpUiShown = true;
+    emitState();
     return;
   }
 
   if (tcData.eventStatus !== "tcloaded" && tcData.eventStatus !== "useractioncomplete") return;
 
+  cmpUiShown = false;
   setState("ready");
-  // Purpose 1 = "Store and/or access information on a device" — the ePrivacy
-  // cookie purpose, which is what gates analytics storage.
-  const purpose1 = tcData.purpose?.consents?.[1] === true;
-  recordConsent(purpose1 ? "accepted" : "rejected");
 }
 
 export function initCmp(): void {

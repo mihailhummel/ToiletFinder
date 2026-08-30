@@ -2,6 +2,7 @@
 // whenever a real ad cannot be shown. Delete this file to remove AdSense.
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { AD_CLIENT, ADS_ENABLED } from "../lib/adSlots";
+import { CMP_STATE_EVENT, getCmpState } from "../lib/cmp";
 
 declare global {
   interface Window {
@@ -75,7 +76,29 @@ export function AdSenseUnit({
   const pushedRef = useRef(false);
   const [status, setStatus] = useState<FillStatus>("pending");
 
-  const disabled = !ADS_ENABLED || !slot;
+  // Serve only once Google's CMP has produced a consent decision ("ready" means
+  // a TC string exists, or GDPR does not apply here). Two reasons:
+  //
+  //  - While still "pending" we would be requesting ads before any decision
+  //    exists. Google gates personalisation on the TC string anyway, but not
+  //    asking at all until we have one is the defensible order.
+  //  - "unavailable" means the CMP never loaded. Without a certified CMP signal
+  //    EEA traffic is only eligible for non-personalised ads, and those still
+  //    set cookies for frequency capping and reporting — consent we would not
+  //    have. Only "limited ads" are cookieless, and that mode cannot be
+  //    guaranteed without the CMP.
+  //
+  // Both cases fall back to the house ad, which costs nothing real: anything
+  // blocking the CMP almost certainly blocks the ad script too.
+  const [cmpState, setCmpState] = useState(getCmpState);
+  useEffect(() => {
+    const onChange = () => setCmpState(getCmpState());
+    onChange();
+    window.addEventListener(CMP_STATE_EVENT, onChange);
+    return () => window.removeEventListener(CMP_STATE_EVENT, onChange);
+  }, []);
+
+  const disabled = !ADS_ENABLED || !slot || cmpState !== "ready";
 
   useEffect(() => {
     if (disabled) return;

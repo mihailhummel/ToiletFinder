@@ -5,7 +5,12 @@ import logoSrc from "../assets/blog-logo.png";
 // ADSENSE: lets readers reopen Google's consent dialog. The main site's
 // /cookie-settings page governs analytics only and cannot drive this, because
 // the CMP is loaded on the blog alone.
-import { canShowConsentUi, showConsentUi, CMP_STATE_EVENT } from "../lib/cmp";
+import {
+  canShowConsentUi,
+  showConsentUi,
+  openAnalyticsConsent,
+  CMP_STATE_EVENT,
+} from "../lib/cmp";
 
 export default function Layout() {
   // The link only appears once the CMP has actually loaded — offering it when
@@ -75,7 +80,8 @@ export default function Layout() {
             <div className="flex flex-col gap-4">
               <h3 className="text-lg font-bold text-white mb-2">Бързи Връзки:</h3>
               <Link to="/" className="hover:text-blue-400 transition-colors w-fit">Начало Блог</Link>
-              {/* ADSENSE */}
+              {/* ADSENSE: one entry point per consent purpose, so either decision
+                  can be revisited from the blog (GDPR Art. 7(3)). */}
               {consentUiReady && (
                 <button
                   type="button"
@@ -85,6 +91,13 @@ export default function Layout() {
                   Настройки за реклами
                 </button>
               )}
+              <button
+                type="button"
+                onClick={openAnalyticsConsent}
+                className="text-left hover:text-blue-400 transition-colors w-fit"
+              >
+                Настройки за бисквитки
+              </button>
               {/* <Link to="/login" className="flex items-center gap-2 hover:text-blue-400 transition-colors w-fit">
                 <LogIn size={16} />
                 Вход за администратори

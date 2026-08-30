@@ -1,35 +1,59 @@
-// ADSENSE: fallback consent banner, shown ONLY when Google's CMP fails to load.
+// ADSENSE: the blog's Google Analytics consent banner.
 //
-// fundingchoicesmessages.google.com is on uBlock Origin's and Brave's default
-// blocklists. Without this, those visitors would get no consent prompt at all
-// and no way to opt into analytics — worse than before the CMP was introduced.
-// Delete this file (and its use in App.tsx) along with lib/cmp.ts.
+// Purpose split (see lib/cmp.ts): Google's CMP asks about ADVERTISING, this asks
+// about ANALYTICS. Google's message says nothing about Google Analytics, so it
+// cannot stand in for this one — consent must be specific and informed per
+// purpose. Both write/read the same site-wide record, so whichever surface the
+// reader answers on, they are not asked twice.
+//
+// It appears when a decision is still owed, which is the correct trigger — NOT
+// how the reader arrived. Someone who came from the map may have rejected, or
+// never answered at all; someone arriving from search may have decided on a
+// previous visit. Only the stored record knows.
+//
+// It deliberately waits for Google's dialog to close before appearing, so the
+// reader is never faced with two consent prompts stacked on top of each other.
 import { useEffect, useState } from "react";
-import { CMP_STATE_EVENT, getCmpState, recordConsent, ADS_ENABLED } from "../lib/cmp";
+import {
+  ADS_ENABLED,
+  CMP_STATE_EVENT,
+  OPEN_ANALYTICS_CONSENT_EVENT,
+  getCmpState,
+  isCmpUiShown,
+  needsAnalyticsDecision,
+  recordConsent,
+} from "../lib/cmp";
 
-export function ConsentFallbackBanner() {
+export function AnalyticsConsentBanner() {
   const [visible, setVisible] = useState(false);
+  // Set by the footer link, which must be able to reopen this even for a reader
+  // who already decided (GDPR Art. 7(3): withdrawing must be as easy as giving).
+  const [forceOpen, setForceOpen] = useState(false);
 
   useEffect(() => {
-    if (!ADS_ENABLED) return;
-
     const evaluate = () => {
-      // Only stand in for the CMP when it is genuinely unavailable, and only if
-      // the visitor has not already decided (here or on the main site).
-      const undecided = !localStorage.getItem("toaletna-cookie-consent");
-      setVisible(getCmpState() === "unavailable" && undecided);
+      // With ads off the CMP never runs, so there is nothing to wait for.
+      const cmpSettled = !ADS_ENABLED || getCmpState() !== "pending";
+      setVisible(cmpSettled && !isCmpUiShown() && needsAnalyticsDecision());
     };
+
+    const open = () => setForceOpen(true);
 
     evaluate();
     window.addEventListener(CMP_STATE_EVENT, evaluate);
-    return () => window.removeEventListener(CMP_STATE_EVENT, evaluate);
+    window.addEventListener(OPEN_ANALYTICS_CONSENT_EVENT, open);
+    return () => {
+      window.removeEventListener(CMP_STATE_EVENT, evaluate);
+      window.removeEventListener(OPEN_ANALYTICS_CONSENT_EVENT, open);
+    };
   }, []);
 
-  if (!visible) return null;
+  if (!visible && !forceOpen) return null;
 
   const decide = (status: "accepted" | "rejected") => {
     recordConsent(status);
     setVisible(false);
+    setForceOpen(false);
   };
 
   return (
@@ -41,11 +65,29 @@ export function ConsentFallbackBanner() {
     >
       <div className="pointer-events-auto mx-auto max-w-3xl bg-white rounded-2xl shadow-2xl shadow-slate-900/20 border border-slate-200 p-4 sm:px-5 sm:py-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-5">
-          <p className="min-w-0 sm:flex-1 text-[13px] leading-relaxed text-slate-600">
-            Този сайт работи с бисквитки 🍪 (истинските са по-вкусни, знаем). Помагат ни да
-            разберем колко хора ни четат. Нищо страшно.
-          </p>
-          {/* Equal weight for both choices — refusing is as easy as accepting. */}
+          <div className="min-w-0 sm:flex-1">
+            <p className="text-[13px] leading-relaxed text-slate-600">
+              Този сайт работи с бисквитки 🍪 (истинските са по-вкусни, знаем). Аналитичните
+              бисквитки (Google Analytics) ни показват колко хора четат блога и ползват картата.
+              Този избор важи за целия toaletna.com.
+            </p>
+            <p className="mt-1.5 text-[12px] text-blue-600">
+              <a
+                href="https://toaletna.com/cookies"
+                className="font-semibold underline underline-offset-2 hover:text-blue-700"
+              >
+                Бисквитки
+              </a>
+              {" · "}
+              <a
+                href="https://toaletna.com/privacy"
+                className="font-semibold underline underline-offset-2 hover:text-blue-700"
+              >
+                Поверителност
+              </a>
+            </p>
+          </div>
+          {/* Both one-click and equally weighted — refusing is as easy as accepting. */}
           <div className="flex gap-2.5 sm:flex-shrink-0">
             <button
               type="button"
@@ -68,4 +110,4 @@ export function ConsentFallbackBanner() {
   );
 }
 
-export default ConsentFallbackBanner;
+export default AnalyticsConsentBanner;

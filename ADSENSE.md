@@ -54,7 +54,7 @@ Consent is split by surface, on purpose:
 | Surface | Consent UI | Covers |
 |---|---|---|
 | `toaletna.com` (map) | the site's own cookie banner (`ConsentBanner`) | Google Analytics only |
-| `toaletna.com/blog`, `/blog/*` | Google's Funding Choices CMP | advertising + analytics |
+| `toaletna.com/blog`, `/blog/*` | Google's Funding Choices CMP | advertising only |
 
 The map app carries no ad units, so it needs no ad consent and never loads the
 CMP — `client/src/lib/cmp.ts` does not exist, and `client/src/main.tsx` only
@@ -63,18 +63,40 @@ reopen the ad-consent dialog from the **"Настройки за реклами"
 footer, which only renders once the CMP is actually loaded so it is never a dead
 button.
 
-Both surfaces are same-origin, so they share the `toaletna-cookie-consent`
-record in localStorage: a decision made on either satisfies analytics on both,
-and a visitor who accepted on the map does not get the blog's fallback banner
-too. Ad personalisation is governed separately by Google's own TCF string.
+**The two never substitute for one another.** Consent must be specific and
+informed *per purpose* (EDPB Guidelines 05/2020) — not per page — so each purpose
+is asked for on the surface that actually discloses it:
 
-The blog's CMP adapter (`blog/src/lib/cmp.ts`) is **TCF gating, not Google
-Consent Mode v2**. It reads the TCF signal and decides whether analytics may run,
-deliberately not loading `gtag.js` before a decision, so there are no cookieless
-pings. Consent Mode v2 was rejected because it requires contacting Google before
-consent exists; what that gives up is conversion modelling, an advertiser feature
-irrelevant to a publisher. Ad serving is governed by TCF, so revenue is
-unaffected.
+- **Advertising** — Google's CMP, blog only. Its TCF string is the record.
+- **Analytics** — the site's own banner, the only place GA is disclosed. It
+  writes the shared `toaletna-cookie-consent` record, and since `/blog` is
+  same-origin the blog honours that same decision.
+
+The blog's CMP adapter deliberately does **not** write the analytics record from
+the TCF signal. The TC string does not carry analytics consent: GA is not a TCF
+vendor, and GA4 obeys Consent Mode's `analytics_storage`, which TCF does not
+cover. Treating TCF Purpose 1 ("store and/or access information on a device") as
+"GA may run" would manufacture a consent the reader never gave, since Google's
+message describes advertising.
+
+So the blog carries **both** prompts: Google's CMP for advertising, and
+`AnalyticsConsentBanner` for analytics. The analytics banner is shown when a
+decision is still owed — **never based on how the reader arrived**. Entry point
+is a broken proxy for consent: someone who came from the map may have rejected,
+or clicked through without answering at all, and someone arriving from search may
+have decided on an earlier visit. Only the stored record knows, so
+`needsAnalyticsDecision()` (which mirrors the map's `needsConsentDecision()`,
+including the 180-day re-ask for rejecters) is the trigger.
+
+The banner waits for Google's dialog to close before appearing — tracked via the
+TCF `cmpuishown` event status — so a reader is never shown two stacked prompts.
+
+Either decision can be revisited from the blog footer: **"Настройки за реклами"**
+reopens Google's dialog, **"Настройки за бисквитки"** reopens the analytics
+banner (GDPR Art. 7(3): withdrawal must be as easy as consent).
+
+The adapter is **TCF gating, not Google Consent Mode v2** — it never loads
+`gtag.js` before a decision, so there are no cookieless pings.
 
 `fundingchoicesmessages.google.com` is blocked by uBlock Origin and Brave. When
 the CMP fails to resolve within 5s the blog falls back to its own banner
@@ -82,10 +104,18 @@ the CMP fails to resolve within 5s the blog falls back to its own banner
 continues for 30s, so a merely slow CMP still takes over and retracts the
 fallback rather than leaving two banners on screen.
 
-Refusing consent does **not** hide ads: Google serves cookieless "limited ads"
-instead, which is real revenue. The house ad is only for genuinely-can't-serve
-cases. This depends on the "do not consent" behaviour configured in
-AdSense → Privacy & messaging.
+Refusing consent does **not** hide ads: Google serves cookieless **limited ads**,
+which is real revenue. Configure the "do not consent" path in AdSense → Privacy &
+messaging as *limited ads*, **not** non-personalised ads — the two are not
+interchangeable. Non-personalised ads still set cookies for frequency capping and
+reporting, so they need ePrivacy consent you would not have; limited ads disable
+everything requiring a local identifier. (An earlier version of this file
+conflated the two.)
+
+For the same reason `AdSenseUnit` refuses to serve at all when the CMP is
+unavailable, falling back to the house ad: without a certified CMP signal, EEA
+traffic is only eligible for non-personalised ads. That costs nothing real —
+anything blocking the CMP almost certainly blocks the ad script too.
 
 ## Slot configuration
 
@@ -198,8 +228,8 @@ the content pinned to the left edge.
    - `client/public/ads.txt`, `blog/public/ads.txt`
    - `blog/src/lib/cmp.ts`, `blog/src/lib/adSlots.ts`
    - `blog/src/components/AdSenseUnit.tsx`
-   - `blog/src/components/ConsentFallbackBanner.tsx`
-   - the "Настройки за реклами" button in `blog/src/components/Layout.tsx`
+   - `blog/src/components/AnalyticsConsentBanner.tsx`
+   - the two consent-settings buttons in `blog/src/components/Layout.tsx`
 3. Replace the body of `blog/src/components/Ads.tsx` with:
    ```ts
    export { HouseAd as Ad1, HouseAd as Ad2 } from "./HouseAd";
