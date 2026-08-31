@@ -18,10 +18,29 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { createClient } from '@supabase/supabase-js';
+import {
+  buildSitemap,
+  homepageHeadTags,
+  notFoundHeadTags,
+  patchShell,
+  postHeadTags,
+  postRootContent,
+  resolveImage,
+} from './seo.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DIST = path.join(__dirname, 'dist');
 const PORT = process.env.PORT || 3000;
+
+// Public URL shape, used to build canonicals and the sitemap. Must match how the
+// main app proxies us (toaletna.com/blog).
+const SITE_URL = (process.env.VITE_SITE_URL || 'https://toaletna.com').replace(/\/$/, '');
+const BASE_PATH = process.env.VITE_BASE_PATH || '/blog';
+const SEO = { siteUrl: SITE_URL, basePath: BASE_PATH };
+
+// Client-only SPA routes. They are real pages, not posts, and must not be
+// treated as missing articles — nor indexed.
+const CLIENT_ROUTES = new Set(['/login', '/admin']);
 
 const app = express();
 
@@ -147,12 +166,96 @@ app.post('/api/posts/flush', async (req, res) => {
   res.json({ flushed: true });
 });
 
+
+// ── Shared post lookups (used by both the JSON API and the SEO rendering) ─────
+//
+// Both return cached data where possible. They THROW on a backend failure and
+// return null only for "no such published post", so callers can tell a genuine
+// 404 apart from Supabase being down — the difference between correctly
+// de-indexing a dead URL and accidentally 404-ing the whole blog.
+
+async function getPostList() {
+  if (!supabase) throw new Error('Supabase not configured');
+  const cached = readCache('list');
+  if (cached) return cached;
+
+  const { data, error } = await supabase
+    .from('blog_posts')
+    .select(LIST_COLUMNS)
+    .eq('is_published', true)
+    .order('date', { ascending: false })
+    .limit(MAX_POSTS);
+
+  if (error) throw new Error(error.message);
+  writeCache('list', data);
+  return data;
+}
+
+async function getPost(slug) {
+  if (!supabase) throw new Error('Supabase not configured');
+  const key = `post:${slug}`;
+  const cached = readCache(key);
+  if (cached) return cached;
+
+  const { data, error } = await supabase
+    .from('blog_posts')
+    .select(`${LIST_COLUMNS},content`)
+    .eq('slug', slug)
+    .eq('is_published', true)
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  if (data) writeCache(key, data);
+  return data ?? null;
+}
+
+// The built shell still carrying <!-- SEO_HEAD -->. prerender.mjs writes it;
+// if prerender was skipped, vite's own index.html still has the marker.
+let shellCache = null;
+function getShell() {
+  if (shellCache) return shellCache;
+  for (const f of [path.join(DIST, '_shell.html'), path.join(DIST, 'index.html')]) {
+    if (fs.existsSync(f)) {
+      shellCache = fs.readFileSync(f, 'utf8');
+      return shellCache;
+    }
+  }
+  return '<!doctype html><html><head><!-- SEO_HEAD --></head><body><div id="root"></div></body></html>';
+}
+
+// ── sitemap.xml, generated per request from live data ─────────────────────────
+//
+// Must be registered BEFORE express.static, which would otherwise serve the
+// build-time dist/sitemap.xml. That stale file was half the reason new posts
+// went undiscovered: a post published between deploys simply was not listed.
+app.get('/sitemap.xml', async (_req, res) => {
+  try {
+    const posts = await getPostList();
+    res.type('application/xml');
+    res.set('Cache-Control', 'public, max-age=300, stale-while-revalidate=600');
+    return res.send(buildSitemap(posts, SEO));
+  } catch (err) {
+    console.error('[blog] dynamic sitemap failed:', err.message);
+    const built = path.join(DIST, 'sitemap.xml');
+    if (fs.existsSync(built)) return res.type('application/xml').sendFile(built);
+    return res.sendStatus(503);
+  }
+});
+
+// The pristine shell is an internal template, not a page. Never serve it: it
+// would be a title-less near-duplicate of every article.
+app.get('/_shell.html', (_req, res) => res.sendStatus(404));
+
 // 1. Real static assets (JS/CSS/images/sitemap.xml) with correct Content-Type.
 //    index:false so we control HTML resolution; redirect:false avoids surprise 301s.
 app.use(express.static(DIST, { redirect: false, index: false, maxAge: '1h' }));
 
-// 2. Clean-URL HTML resolution for everything else.
-app.get('*', (req, res) => {
+// 2. HTML resolution. Post pages are rendered HERE, per request, rather than
+//    served from build-time files — that is what lets a post published between
+//    deploys be indexed. A URL with no matching published post gets a 404 plus
+//    noindex, instead of the homepage shell it used to get (whose canonical
+//    pointed at /blog and so told Google to ignore the post entirely).
+app.get('*', async (req, res) => {
   let rel;
   try {
     rel = decodeURIComponent(req.path);
@@ -160,26 +263,50 @@ app.get('*', (req, res) => {
     return res.sendStatus(400); // malformed percent-encoding
   }
 
-  // Confine to DIST. normalize() collapses any `..`; the startsWith guard below
-  // rejects only paths that still resolve outside DIST — ordinary slugs
-  // (including non-ASCII ones) stay inside and must return 200.
-  const base = path.join(DIST, path.normalize(rel));
-  if (base !== DIST && !base.startsWith(DIST + path.sep)) {
-    return res.sendStatus(400); // path-traversal attempt
+  const shell = getShell();
+  const clean = rel.replace(/\/+$/, '') || '/';
+
+  // Homepage — the prerendered file already carries the right head tags.
+  if (clean === '/') {
+    const home = path.join(DIST, 'index.html');
+    if (fs.existsSync(home)) return res.sendFile(home);
+    return res.type('html').send(patchShell(shell, homepageHeadTags(SEO)));
   }
 
-  const candidates = [
-    path.join(base, 'index.html'),                  // dist/<slug>/index.html
-    base.endsWith('.html') ? base : base + '.html', // dist/<slug>.html
-  ];
-  for (const f of candidates) {
-    if (f.startsWith(DIST) && fs.existsSync(f) && fs.statSync(f).isFile()) {
-      return res.sendFile(f);
+  // Real SPA routes that are not articles. Served, but kept out of the index.
+  if (CLIENT_ROUTES.has(clean)) {
+    return res.type('html').send(patchShell(shell, notFoundHeadTags(SEO)));
+  }
+
+  // A post slug is a single path segment. Anything else (nested paths, control
+  // characters, traversal attempts) is not an article and must not reach the
+  // filesystem fallback below.
+  const slug = clean.slice(1);
+  const isSlug = slug.length > 0 && slug.length < 200 && !slug.includes('/');
+  if (isSlug) {
+    try {
+      const post = await getPost(slug);
+      if (post) {
+        res.set('Cache-Control', 'public, max-age=300, stale-while-revalidate=600');
+        const image = resolveImage(post.thumbnail, SEO);
+        return res
+          .type('html')
+          .send(patchShell(shell, postHeadTags(post, image, SEO), postRootContent(post)));
+      }
+    } catch (err) {
+      // Supabase unreachable. Do NOT 404 — that would de-index the whole blog
+      // over a transient outage. Fall back to whatever the build produced.
+      console.error(`[blog] render ${slug} failed:`, err.message);
+      // basename() strips any separator, so the slug cannot escape DIST
+      // regardless of what it contains.
+      const built = path.join(DIST, path.basename(slug), 'index.html');
+      if (built.startsWith(DIST + path.sep) && fs.existsSync(built)) return res.sendFile(built);
+      return res.sendFile(path.join(DIST, 'index.html'));
     }
   }
 
-  // SPA fallback for client-only routes (no prerendered file exists).
-  return res.sendFile(path.join(DIST, 'index.html'));
+  // No such published post.
+  return res.status(404).type('html').send(patchShell(shell, notFoundHeadTags(SEO)));
 });
 
 app.listen(PORT, () => console.log(`[blog] serving ${DIST} on :${PORT}`));
