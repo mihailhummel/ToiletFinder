@@ -1180,3 +1180,26 @@ button:active,
     transform: translateY(-20px);
   }
 }
+
+/* ── Header location picker (mobile) ─────────────────────────────────────────
+   This button replaces the static "Bulgaria" label under the title, so it has to
+   read as that label: same size, sitting tight under the heading.
+
+   The global mobile rules above force every button to min-height/min-width 48px
+   (!important) and font-size .9rem — a sensible touch-target default that turns
+   this one into a tall block and shoves it away from the title. Same opt-out the
+   language toggle uses, but selector-qualified with .app-header so it matches the
+   48px rule's specificity (0,2,1) and wins on source order at every viewport.
+
+   The touch target isn't lost: the component pads the button and cancels that
+   padding with an equal negative margin, so the hit area grows without the
+   layout box changing. */
+.app-header button.header-inline-btn {
+  min-height: 0 !important;
+  min-width: 0 !important;
+  height: auto !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  font-size: 0.75rem !important;
+  line-height: 1rem !important;
+}

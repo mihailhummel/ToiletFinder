@@ -197,6 +197,16 @@ interface Translations {
   'admin.searchPlaceholder': string;
   'admin.toiletNotFound': string;
   'admin.toiletFound': string;
+  'search.placeholder': string;
+  'search.groupToilets': string;
+  'search.groupPlaces': string;
+  'search.noResults': string;
+  'search.placesError': string;
+  'search.untitledToilet': string;
+  'search.clear': string;
+  'location.current': string;
+  'location.useCurrent': string;
+  'location.pickerTitle': string;
 
   // Confirmations & inline/notification feedback
   'confirm.deleteToilet.title': string;
@@ -284,7 +294,6 @@ interface Translations {
   'about.p1': string;
   'about.p2': string;
   'about.p3': string;
-  'about.p4': string;
 
   // Guides Modal
   'guides.title': string;
@@ -487,9 +496,19 @@ const translations: Record<Language, Translations> = {
     'language.bulgarian': 'Български',
 
     // Admin Search
-    'admin.searchPlaceholder': 'Search by Toilet ID...',
+    'admin.searchPlaceholder': 'Search a town, village or toilet ID...',
     'admin.toiletNotFound': 'Toilet not found',
     'admin.toiletFound': 'Toilet found!',
+    'search.placeholder': 'Search a town or village...',
+    'search.groupToilets': 'Toilets',
+    'search.groupPlaces': 'Places',
+    'search.noResults': 'Nothing found',
+    'search.placesError': 'Place search is unavailable right now',
+    'search.untitledToilet': 'Untitled toilet',
+    'search.clear': 'Clear search',
+    'location.current': 'Current Location',
+    'location.useCurrent': 'Use current location',
+    'location.pickerTitle': 'Choose a location',
 
     // Confirmations & inline/notification feedback
     'confirm.deleteToilet.title': 'Delete this toilet?',
@@ -576,8 +595,7 @@ const translations: Record<Language, Translations> = {
     'about.title': 'About Us',
     'about.p1': 'Our mission is to map out every accessible and clean restroom in the country, ensuring nobody ever has to compromise their comfort or dignity.',
     'about.p2': 'We believe access to sanitation is a fundamental human right. Together, we can build a comprehensive guide that helps locals and tourists alike find relief in a clean and safe environment.',
-    'about.p3': 'We are a group of developers, designers, and urban enthusiasts who grew tired of wondering where the nearest usable toilet is.',
-    'about.p4': 'What started as a weekend project has evolved into a growing community of contributors.',
+    'about.p3': 'The map is built and maintained by {studio}, an independent venture studio.',
 
     // Guides Modal
     'guides.title': 'Guides',
@@ -773,9 +791,19 @@ const translations: Record<Language, Translations> = {
     'language.bulgarian': 'Български',
 
     // Admin Search
-    'admin.searchPlaceholder': 'Търси по ID на тоалетна...',
+    'admin.searchPlaceholder': 'Търси град, село или ID на тоалетна...',
     'admin.toiletNotFound': 'Тоалетната не е намерена',
     'admin.toiletFound': 'Тоалетната е намерена!',
+    'search.placeholder': 'Търси град или село...',
+    'search.groupToilets': 'Тоалетни',
+    'search.groupPlaces': 'Места',
+    'search.noResults': 'Няма резултати',
+    'search.placesError': 'Търсенето на места е недостъпно в момента',
+    'search.untitledToilet': 'Тоалетна без име',
+    'search.clear': 'Изчисти търсенето',
+    'location.current': 'Локация',
+    'location.useCurrent': 'Настояща локация',
+    'location.pickerTitle': 'Избери локация',
 
     // Confirmations & inline/notification feedback
     'confirm.deleteToilet.title': 'Изтриване на тази тоалетна?',
@@ -862,8 +890,7 @@ const translations: Record<Language, Translations> = {
     'about.title': 'За Нас',
     'about.p1': 'Нашата мисия е да картографираме всяка достъпна и чиста тоалетна в страната, така че никой да не прави компромис с комфорта и достойнството си.',
     'about.p2': 'Вярваме, че достъпът до санитарни условия е основно човешко право. Заедно можем да изградим изчерпателен наръчник, който помага както на местните, така и на туристите да намерят облекчение в чиста и безопасна среда.',
-    'about.p3': 'Ние сме група от разработчици, дизайнери и градски ентусиасти, на които им омръзна да се чудят къде е най-близката използваема тоалетна.',
-    'about.p4': 'Това, което започна като проект през уикенда, се превърна в растяща общност от сътрудници.',
+    'about.p3': 'Картата се разработва и поддържа от {studio}, независимо венчър студио.',
 
     // Guides Modal
     'guides.title': 'Насоки',

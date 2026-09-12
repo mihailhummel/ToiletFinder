@@ -4,6 +4,8 @@ import { storage } from "./storage";
 import { insertToiletSchema, updateToiletSchema, insertReviewSchema, insertReportSchema, insertToiletReportSchema } from "@shared/schema";
 import { z } from "zod";
 import { auth } from "../firebase-admin-config.js";
+import rateLimit from "express-rate-limit";
+import { GeocoderBusyError, reverseGeocode, searchPlaces } from "./geocoding";
 
 // Calculate distance between two points in kilometers
 function calculateDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
@@ -140,6 +142,30 @@ async function requireAuth(
   }
 }
 
+// Resolve which town/village a pin sits in and store it on the row.
+//
+// Deliberately fire-and-forget: Nominatim allows 1 request/second, so a burst of
+// adds would queue behind each other and make the caller wait seconds for data it
+// does not need in the response. The row is already committed by the time this
+// runs; if the lookup fails, `city_resolved_at` stays NULL and the backfill script
+// picks the row up later. Never rejects.
+function resolveCityInBackground(toiletId: string, coordinates: { lat: number; lng: number }): void {
+  void (async () => {
+    try {
+      const { city, region } = await reverseGeocode(coordinates.lat, coordinates.lng);
+      if (!city && !region) return; // leave unresolved so the backfill retries
+      await storage.setToiletCity(toiletId, city, region);
+      // Patch the cached list so the new city is visible without waiting for the TTL.
+      await upsertToiletInCache(toiletId);
+    } catch (err) {
+      console.warn(
+        `⚠️ Could not resolve city for ${toiletId}:`,
+        err instanceof Error ? err.message : err
+      );
+    }
+  })();
+}
+
 function logDatabaseRequest(endpoint: string, details: string = '') {
   dbRequestCount++;
   const elapsed = Date.now() - lastResetTime;
@@ -160,6 +186,45 @@ function logDatabaseRequest(endpoint: string, details: string = '') {
 export async function registerRoutes(app: Express): Promise<Server> {
   // Clean cache periodically
   // No caching - direct database access
+
+  // Place search (towns, villages, streets) for the header search bar and the
+  // mobile location picker. Open to everyone, including signed-out visitors —
+  // finding a town is the app's core job and must not require an account.
+  //
+  // Geocoding is a shared, rate-limited upstream budget (see server/geocoding.ts),
+  // so the protection is layered rather than an auth check: this per-IP limiter,
+  // the queue-depth cap and response cache in geocoding.ts, the length bounds
+  // below, and a client-side debounce.
+  const geocodeLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    max: 60,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: "Too many search requests" },
+  });
+
+  app.get("/api/geocode/search", geocodeLimiter, async (req: Request, res: Response) => {
+    const q = String(req.query.q ?? "").trim();
+    if (q.length < 2) return res.json({ results: [] });
+    if (q.length > 120) return res.status(400).json({ error: "Query too long" });
+
+    try {
+      const results = await searchPlaces(q);
+      // Place names don't move, and the response depends on nothing but `q` — so
+      // let browsers and any shared cache keep it and spare us the repeat.
+      res.set("Cache-Control", "public, max-age=3600, stale-while-revalidate=86400");
+      res.json({ results });
+    } catch (error) {
+      // Saturated queue is a "try again in a moment", not an outage.
+      if (error instanceof GeocoderBusyError) {
+        res.set("Cache-Control", "no-store");
+        return res.status(503).json({ error: "Place search is busy, try again in a moment" });
+      }
+      console.error("Geocode search error:", error instanceof Error ? error.message : error);
+      res.set("Cache-Control", "no-store");
+      res.status(502).json({ error: "Place search is unavailable right now" });
+    }
+  });
 
   // Simple toilet routes - NO CACHING
   app.get("/api/toilets", async (req: Request, res: Response) => {
@@ -382,6 +447,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const id = await storage.createToilet(toilet);
       await upsertToiletInCache(id);
+      // Which settlement did this land in? Resolved out-of-band — see the helper.
+      resolveCityInBackground(id, toilet.coordinates);
       const response = { id, ...toilet };
       res.json(response);
     } catch (error) {
@@ -582,6 +649,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       await storage.updateToilet(id, updateData);
       await upsertToiletInCache(id);
+
+      // An admin relocating a pin can move it into a different town, so the stored
+      // settlement has to be re-resolved. Only when the coordinates actually changed.
+      const moved =
+        !!updateData.coordinates &&
+        (updateData.coordinates.lat !== toilet.coordinates.lat ||
+          updateData.coordinates.lng !== toilet.coordinates.lng);
+      if (moved) resolveCityInBackground(id, updateData.coordinates!);
 
       // Return the canonical row so the client can patch its map cache with what
       // was actually persisted. The rules above strip `coordinates`/`isDomestos`

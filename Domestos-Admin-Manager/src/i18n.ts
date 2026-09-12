@@ -33,6 +33,7 @@ export const t = {
   navUsers: 'Активни потребители',
   navDomestos: 'Domestos локации',
   navActivity: 'Активност',
+  navLocations: 'Всички локации',
 
   // KPI cards
   newLocations: 'Нови локации',
@@ -75,7 +76,7 @@ export const t = {
   domestosDesc:
     'Специалните локации със значка Domestos и как се представят. Класирани по претеглена оценка.',
   domestosBoardTitle: 'Класация',
-  domestosBoardDesc: 'Оценените Domestos локации — от най-добре представящата се надолу.',
+  domestosBoardDesc: 'Оценените Domestos локации - от най-добре представящата се надолу.',
   awaitingTitle: 'Локации без оценка',
   awaitingDesc: 'Отбелязани Domestos локации, които все още нямат оценки.',
   noDomestosTitle: 'Все още няма Domestos локации',
@@ -108,6 +109,47 @@ export const t = {
   explainTitle: 'Методология: как се определя класирането',
   explainToggleOpen: 'Скрий',
   explainToggleClosed: 'Покажи',
+
+  // Locations view
+  locationsTitle: 'Всички локации',
+  locationsDesc:
+    'Всички добавени локации в платформата, групирани по населеното място, в което се намират.',
+  locationsTotal: 'Локации',
+  locationsCities: 'Населени места',
+  locationsShowing: 'Показани',
+  locationsFilterCity: 'Населено място',
+  locationsAllCities: 'Всички места',
+  locationsSearchPlaceholder: 'Търси по име, ID или град…',
+  locationsUnknownCity: 'Неустановено място',
+  locationsUnknownHint:
+    'Тези локации са добавени в неопределено населено място.',
+  locationsRegions: 'Области',
+  locationsRegionsDesc:
+    'Всичките 28 области. Кликнете върху област, за да филтрирате списъка по-долу.',
+  locationsAllRegions: 'Всички области',
+  locationsRegionsStale:
+    'Сървърът все още връща данни в стария формат. Рестартирайте услугата (npm start / redeploy), за да се появи разбивката по области.',
+  locationsFilterRegion: 'Област',
+  locationsForeignTitle: 'Локации извън България',
+  locationsForeignHint:
+    'OSM импортът е подбрал тоалетни по правоъгълник около България, а той захваща части от Сърбия, Гърция, Турция и Румъния. Тези локации са реални, но не са в българска област.',
+  locationsShowForeign: 'Покажи ги',
+  locationsSortBy: 'Подреди по',
+  sortNewest: 'Най-нови',
+  sortOldest: 'Най-стари',
+  sortReviews: 'Най-много оценки',
+  sortRating: 'Най-висок рейтинг',
+  locationsColReviews: 'Рейтинг · оценки',
+  locationsOnlyDomestos: 'Само Domestos',
+  locationsOnlyUserAdded: 'Само от потребители',
+  locationsColCity: 'Място',
+  locationsColAdded: 'Добавена',
+  locationsSourceOsm: 'От OSM',
+  locationsSourceUser: 'От потребител',
+  locationsEmpty: 'Няма локации, които отговарят на филтрите.',
+  locationsLoadMore: 'Покажи още',
+  locationsExportCsv: 'Експортирай по градове',
+  locationsNoRating: 'Без оценки',
 
   // Errors
   errorTitle: 'Възникна грешка',

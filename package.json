@@ -15,6 +15,7 @@
     "start:prod": "NODE_ENV=production node dist/index.js",
     "install:all": "npm install && cd client && npm install",
     "migrate": "node setup_and_migrate_all.mjs",
+    "backfill:cities": "tsx scripts/backfill-toilet-cities.ts",
     "check-quota": "node check_firebase_quota.mjs",
     "test": "cd client && npm test",
     "test:e2e": "cd client && npm run test:e2e",

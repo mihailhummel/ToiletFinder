@@ -19,6 +19,39 @@ export type InfoModalType = 'about' | 'guides' | 'contacts' | null;
 const BLOG_URL = 'https://toaletna.com/blog';
 const CONTACT_EMAIL = 'contact@toaletna.com';
 
+const STUDIO_NAME = 'Phygital Factory';
+const STUDIO_URL = 'https://phygitalfactory.com';
+
+/**
+ * Renders the studio credit with its name as a link.
+ *
+ * The translated sentence carries a `{studio}` placeholder rather than being
+ * split in two, because the name lands in a different position in English than
+ * in Bulgarian — hard-coding "before" and "after" halves would mistranslate one
+ * of them. Falls back to plain text if a translation ever drops the placeholder.
+ */
+function StudioCredit({ text }: { text: string }) {
+  const [before, after] = text.split('{studio}');
+  const link = (
+    <a
+      href={STUDIO_URL}
+      target="_blank"
+      rel="noreferrer"
+      className="font-semibold text-blue-600 sm:hover:text-blue-700 sm:hover:underline"
+    >
+      {STUDIO_NAME}
+    </a>
+  );
+  if (after === undefined) return <>{text}</>;
+  return (
+    <>
+      {before}
+      {link}
+      {after}
+    </>
+  );
+}
+
 const PIN_COLORS = {
   babyChanging: '#ff66c4',
   gasStation: '#ff3131',
@@ -373,7 +406,7 @@ export const InfoModals: React.FC<InfoModalsProps> = ({ activeModal, onClose }) 
           <div className="px-6 py-4 pb-8 flex flex-col gap-5">
             <div className="flex justify-center gap-4">
               <a
-                href="https://www.instagram.com/"
+                href="https://www.instagram.com/phygital.factory"
                 target="_blank"
                 rel="noreferrer"
                 className="w-12 h-12 rounded-full bg-pink-50 text-pink-600 flex items-center justify-center sm:hover:bg-pink-100 transition-colors"
@@ -381,7 +414,7 @@ export const InfoModals: React.FC<InfoModalsProps> = ({ activeModal, onClose }) 
                 <Instagram size={24} />
               </a>
               <a
-                href="https://www.linkedin.com/"
+                href="https://www.linkedin.com/company/phygital-factory"
                 target="_blank"
                 rel="noreferrer"
                 className="w-12 h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center sm:hover:bg-blue-100 transition-colors"
@@ -452,8 +485,33 @@ export const InfoModals: React.FC<InfoModalsProps> = ({ activeModal, onClose }) 
               <p className="text-slate-600 leading-relaxed text-[15px]">{t('about.p1')}</p>
               <p className="text-slate-600 leading-relaxed text-[15px]">{t('about.p2')}</p>
               <div className="h-px w-12 bg-slate-200 my-4" />
-              <p className="text-slate-600 leading-relaxed text-[15px]">{t('about.p3')}</p>
-              <p className="text-slate-600 leading-relaxed text-[15px]">{t('about.p4')}</p>
+              <div className="flex items-start gap-3">
+                <a
+                  href={STUDIO_URL}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="shrink-0"
+                  aria-label={STUDIO_NAME}
+                >
+                  <img
+                    src="/phygital-factory.png"
+                    alt={STUDIO_NAME}
+                    // No rounded-full here on purpose: the source file is a full
+                    // square lockup (icon + wordmark filling most of the canvas),
+                    // not a round icon-only mark — a circular crop would clip the
+                    // "Phygital"/"Factory" text near the left/right edges.
+                    className="w-14 h-14 object-contain"
+                    /* The logo is optional dressing: if the file hasn't been
+                       added yet, hide it rather than show a broken image. */
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                    }}
+                  />
+                </a>
+                <p className="text-slate-600 leading-relaxed text-[15px]">
+                  <StudioCredit text={t('about.p3')} />
+                </p>
+              </div>
             </div>
           )}
 

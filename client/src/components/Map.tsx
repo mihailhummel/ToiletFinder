@@ -28,12 +28,33 @@ const escapeHtml = (value: unknown): string =>
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
 
+// Imperative handles the map hands back to App once Leaflet is up. Used by the
+// header search / location picker to jump to a toilet, a searched town, or the
+// user's own position.
+export interface MapControls {
+  /** Fly to a toilet by ID and open its popup. False if the ID isn't in the cache. */
+  flyToToilet: (toiletId: string) => boolean;
+  /** Fly to an arbitrary place; fits the bounding box when the geocoder gave one. */
+  flyToLocation: (target: {
+    lat: number;
+    lng: number;
+    /** [south, west, north, east] from Nominatim. */
+    boundingBox?: [number, number, number, number] | null;
+    zoom?: number;
+  }) => void;
+  /**
+   * Recentre on the user, re-requesting permission if we don't have a position.
+   * The same action as the on-map crosshair button.
+   */
+  returnToUserLocation: () => void;
+}
+
 interface MapProps {
   onToiletClick: (toilet: Toilet) => void;
   onAddToiletClick: (location: MapLocation) => void;
   onLoginClick: () => void;
   onReportClick?: (toilet: Toilet) => void;
-  onMapReady?: (flyToToilet: (toiletId: string) => boolean) => void;
+  onMapReady?: (controls: MapControls) => void;
   isAdmin?: boolean;
   currentUser?: any;
   isAddingToilet?: boolean;
@@ -854,7 +875,7 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, onReportC
     };
   }, [leafletLoaded, stableUserLocation ? 'has-location' : 'no-location']); // Only re-init if location availability changes
 
-  // Expose flyToToilet function to parent component (for admin search)
+  // Expose the imperative map controls to the parent (header search / location picker)
   useEffect(() => {
     if (!map.current || !leafletLoaded || !onMapReady) return;
 
@@ -893,9 +914,42 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, onReportC
       return true;
     };
 
-    // Call the callback to expose the function
-    onMapReady(flyToToilet);
+    // Fly to a searched place (town, village, street…). A settlement's bounding
+    // box is the honest framing — fitBounds shows the whole village or the whole
+    // city rather than guessing one zoom level that suits neither.
+    const flyToLocation: MapControls['flyToLocation'] = ({ lat, lng, boundingBox, zoom }) => {
+      if (!map.current) return;
+
+      // Clear any open toilet popup so it doesn't linger over the new area.
+      map.current.closePopup();
+      openPopupToiletIdRef.current = null;
+      pendingFlyToToiletIdRef.current = null;
+      manuallyClosedPopupRef.current = true;
+
+      if (boundingBox) {
+        const [south, west, north, east] = boundingBox;
+        map.current.flyToBounds(
+          [[south, west], [north, east]],
+          { padding: [40, 40], maxZoom: 16, duration: 1.5 }
+        );
+        return;
+      }
+
+      map.current.flyTo([lat, lng], zoom ?? 14, { duration: 1.5, easeLinearity: 0.25 });
+    };
+
+    // Call the callback to expose the controls
+    onMapReady({
+      flyToToilet,
+      flyToLocation,
+      // Through the ref, because handleReturnToLocation closes over the current
+      // user position — capturing it here would freeze the first render's copy.
+      returnToUserLocation: () => returnToLocationRef.current(),
+    });
   }, [map.current, leafletLoaded, onMapReady, queryClient]);
+
+  // Always points at the latest handleReturnToLocation (defined further down).
+  const returnToLocationRef = useRef<() => void>(() => {});
 
   // Close any open toilet popup when the rest of the app asks (e.g. the user
   // taps the locate button or opens a menu item). Dispatched from App.tsx.
@@ -1540,6 +1594,12 @@ const MapComponent = ({ onToiletClick, onAddToiletClick, onLoginClick, onReportC
         notify.error(t('toast.locationDenied'));
       });
   };
+
+  // Re-point the ref on every render so the exposed control never calls a stale
+  // closure (see the onMapReady effect above). No dep array — that's the point.
+  useEffect(() => {
+    returnToLocationRef.current = handleReturnToLocation;
+  });
 
   const handleAddToilet = () => {
     if (!user) {

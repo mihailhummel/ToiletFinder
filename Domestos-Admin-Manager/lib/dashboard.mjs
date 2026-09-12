@@ -7,6 +7,7 @@
  * Returns: { generatedAt, campaign, overview, ranking, domestosLocations, users, recent }
  */
 import { supabase } from './supabase.mjs';
+import { getAllToilets } from './toilets.mjs';
 import { auth } from './firebase-admin.mjs';
 import { rankLocations, setPrior, DEFAULT_M } from './ranking.mjs';
 
@@ -28,7 +29,7 @@ export async function buildDashboard() {
 
 async function compute() {
   const [toilets, reviews, recentReviewRows] = await Promise.all([
-    fetchAllToilets(),
+    getAllToilets(),
     fetchReviewsMinimal(),
     fetchRecentReviews(),
   ]);
@@ -78,6 +79,10 @@ async function compute() {
       averageRating: Number(t.average_rating) || 0,
       reviewCount: Number(t.review_count) || 0,
       isDomestos: t.is_domestos === true, // undefined (pre-migration) → false
+      // Settlement the pin sits in. NULL until add_city_columns.sql is applied and
+      // scripts/backfill-toilet-cities.ts has run over the older rows.
+      city: t.city || null,
+      region: t.region || null,
       createdAt: t.created_at,
       addedByUserName: t.added_by_user_name || null,
       lastReviewAt: lastReviewAt.get(t.id) || 0,
@@ -177,6 +182,8 @@ async function compute() {
         id: l.id,
         title: l.title,
         type: l.type,
+        city: l.city,
+        region: l.region,
         averageRating: l.averageRating,
         reviewCount: l.reviewCount,
         createdAt: l.createdAt,
@@ -245,6 +252,7 @@ async function compute() {
           title: l.title,
           type: l.type,
           isDomestos: l.isDomestos,
+          city: l.city,
           addedByUserName: l.addedByUserName,
           createdAt: l.createdAt,
           inWindow: inWindow(l.createdAt),
@@ -270,31 +278,6 @@ async function resolveEmails(uidSet) {
 }
 
 // ─── Supabase reads (paginated like server/supabase-storage.ts) ──────────────
-
-async function fetchAllToilets() {
-  let all = [];
-  let from = 0;
-  const pageSize = 1000;
-  // select('*') is intentional: it stays resilient if the is_domestos column
-  // hasn't been migrated yet (the field is just undefined → treated as false).
-  for (;;) {
-    const { data, error } = await supabase
-      .from('toilets')
-      .select('*')
-      .eq('is_removed', false)
-      .order('created_at', { ascending: false })
-      .range(from, from + pageSize - 1);
-    if (error) throw error;
-    if (data && data.length) {
-      all = all.concat(data);
-      from += pageSize;
-      if (data.length < pageSize) break;
-    } else {
-      break;
-    }
-  }
-  return all;
-}
 
 async function fetchRecentReviews() {
   const { data, error } = await supabase

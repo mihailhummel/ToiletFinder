@@ -1,5 +1,5 @@
 import { auth } from '@/firebase';
-import type { DashboardData, Viewer } from '@/types';
+import type { DashboardData, LocationsData, LocationsQuery, Viewer } from '@/types';
 
 export class ApiError extends Error {
   status: number;
@@ -19,8 +19,8 @@ async function authHeaders(): Promise<Record<string, string>> {
   return { Authorization: `Bearer ${token}` };
 }
 
-async function getJson<T>(url: string): Promise<T> {
-  const res = await fetch(url, { headers: await authHeaders() });
+async function getJson<T>(url: string, signal?: AbortSignal): Promise<T> {
+  const res = await fetch(url, { headers: await authHeaders(), signal });
   if (!res.ok) {
     let message = res.statusText;
     try {
@@ -36,3 +36,14 @@ async function getJson<T>(url: string): Promise<T> {
 
 export const fetchMe = () => getJson<Viewer>('/api/me');
 export const fetchDashboard = () => getJson<DashboardData>('/api/dashboard');
+
+/** Locations tab. Filtering + paging happen server-side (see lib/locations.mjs). */
+export function fetchLocations(query: LocationsQuery = {}, signal?: AbortSignal) {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(query)) {
+    if (value === undefined || value === '' || value === false) continue;
+    params.set(key, String(value));
+  }
+  const qs = params.toString();
+  return getJson<LocationsData>(`/api/locations${qs ? `?${qs}` : ''}`, signal);
+}

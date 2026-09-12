@@ -17,7 +17,9 @@ import CookieSettings from "./pages/legal/CookieSettings";
 
 // Components
 import { PWABanner } from "./components/PWABanner";
-import { Map } from "./components/Map";
+import { Map, type MapControls } from "./components/Map";
+import { HeaderSearchBar } from "./components/HeaderSearchBar";
+import { LocationPicker } from "./components/LocationPicker";
 import { FilterPanel, type FilterOptions } from "./components/FilterPanel";
 import { AddToiletModal } from "./components/AddToiletModal";
 import { EditToiletModal } from "./components/EditToiletModal";
@@ -41,9 +43,8 @@ import { useToast } from "./hooks/use-toast";
 import { clearToiletCache } from "@/hooks/useToilets";
 
 // Icons
-import { MapPin, Plus, Search } from "lucide-react";
+import { MapPin, Plus } from "lucide-react";
 import { Button } from "./components/ui/button";
-import { Input } from "./components/ui/input";
 
 // Types
 import type { Toilet, MapLocation, ToiletType, Accessibility, AccessType } from "./types/toilet";
@@ -147,15 +148,16 @@ function AppContent() {
   const [activeInfoModal, setActiveInfoModal] = useState<InfoModalType>(null);
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
   const [showDomestosCampaign, setShowDomestosCampaign] = useState(false);
-  // True only while the campaign modal is showing as part of the first-run
-  // sequence (campaign → then welcome). Opening it later from the floating
-  // button / a branded pin must NOT chain into the welcome modal.
+  // Chains the campaign modal into the welcome modal on first run. Currently
+  // always false: the campaign modal no longer opens on app start, so nothing
+  // sets it. Kept so re-enabling the first-run sequence is a one-line change.
   const domestosFirstRunRef = useRef(false);
   const [showReport, setShowReport] = useState(false);
   const [reportToilet, setReportToilet] = useState<Toilet | null>(null);
   const [isAddingToilet, setIsAddingToilet] = useState(false); // Track if user is in add toilet mode
-  const [searchToiletId, setSearchToiletId] = useState('');
-  const [flyToToiletFn, setFlyToToiletFn] = useState<((toiletId: string) => boolean) | null>(null);
+  // Imperative map handles (fly to a toilet / to a searched place), handed over
+  // by <Map> once Leaflet is up. Used by the header search and location picker.
+  const [mapControls, setMapControls] = useState<MapControls | null>(null);
   const [pendingToiletLocation, setPendingToiletLocation] = useState<MapLocation | undefined>(undefined);
   const [pendingToiletData, setPendingToiletData] = useState<{type: ToiletType; title: string; accessibility: Accessibility; accessType: AccessType; hasBabyChanging: boolean; isDomestos: boolean} | null>(null);
   const [isTransitioningToLocationMode, setIsTransitioningToLocationMode] = useState(false);
@@ -257,10 +259,12 @@ function AppContent() {
         // which indicates the map and toilet system is ready
         if (typeof window !== 'undefined' && window.refreshToilets) {
           setTimeout(() => {
-            // First-run sequence: show the Domestos campaign modal first; the
-            // welcome modal opens after it's dismissed (see onClose below).
-            domestosFirstRunRef.current = true;
-            setShowDomestosCampaign(true);
+            // The Domestos campaign modal no longer opens on first run — the
+            // welcome modal is shown directly. To bring the campaign back,
+            // restore the two commented lines (and the floating button below).
+            // domestosFirstRunRef.current = true;
+            // setShowDomestosCampaign(true);
+            setShowWelcomeModal(true);
             localStorage.setItem('toilet-map-visited', 'true');
           }, 1000); // Small delay to ensure everything is loaded
         } else if (attempts < maxAttempts) {
@@ -269,10 +273,10 @@ function AppContent() {
         } else {
           // Fallback: show modal after timeout regardless
           setTimeout(() => {
-            // First-run sequence: show the Domestos campaign modal first; the
-            // welcome modal opens after it's dismissed (see onClose below).
-            domestosFirstRunRef.current = true;
-            setShowDomestosCampaign(true);
+            // Campaign modal disabled on first run — see the note above.
+            // domestosFirstRunRef.current = true;
+            // setShowDomestosCampaign(true);
+            setShowWelcomeModal(true);
             localStorage.setItem('toilet-map-visited', 'true');
           }, 2000);
         }
@@ -575,38 +579,8 @@ function AppContent() {
     setShowReport(true);
   }, []);
 
-  const handleToiletSearch = useCallback((e: React.FormEvent) => {
-    e.preventDefault();
-    if (!searchToiletId.trim()) return;
-
-    if (!flyToToiletFn) {
-      toast({
-        title: t('admin.toiletNotFound'),
-        description: 'Map is still loading. Please try again.',
-        variant: "error"
-      });
-      return;
-    }
-
-    const found = flyToToiletFn(searchToiletId.trim());
-    if (found) {
-      toast({
-        title: t('admin.toiletFound'),
-        description: `ID: ${searchToiletId}`,
-        variant: "success"
-      });
-      setSearchToiletId(''); // Clear search after success
-    } else {
-      toast({
-        title: t('admin.toiletNotFound'),
-        description: `ID: ${searchToiletId}`,
-        variant: "error"
-      });
-    }
-  }, [searchToiletId, flyToToiletFn, toast, t]);
-
-  const handleMapReady = useCallback((flyTo: (toiletId: string) => boolean) => {
-    setFlyToToiletFn(() => flyTo);
+  const handleMapReady = useCallback((controls: MapControls) => {
+    setMapControls(controls);
   }, []);
 
   const handleToiletClick = useCallback((toilet: Toilet) => {
@@ -733,26 +707,18 @@ function AppContent() {
                   />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <h1 className="text-base sm:text-lg font-bold text-gray-900 truncate">{t('header.title')}</h1>
-                  <p className="text-xs text-gray-600">Bulgaria</p>
+                  <h1 className="truncate text-base font-bold leading-tight text-gray-900 sm:text-lg">{t('header.title')}</h1>
+                  {/* Below lg the header has no room for a search field, so this
+                      slot becomes the location picker instead of a static label.
+                      From lg up, <HeaderSearchBar> covers it and the label stays. */}
+                  <LocationPicker controls={mapControls} className="lg:hidden" />
+                  <p className="hidden text-xs text-gray-600 lg:block">Bulgaria</p>
                 </div>
               </div>
 
-              {/* Admin Search Bar - Desktop Only */}
-              {isAdmin && (
-                <form onSubmit={handleToiletSearch} className="hidden lg:flex items-center mx-4 flex-1 max-w-md">
-                  <div className="relative w-full">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    <Input
-                      type="text"
-                      value={searchToiletId}
-                      onChange={(e) => setSearchToiletId(e.target.value)}
-                      placeholder={t('admin.searchPlaceholder')}
-                      className="pl-10 pr-4 h-9 text-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                    />
-                  </div>
-                </form>
-              )}
+              {/* Desktop search — towns and villages for everyone; admins also get
+                  toilets by ID/title. Mobile uses <LocationPicker> above instead. */}
+              <HeaderSearchBar controls={mapControls} includeToilets={isAdmin} />
               
               <div className="flex items-center space-x-2 sm:space-x-3 flex-shrink-0">
                 {/* Desktop navigation links (next to language switch) */}
@@ -825,8 +791,12 @@ function AppContent() {
             </MapErrorBoundary>
             
             
-            {/* Floating Domestos campaign button — sits just above the add (+)
-                button on the right. Opens the campaign modal (not first-run). */}
+            {/* Floating Domestos campaign button — HIDDEN.
+                Sat just above the add (+) button and opened the campaign modal.
+                The modal itself is still mounted and still reachable from the
+                branded pin popups (window.openDomestosModal in Map.tsx), so the
+                Domestos pins keep working. Uncomment to bring the button back. */}
+            {/*
             <button
               onClick={() => {
                 haptics.light();
@@ -847,15 +817,13 @@ function AppContent() {
                 border: 'none',
               }}
             >
-              {/* Image is intentionally larger than the 55px tap target so the
-                  badge artwork reads at the same visible width as the + button
-                  (the FAB is a solid 55px circle; the badge has transparent margins). */}
               <img
                 src="/domestos-pin.png"
                 alt="Domestos"
                 style={{ width: '64px', height: '70px', objectFit: 'contain', filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.3))' }}
               />
             </button>
+            */}
 
             {/* Floating Action Button with Attention Animation */}
             <Button

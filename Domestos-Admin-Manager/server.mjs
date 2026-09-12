@@ -12,6 +12,7 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { requireDashboardAccess } from './lib/auth.mjs';
 import { buildDashboard } from './lib/dashboard.mjs';
+import { queryLocations } from './lib/locations.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DIST = path.join(__dirname, 'dist');
@@ -37,6 +38,36 @@ app.get('/api/dashboard', requireDashboardAccess, async (_req, res) => {
     res.status(500).json({ error: 'Failed to build dashboard' });
   }
 });
+
+// All locations, filtered + paginated server-side. Separate from /api/dashboard
+// because the full table is thousands of rows — far too much to bolt onto every
+// dashboard load just so one tab can page through it.
+app.get('/api/locations', requireDashboardAccess, async (req, res) => {
+  try {
+    const data = await queryLocations({
+      city: str(req.query.city),
+      region: str(req.query.region),
+      q: str(req.query.q),
+      type: str(req.query.type),
+      source: str(req.query.source),
+      domestos: req.query.domestos === 'true',
+      sort: str(req.query.sort),
+      limit: req.query.limit,
+      offset: req.query.offset,
+    });
+    res.set('Cache-Control', 'private, no-store');
+    res.json(data);
+  } catch (err) {
+    console.error('[domestos-admin] locations error:', err);
+    res.status(500).json({ error: 'Failed to load locations' });
+  }
+});
+
+// Express gives arrays for repeated query params; keep only plain strings, and
+// bound the length so a filter value can't be used to push huge scans.
+function str(value) {
+  return typeof value === 'string' && value.length <= 200 ? value : undefined;
+}
 
 // Any other /api/* is a real 404 (never fall through to the SPA shell).
 app.use('/api', (_req, res) => res.status(404).json({ error: 'Not found' }));

@@ -443,6 +443,27 @@ export class SupabaseStorage implements IStorage {
     }
   }
 
+  // Store the reverse-geocoded settlement for a location. Written separately from
+  // updateToilet because it is server-derived, never part of a client payload:
+  // routes.ts resolves it in the background after the row is already committed.
+  // `city_resolved_at` is stamped even when the lookup found nothing, so the
+  // backfill script can tell "not asked yet" from "asked, no settlement there".
+  async setToiletCity(toiletId: string, city: string | null, region: string | null): Promise<void> {
+    const { error } = await supabase
+      .from('toilets')
+      .update({
+        city: city,
+        region: region,
+        city_resolved_at: new Date().toISOString()
+      })
+      .eq('id', toiletId);
+
+    if (error) {
+      console.error('❌ Error storing toilet city:', error);
+      throw error;
+    }
+  }
+
   async deleteToilet(toiletId: string): Promise<void> {
     try {
       const { error } = await supabase
@@ -715,9 +736,14 @@ export class SupabaseStorage implements IStorage {
       removedAt: data.removed_at ? new Date(data.removed_at) : null,
       createdAt: new Date(data.created_at || Date.now()),
       averageRating: data.average_rating || 0,
-      reviewCount: data.review_count || 0
+      reviewCount: data.review_count || 0,
+      // Settlement attribution. `undefined` before add_city_columns.sql has been
+      // run against the DB, so normalize to null rather than leaking undefined.
+      city: data.city ?? null,
+      region: data.region ?? null,
+      cityResolvedAt: data.city_resolved_at ? new Date(data.city_resolved_at) : null
     };
-    
+
     return transformed;
   }
 

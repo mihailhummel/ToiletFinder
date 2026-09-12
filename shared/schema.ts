@@ -44,6 +44,12 @@ export const toilets = pgTable("toilets", {
   accessType: text("access_type").$type<z.infer<typeof accessTypeSchema>>().default('unknown'),
   hasBabyChanging: boolean("has_baby_changing").default(false).notNull(),
   isDomestos: boolean("is_domestos").default(false).notNull(),
+  // Settlement the pin sits in, resolved by reverse geocoding when the location is
+  // created or moved (server/geocoding.ts). Nullable: a lookup can fail, or the
+  // row can predate the feature — scripts/backfill-toilet-cities.mjs fills those in.
+  city: text("city"),
+  region: text("region"),
+  cityResolvedAt: timestamp("city_resolved_at"),
   userId: text("user_id").notNull(),
   source: text("source", { enum: ['osm', 'user'] }).notNull().default('osm'),
   addedByUserName: text("added_by_user_name"),

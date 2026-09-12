@@ -12,6 +12,7 @@ import { StatCards } from '@/components/StatCards';
 import { TabNav, type Tab } from '@/components/TabNav';
 import { UsersView } from '@/components/UsersView';
 import { DomestosView } from '@/components/DomestosView';
+import { LocationsView } from '@/components/LocationsView';
 import { ActivityView } from '@/components/ActivityView';
 import { RankingExplainer } from '@/components/RankingExplainer';
 
@@ -25,6 +26,9 @@ export default function App() {
   const [errorMsg, setErrorMsg] = useState('');
   const [refreshing, setRefreshing] = useState(false);
   const [tab, setTab] = useState<Tab>('domestos');
+  // Bumped by the header's Refresh button. The Locations tab loads its own data,
+  // so it needs an explicit signal to re-fetch alongside the dashboard.
+  const [reloadToken, setReloadToken] = useState(0);
 
   const load = useCallback(async () => {
     try {
@@ -61,6 +65,7 @@ export default function App() {
     try {
       const dash = await fetchDashboard();
       setData(dash);
+      setReloadToken((n) => n + 1);
     } catch (err) {
       if (err instanceof ApiError && (err.status === 401 || err.status === 403)) setPhase('denied');
     } finally {
@@ -99,6 +104,7 @@ export default function App() {
 
         {tab === 'users' && <UsersView data={data} />}
         {tab === 'domestos' && <DomestosView data={data} />}
+        {tab === 'locations' && <LocationsView reloadToken={reloadToken} />}
         {tab === 'activity' && <ActivityView data={data} />}
 
         {tab === 'domestos' && <RankingExplainer ranking={data.ranking} />}

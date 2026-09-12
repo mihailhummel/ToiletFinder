@@ -39,6 +39,9 @@ export interface IStorage {
   // Admin operations
   updateToilet(toiletId: string, updateData: Partial<InsertToilet>): Promise<void>;
   deleteToilet(toiletId: string): Promise<void>;
+
+  // Server-derived settlement attribution (reverse geocoded, never client-supplied).
+  setToiletCity(toiletId: string, city: string | null, region: string | null): Promise<void>;
   
   // User activity operations
   getUserToilets(userId: string): Promise<Toilet[]>;

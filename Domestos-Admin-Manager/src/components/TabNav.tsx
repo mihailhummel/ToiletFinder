@@ -1,10 +1,11 @@
-import { Activity, Award, Users, type LucideIcon } from 'lucide-react';
+import { Activity, Award, MapPinned, Users, type LucideIcon } from 'lucide-react';
 import { t } from '@/i18n';
 
-export type Tab = 'users' | 'domestos' | 'activity';
+export type Tab = 'users' | 'domestos' | 'activity' | 'locations';
 
 const TABS: { id: Tab; label: string; icon: LucideIcon }[] = [
   { id: 'domestos', label: t.navDomestos, icon: Award },
+  { id: 'locations', label: t.navLocations, icon: MapPinned },
   { id: 'users', label: t.navUsers, icon: Users },
   { id: 'activity', label: t.navActivity, icon: Activity },
 ];
