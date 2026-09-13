@@ -10,7 +10,7 @@ import {
   type RegionCount,
 } from '@/types';
 import { fmtDate, fmtNum, fmtRating, locationName, t, typeLabel } from '@/i18n';
-import { Card, DomestosChip, NAVY, SectionHeader, TypePill } from './ui';
+import { Card, DomestosChip, NAVY, SectionHeader, ToiletId, TypePill } from './ui';
 
 /**
  * Every location in the platform, filterable by the settlement it sits in.
@@ -440,11 +440,15 @@ function LocationRowItem({ loc }: { loc: LocationRow }) {
         </div>
         <div className="mt-1 flex flex-wrap items-center gap-1.5">
           <TypePill type={loc.type} label={typeLabel(loc.type)} />
-          <span className="text-[10.5px] text-slate-400">
+          <span className="truncate text-[10.5px] text-slate-400">
             {loc.source === 'osm' ? t.locationsSourceOsm : t.locationsSourceUser}
             {loc.addedByUserName ? ` · ${loc.addedByUserName}` : ''}
+            {/* Resolved server-side (Firebase Admin) only for user-added rows;
+                OSM imports have no addedByEmail and this stays silent. */}
+            {loc.addedByEmail ? ` · ${loc.addedByEmail}` : ''}
           </span>
         </div>
+        <ToiletId id={loc.id} className="mt-1" />
       </div>
 
       <div className="w-40 shrink-0 text-[12px]">

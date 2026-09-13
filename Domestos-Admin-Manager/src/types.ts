@@ -134,6 +134,8 @@ export interface LocationRow {
   /** `city|region`, or UNKNOWN_CITY_KEY. The value the city filter sends back. */
   cityKey: string;
   addedByUserName: string | null;
+  /** Resolved server-side (Firebase Admin), only for the page actually returned. */
+  addedByEmail: string | null;
   averageRating: number;
   reviewCount: number;
   createdAt: string;

@@ -12,6 +12,7 @@
  * lets the city list carry exact counts without a second round trip.
  */
 import { getAllToilets } from './toilets.mjs';
+import { resolveEmails } from './emails.mjs';
 
 /** Grouping key. Same-named villages in different oblasti must not merge. */
 const cityKey = (city, region) => (city ? `${city}|${region || ''}` : UNKNOWN_KEY);
@@ -64,6 +65,9 @@ function toLocation(row) {
     // whether it found a settlement: rural points and motorways legitimately
     // resolve to no city at all.
     cityResolved: !!row.city_resolved_at,
+    // Kept only long enough to resolve an email against Firebase Admin (see
+    // queryLocations below) — never sent to the browser as a raw uid.
+    userId: row.user_id || null,
     addedByUserName: row.added_by_user_name || null,
     averageRating: Number(row.average_rating) || 0,
     reviewCount: Number(row.review_count) || 0,
@@ -86,7 +90,23 @@ function toLocation(row) {
  * @param {number} [params.offset]
  */
 export async function queryLocations(params = {}) {
-  return buildLocationsResult(await getAllToilets(), params);
+  const result = buildLocationsResult(await getAllToilets(), params);
+
+  // Emails are resolved only for the page actually being returned (typically 50
+  // rows), not the whole filtered set — looking up thousands of Firebase users
+  // per request just to throw away the ones off-page would be pure waste.
+  const uids = new Set(result.items.map((l) => l.userId).filter(Boolean));
+  const emailByUid = await resolveEmails(uids);
+
+  return {
+    ...result,
+    items: result.items.map((l) => {
+      // Strip the raw uid before it leaves the server — only the resolved email
+      // (or null) is ever sent to the browser.
+      const { userId, ...rest } = l;
+      return { ...rest, addedByEmail: userId ? emailByUid.get(userId) || null : null };
+    }),
+  };
 }
 
 /**

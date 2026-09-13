@@ -8,7 +8,7 @@
  */
 import { supabase } from './supabase.mjs';
 import { getAllToilets } from './toilets.mjs';
-import { auth } from './firebase-admin.mjs';
+import { resolveEmails } from './emails.mjs';
 import { rankLocations, setPrior, DEFAULT_M } from './ranking.mjs';
 
 const RANKING_M = Number(process.env.RANKING_M) || DEFAULT_M;
@@ -259,22 +259,6 @@ async function compute() {
         })),
     },
   };
-}
-
-/** Batch-resolve Firebase emails for a set of uids. Best-effort: failures → no email. */
-async function resolveEmails(uidSet) {
-  const map = new Map();
-  const uids = [...uidSet].filter(Boolean);
-  for (let i = 0; i < uids.length; i += 100) {
-    const chunk = uids.slice(i, i + 100).map((uid) => ({ uid }));
-    try {
-      const res = await auth.getUsers(chunk);
-      for (const u of res.users) map.set(u.uid, u.email || null);
-    } catch (err) {
-      console.warn('[domestos-admin] email lookup failed:', err.message);
-    }
-  }
-  return map;
 }
 
 // ─── Supabase reads (paginated like server/supabase-storage.ts) ──────────────
